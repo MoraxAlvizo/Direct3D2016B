@@ -35,7 +35,9 @@ struct MATRIX4D
 };
 
 MATRIX4D operator*(MATRIX4D& A, MATRIX4D &B);
-MATRIX4D operator*(VECTOR4D& A, long &B);
+VECTOR4D operator*(VECTOR4D& A, float B);
+VECTOR4D operator*(float B, VECTOR4D& A);
+
 VECTOR4D operator*(MATRIX4D& A, VECTOR4D& V);
 VECTOR4D operator*(VECTOR4D& V, MATRIX4D& A);
 VECTOR4D operator*(VECTOR4D& A, VECTOR4D& B);

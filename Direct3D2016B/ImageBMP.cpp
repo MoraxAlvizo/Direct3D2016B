@@ -75,7 +75,30 @@ CImageBMP* CImageBMP::CreateBitmapFromFile(
 	break;
 	case 24: //24bpp 16M Colores
 	case 32: //32bpp 16M Colores 256 alphas
-		break;
+	{
+		unsigned char *pRow = new unsigned char[RowLength];
+		pNewImage = new CImageBMP();
+		pNewImage->m_ulSizeX = bih.biWidth;
+		pNewImage->m_ulSizeY = bih.biHeight;
+		pNewImage->m_pBuffer =
+			new PIXEL[bih.biWidth*bih.biHeight];
+		for (long j = 0; j < bih.biHeight; j++)
+		{
+			file.read((char*)pRow, RowLength);
+			for (long i = 0; i < bih.biWidth; i++)
+			{
+				PIXEL* p = &pNewImage->m_pBuffer[(bih.biHeight - j - 1)*bih.biWidth + i];
+				p->b = pRow[i*3];
+				p->g = pRow[i*3+1];
+				p->r = pRow[i*3+2];
+				if(bih.biBitCount == 32)
+					p->a = pRow[i * 3 + 3];
+				else
+					p->a = 1;
+			}
+		}
+		return pNewImage;
+	}
 	}
 	return NULL;
 }

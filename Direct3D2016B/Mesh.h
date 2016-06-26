@@ -26,6 +26,7 @@ public:
 		multimap<float, unsigned long>& Vertices,float radius);
 	void VertexShade(CDXBasicPainter::VERTEX(*pVS)(CDXBasicPainter::VERTEX V));
 	void LoadSuzanne();
+	void BuildTangentSpaceFromTexCoordsIndexed(void);
 	~CMesh();
 };
 

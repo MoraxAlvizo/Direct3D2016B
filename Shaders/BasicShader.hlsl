@@ -17,6 +17,8 @@ struct VERTEX_INPUT
 {
 	float4 Position:POSITION;
 	float4 Normal:NORMAL;
+    float4 Tanget : TANGENT;
+    float4 Binormal : BINORMAL;
 	float4 Color:COLOR;
     float4 TexCoord : TEXCOORD;
 };
@@ -25,6 +27,8 @@ struct VERTEX_OUTPUT
     float4 Position : SV_Position;
 	float4 PositionNonProjected:POSITION;
 	float4 Normal:NORMAL;
+    float4 Tanget : TANGENT;
+    float4 Binormal : BINORMAL;
 	float4 Color:COLOR;
     float4 TexCoord : TEXCOORD;
 };
@@ -66,6 +70,7 @@ struct LIGHT
 #define MAPPING_DIFFUSE             0x10
 #define MAPPING_NORMAL              0x20
 #define MAPPING_ENVIROMENTAL_FAST   0x40
+#define MAPPING_NORMAL_TRUE			0x80
 
 cbuffer PARAMS:register(b0)
 {
@@ -89,12 +94,15 @@ VERTEX_OUTPUT VSMain(VERTEX_INPUT Input)
     Output.Normal = mul(Input.Normal, mul(World, View));
 	Output.Color = Input.Color;
     Output.TexCoord = Input.TexCoord;
+    Output.Tanget = Input.Tanget;
+    Output.Binormal = Input.Binormal;
     return Output;
 
 }
 Texture2D Diffuse:register(t0);
 Texture2D NormalMap : register(t1);
 Texture2D EnviromentalMap : register(t2);
+Texture2D NormalMapTrue : register(t3);
 SamplerState Sampler : register(s0);
 
 float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
@@ -103,17 +111,17 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     float4 Protuberancia = 0;
     float4 ColorEnviomental = 0;
     float4 ColorSpecular = 0;
+    float4 N = normalize(Input.Normal + Protuberancia);
 
     if (Flags.x & MAPPING_NORMAL)
     {
         Protuberancia = 0.3 * NormalMap.Sample(Sampler, Input.TexCoord.xy);
         Protuberancia.w = 0;
+        N = normalize(Input.Normal + Protuberancia);
     }
-    float4 N = normalize(Input.Normal + Protuberancia);
 
     if (Flags.x & MAPPING_ENVIROMENTAL_FAST)
     {
-
         ColorEnviomental = EnviromentalMap.Sample(Sampler, (N.xy * float2(0.5, -0.5) + 0.5) / 2 );
     }
 
@@ -192,7 +200,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     }
 
     if (Flags.x & MAPPING_DIFFUSE)
-        ColorDiffuse *= Diffuse.Sample(Sampler, Input.TexCoord.xy);
+        ColorDiffuse *= NormalMapTrue.Sample(Sampler, Input.TexCoord.xy);
 
     return Material.Emissive + 
            ColorDiffuse  * Material.Diffuse  + 

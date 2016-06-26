@@ -22,6 +22,7 @@ CDXManager g_Manager;
 CDXBasicPainter g_Painter(&g_Manager);
 CImageBMP*      g_pSysTexture; //CPU
 ID3D11Texture2D* g_pTexture;   //GPU
+ID3D11Texture2D* g_pNormalMapTrue; 
 
 MATRIX4D g_World;
 MATRIX4D g_View;
@@ -323,6 +324,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    }
 
    g_pEnvMap = pImage->CreateTexture(&g_Manager);
+
    if (!g_pEnvMap)
    {
 	   MessageBox(NULL, L"No se pudo cargar textura al GPU",
@@ -330,13 +332,32 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   return FALSE;
    }
 
+   CImageBMP::DestroyBitmap(pImage);
+
+   pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\Normal.bmp", NULL);
+
+   if (!pImage)
+   {
+	   MessageBox(NULL, L"No se pudo cargar textura desde archivo",
+		   L"Verificar recursos sombreadores", MB_ICONERROR);
+	   return FALSE;
+   }
+
+   g_pNormalMapTrue = pImage->CreateTexture(&g_Manager);
+
+   if (!g_pNormalMapTrue)
+   {
+	   MessageBox(NULL, L"No se pudo cargar textura al GPU",
+		   L"Verificar recursos sombreadores", MB_ICONERROR);
+	   return FALSE;
+   }
+
+   CImageBMP::DestroyBitmap(pImage);
+
    // Init FPS
    g_iFrames = 0;
    g_dStarttime = GetTickCount();
 
-
-
-   CImageBMP::DestroyBitmap(pImage);
    ShowWindow(g_hWnd, nCmdShow);
    UpdateWindow(g_hWnd);
 
@@ -377,6 +398,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			//g_Surface.BuildTextureCoords(0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1));
 
 			g_Surface.LoadSuzanne();
+			g_Surface.BuildTangentSpaceFromTexCoordsIndexed();
 			VECTOR4D White = { 1, 1, 1, 1 };
 			g_Surface.SetColor(White, White, White, White);
 		}
@@ -454,7 +476,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			VECTOR4D Color = { 0, 0, 0, 0 };
 			g_Painter.m_Params.Brightness = Color;
-			g_Painter.m_Params.Flags1 =   MAPPING_DIFFUSE | MAPPING_ENVIROMENTAL_FAST |MAPPING_NORMAL;
+			g_Painter.m_Params.Flags1 =   MAPPING_DIFFUSE | MAPPING_NORMAL_TRUE;
 			ID3D11ShaderResourceView* pSRV = NULL;
 			g_Manager.GetDevice()->CreateShaderResourceView(g_pTexture, NULL, &pSRV);
 			g_Manager.GetContext()->PSSetShaderResources(0, 1, &pSRV);
@@ -464,6 +486,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			ID3D11ShaderResourceView* pSRVEnvMap = NULL;
 			g_Manager.GetDevice()->CreateShaderResourceView(g_pEnvMap, NULL, &pSRVEnvMap);
 			g_Manager.GetContext()->PSSetShaderResources(2, 1, &pSRVEnvMap);
+			ID3D11ShaderResourceView* pSRVNormalMapTrue = NULL;
+			g_Manager.GetDevice()->CreateShaderResourceView(g_pNormalMapTrue, NULL, &pSRVNormalMapTrue);
+			g_Manager.GetContext()->PSSetShaderResources(3, 1, &pSRVNormalMapTrue);
+
+
 			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size());
 			g_Manager.GetSwapChain()->Present(1,0);
 			SAFE_RELEASE(pSRV);

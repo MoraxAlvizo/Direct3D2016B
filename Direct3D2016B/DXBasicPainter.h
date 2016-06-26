@@ -56,6 +56,7 @@ public:
 #define MAPPING_DIFFUSE				0x10
 #define MAPPING_NORMAL				0x20
 #define MAPPING_ENVIROMENTAL_FAST	0x40
+#define MAPPING_NORMAL_TRUE			0x80
 
 		MATRIX4D World;
 		MATRIX4D View;
@@ -68,6 +69,8 @@ public:
 	{
 		VECTOR4D Position;
 		VECTOR4D Normal;
+		VECTOR4D Tangent;
+		VECTOR4D Binormal;
 		VECTOR4D Color;
 		VECTOR4D TexCoord;
 		static D3D11_INPUT_ELEMENT_DESC InputLayout[];

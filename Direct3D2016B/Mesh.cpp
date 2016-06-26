@@ -1,4 +1,4 @@
-#include "stdafx.h"
+﻿#include "stdafx.h"
 #include "Mesh.h"
 CMesh::CMesh()
 {
@@ -139,4 +139,71 @@ void CMesh::LoadSuzanne()
 		m_Vertices[i].TexCoord = TexCoord;
 	}
 	return;
+}
+
+void CMesh::BuildTangentSpaceFromTexCoordsIndexed(void)
+{
+	vector<int> Histogram;
+	vector<CDXBasicPainter::VERTEX> Accum;
+
+
+	Accum.resize(m_Vertices.size());
+	memset(&Accum[0], 0, sizeof(CDXBasicPainter::VERTEX)*Accum.size());
+
+	Histogram.resize(m_Vertices.size());
+	memset(&Histogram[0], 0, sizeof(int)*Histogram.size());
+	CDXBasicPainter::VERTEX* pVertices = &m_Vertices[0];
+	unsigned long* pIndices = &m_Indices[0];
+	int* pHistogram = &Histogram[0];
+	for (unsigned int i = 0; i<m_Indices.size(); i += 3)
+	{
+		VECTOR4D V0, V1, V2, T0, T1, T2;
+		MATRIX4D InvS, Mq, Mt;
+		InvS = Identity();
+		Mq = Identity();
+		//Tomar un triangulo
+		V0 = pVertices[pIndices[i]].Position;
+		V1 = pVertices[pIndices[i + 1]].Position;
+		V2 = pVertices[pIndices[i + 2]].Position;
+		//y sus coordenadas de textura para formar la base ortornormal en espacio de vertice (espacio tangente)
+		T0 = pVertices[pIndices[i]].TexCoord;
+		T1 = pVertices[pIndices[i + 1]].TexCoord;
+		T2 = pVertices[pIndices[i + 2]].TexCoord;
+
+		Mq.vec[0] = V1 - V0;
+		Mq.vec[1] = V2 - V0;
+		InvS.vec[0] = T1 - T0;
+		InvS.vec[1] = T2 - T0;
+		Inverse(InvS, InvS);
+		Mt = InvS*Mq;
+		for (int j = 0; j<3; j++)
+		{
+			VECTOR4D temp1;
+			VECTOR4D N = pVertices[pIndices[i + j]].Normal; //Normal de vertice
+			VECTOR4D T = Mt.vec[0];
+			VECTOR4D B = Mt.vec[1];
+			//Ortogonalizacion con respecto a la normal de vertice
+			N = Normalize(N);
+			T = T - N*Dot(N, T);
+			T = Normalize(T);
+			VECTOR4D temp2;
+			temp2 = B - N*Dot(N, B);
+			B = temp2 - T*Dot(T, B);
+			B = Normalize(B);
+			Accum[pIndices[i + j]].Normal = Accum[pIndices[i + j]].Normal + N;
+			Accum[pIndices[i + j]].Tangent = Accum[pIndices[i + j]].Tangent + T;
+			Accum[pIndices[i + j]].Binormal = Accum[pIndices[i + j]].Binormal + B;
+			pHistogram[pIndices[i + j]]++;
+		}
+	}
+	for (unsigned int i = 0; i<m_Vertices.size(); i++)
+	{
+		float invFreq = 1.0f / pHistogram[i];
+		pVertices[i].Normal = Accum[i].Normal*invFreq;
+		pVertices[i].Tangent = Accum[i].Tangent*invFreq;
+		pVertices[i].Binormal = Accum[i].Binormal*invFreq;
+		pVertices[i].Normal = Normalize(pVertices[i].Normal);
+		pVertices[i].Tangent = Normalize(pVertices[i].Tangent);
+		pVertices[i].Binormal = Normalize(pVertices[i].Binormal);
+	}
 }
