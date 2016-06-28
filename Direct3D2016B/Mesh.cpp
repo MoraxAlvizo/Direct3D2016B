@@ -207,3 +207,122 @@ void CMesh::BuildTangentSpaceFromTexCoordsIndexed(void)
 		pVertices[i].Binormal = Normalize(pVertices[i].Binormal);
 	}
 }
+
+void CMesh::BuildTangentSpaceFromTexCoordsIndexed(bool bGenerateNormal)
+{
+	vector<int> Histogram;
+	vector<CDXBasicPainter::VERTEX> Accum;
+	Accum.resize(m_Vertices.size());
+	memset(&Accum[0], 0, sizeof(CDXBasicPainter::VERTEX)*Accum.size());
+	Histogram.resize(m_Vertices.size());
+	memset(&Histogram[0], 0, sizeof(int)*Histogram.size());
+	CDXBasicPainter::VERTEX* pVertices = &m_Vertices[0];
+	unsigned long* pIndices = &m_Indices[0];
+	int* pHistogram = &Histogram[0];
+	for (unsigned int i = 0; i<m_Indices.size(); i += 3)
+	{
+		VECTOR4D V0, V1, V2, T0, T1, T2;
+		MATRIX4D InvS, Mq, Mt;
+		InvS = Identity();
+		Mq = Identity();
+		//Tomar un triangulo
+		V0 = pVertices[pIndices[i]].Position;
+		V1 = pVertices[pIndices[i + 1]].Position;
+		V2 = pVertices[pIndices[i + 2]].Position;
+		//y sus coordenadas de textura para formar la base ortornormal en espacio de v�rtice (espacio tangente)
+		T0 = pVertices[pIndices[i]].TexCoord;
+		T1 = pVertices[pIndices[i + 1]].TexCoord;
+		T2 = pVertices[pIndices[i + 2]].TexCoord;
+		Mq.vec[0] = V1 - V0;
+		Mq.vec[1] = V2 - V0;
+		InvS.vec[0] = T1 - T0;
+		InvS.vec[1] = T2 - T0;
+		Inverse(InvS, InvS);
+		Mt = InvS*Mq;
+		VECTOR4D T = Normalize(Mt.vec[0]);
+		VECTOR4D B = Normalize(Mt.vec[1]);
+		for (int j = 0; j<3; j++)
+		{
+
+			VECTOR4D N = Normalize(bGenerateNormal ? Cross3(V1 - V0, V2 - V0) : m_Vertices[pIndices[i + j]].Normal);
+			//Ortogonalizaci�n con respecto a la normal de v�rtice
+			T = Normalize(T - N*Dot(N, T));
+			B = Normalize(B - N*Dot(N, B) - T*Dot(T, B));
+			Accum[pIndices[i + j]].Normal = Accum[pIndices[i + j]].Normal + N;
+			Accum[pIndices[i + j]].Tangent = Accum[pIndices[i + j]].Tangent + T;
+			Accum[pIndices[i + j]].Binormal = Accum[pIndices[i + j]].Binormal + B;
+			pHistogram[pIndices[i + j]]++;
+		}
+	}
+	for (unsigned int i = 0; i<m_Vertices.size(); i++)
+	{
+		float invFreq = 1.0f / pHistogram[i];
+		pVertices[i].Normal = Normalize(bGenerateNormal ? (Accum[i].Normal*invFreq) : pVertices[i].Normal);
+		pVertices[i].Tangent = Normalize(Accum[i].Tangent*invFreq);
+		pVertices[i].Binormal = Normalize(Accum[i].Binormal*invFreq);
+	}
+}
+
+void CMesh::Optimize()
+{
+	//Remover vertices duplicados, Complejidad temporal O(N^2)
+	vector<int> VertexRemoved;
+	vector<CDXBasicPainter::VERTEX> VertexOut;
+	vector<int> VertexReplacedBy;
+	int nVertexOut = 0;
+	VertexOut.resize(m_Vertices.size());
+	VertexReplacedBy.resize(m_Vertices.size());
+	VertexRemoved.resize(m_Vertices.size());
+	for (unsigned int i = 0; i < VertexReplacedBy.size(); i++) VertexReplacedBy[i] = i;
+	for (auto &x : VertexRemoved) x = 0;
+	//Para cada vertice, eliminar si existe otro igual en el resto del buffer
+	for (unsigned int j = 0; j < m_Vertices.size() - 1; j++)
+	{
+		if (!VertexRemoved[j]) //Si no se ha removido, entonces, es �nico
+		{
+			VertexOut[nVertexOut] = m_Vertices[j];
+			VertexReplacedBy[j] = nVertexOut;
+			nVertexOut++;
+		}
+		else
+			continue;
+		//Para todos los demas vertices, compararlo con el de referencia [j]
+		for (unsigned int i = j + 1; i < m_Vertices.size(); i++)
+		{
+			if (VertexRemoved[i]) continue;
+			VECTOR4D dist = m_Vertices[i].Position - m_Vertices[j].Position;
+			if (Dot(dist, dist) < 0.000001f)
+			{
+				VertexRemoved[i] = 1;
+				VertexReplacedBy[i] = nVertexOut - 1;
+			}
+		}
+	}
+	for (auto &index : m_Indices) index = VertexReplacedBy[index];
+	VertexOut.resize(nVertexOut);
+	m_Vertices = VertexOut;
+	m_Vertices.shrink_to_fit();
+	//Eliminar triangulos cuya area se aproxime a cero.  Complejidad O(N)
+	//(Estos triingulos no aportan informaci�n consistente para la generaci�n del
+	//espacio tangencial y deben ser removidos)
+	vector<unsigned long> Indices;
+	Indices.resize(m_Indices.size());
+	unsigned long IndicesOut = 0;
+	for (int j = 0; j < m_Indices.size(); j += 3)
+	{
+		//Tomar un triangulo
+		VECTOR4D V0, V1, V2;
+		V0 = m_Vertices[m_Indices[j + 0]].Position;
+		V1 = m_Vertices[m_Indices[j + 1]].Position;
+		V2 = m_Vertices[m_Indices[j + 2]].Position;
+		if (Magnity(Cross3(V1 - V0, V2 - V0)) > 0.000001f) //Si el doble del area del triangulo es mayor que 0.00001, considerarlo
+		{
+			Indices[IndicesOut++] = m_Indices[j + 0];
+			Indices[IndicesOut++] = m_Indices[j + 1];
+			Indices[IndicesOut++] = m_Indices[j + 2];
+		}
+	}
+	Indices.resize(IndicesOut);
+	m_Indices = Indices;
+	m_Indices.shrink_to_fit();
+}

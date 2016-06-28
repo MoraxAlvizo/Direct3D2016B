@@ -58,6 +58,36 @@ void CMeshMathSurface::BuildAnalyticSurface(
 	Tesselate();
 } 
 
+
+void CMeshMathSurface::BuildParametricSurface(
+	unsigned long nVx,
+	unsigned long nVy,
+	float u0, float v0,
+	float du, float dv,
+	VECTOR4D(*pFn)(float u, float v))
+{
+	m_Indices.clear();
+	m_Vertices.clear();
+	m_nVx = nVx;
+	m_nVy = nVy;
+	float u, v = v0;
+	m_Vertices.resize(m_nVx*m_nVy);
+	for (unsigned long j = 0; j < m_nVy; j++)
+	{
+		u = u0;
+		for (unsigned long i = 0; i < m_nVx; i++)
+		{
+			VECTOR4D P = pFn(u, v);
+			m_Vertices[j*m_nVx + i].Position = P;
+
+			u += du;
+
+		}
+		v += dv;
+	}
+	Tesselate();
+}
+
 void CMeshMathSurface::SetColor(
 	VECTOR4D& A,
 	VECTOR4D& B,

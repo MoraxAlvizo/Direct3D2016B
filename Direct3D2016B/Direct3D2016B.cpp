@@ -9,6 +9,7 @@
 #include "Mesh.h"
 #include "MeshMathSurface.h"
 #include <Windows.h>
+#include <Windowsx.h>
 #include <timeapi.h>
 #include <sstream>
 #define MAX_LOADSTRING 100
@@ -41,6 +42,13 @@ bool g_bUp = 0, g_bDown = 0;
 bool g_bForward= 0, g_bBackward = 0;
 bool g_bTurnLeft = 0, g_bTurnRight = 0;
 bool g_bTurnUp = 0, g_bTurnDown = 0, g_bTurnS = 0, g_bTurnS1 = 0;
+bool g_onFirstMouseMove = 1;
+
+int g_iWidth;
+int g_iHeight;
+
+int lastX, lastY;
+int mouseX, mouseY;
 
 #define VK_A 0x41
 #define VK_Q 0x51
@@ -82,6 +90,17 @@ VECTOR4D SinCosNormal(float x, float y, float z)
 	};
 	return Normalize(Normal);
 }
+#define M_PI 3.14159265358979323846
+VECTOR4D Sphere1(float u, float v)
+{
+	float r = 1.f;
+	VECTOR4D v1;
+	v1.x = r*cos(2 * M_PI *u)*sin(M_PI *v);
+	v1.y = r*sin(2 * M_PI*u)*sin(M_PI*v);
+	v1.z = r*cos(M_PI*v);
+	v1.w = 1;
+	return v1;
+}
 
 void UpdateCamera()
 {
@@ -99,18 +118,42 @@ void UpdateCamera()
 	O.m23 = 0;
 
 	VECTOR4D Speed = { 0.1, 0.1, 0.1, 0 };
+	bool movePos = false;
 	if (g_bBackward)
+	{
 		EyePos = EyePos - ZDir*Speed;
+		movePos = true;
+	}
 	if (g_bForward)
+	{
 		EyePos = EyePos + ZDir*Speed;
+		movePos = true;
+	}
 	if (g_bLeft)
+	{
 		EyePos = EyePos - XDir*Speed;
+		movePos = true;
+	}
 	if (g_bRight)
+	{
 		EyePos = EyePos + XDir*Speed;
+		movePos = true;
+	}
 	if (g_bUp)
+	{
 		EyePos = EyePos + YDir*Speed;
+		movePos = true;
+	}
 	if (g_bDown)
+	{
 		EyePos = EyePos - YDir*Speed;
+		movePos = true;
+	}
+
+	if (movePos)
+	{
+		//g_onFirstMouseMove = true;
+	}
 
 	g_Painter.m_Params.lights[1].Position = EyePos;
 	g_Painter.m_Params.lights[1].Direction = ZDir;
@@ -145,6 +188,75 @@ void UpdateCamera()
 	{
 		MATRIX4D R = RotationAxis(-speed, ZDir);
 		O = O*R;
+	}
+
+	{
+		if (g_onFirstMouseMove)
+		{
+			lastX = g_iWidth/2;
+			lastY = g_iHeight/2;
+
+			g_onFirstMouseMove = false;
+		}
+		else
+		{
+			
+			if (mouseX - lastX != 0)
+			{
+				float diffX = (float)(mouseX)-(lastX);
+				diffX /= g_iWidth/2;
+
+				MATRIX4D R = RotationAxis(-diffX, YDir);
+				O = O*R;
+				
+			}
+			
+			if (mouseY - lastY != 0)
+			{
+				float diffY = (float)mouseY - lastY;
+				diffY /= g_iHeight/2;
+				MATRIX4D R = RotationAxis(-diffY, XDir);
+				O = O*R;
+			}
+
+			lastX = mouseX;
+			lastY = mouseY;
+
+			/*
+			if (mouseX - lastX != 0)
+			{
+				if (mouseX < g_iWidth / 2)
+				{
+					float diffX = (float)(mouseX)-(g_iWidth / 2);
+					diffX /= g_iWidth;
+					diffX /= M_PI;
+
+					if (mouseX > lastX)
+						diffX *= -1;
+					MATRIX4D R = RotationAxis(-diffX, YDir);
+					O = O*R;
+				}
+
+				if (mouseX > g_iWidth / 2)
+				{
+					float diffX = (float)(g_iWidth / 2) - (mouseX);
+					diffX /= g_iWidth;
+					diffX /= M_PI;
+
+					if (mouseX < lastX)
+						diffX *= -1;
+
+					MATRIX4D R = RotationAxis(diffX, YDir);
+					O = O*R;
+				}
+
+				lastX = mouseX;
+			}
+			lastY = mouseY;
+			*/
+
+		}
+
 	}
 
 	InvV = O;
@@ -282,7 +394,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   return FALSE;
    }
    g_pSysTexture = CImageBMP::
-	   CreateBitmapFromFile("..\\Assets\\Koala256.bmp",NULL);
+	   CreateBitmapFromFile("..\\Assets\\tela.bmp",NULL);
    if (!g_pSysTexture)
    {
 	   MessageBox(NULL, L"No se pudo cargar textura desde archivo",
@@ -334,7 +446,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    CImageBMP::DestroyBitmap(pImage);
 
-   pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\Normal.bmp", NULL);
+   pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\StarFieldBump.bmp", NULL);
 
    if (!pImage)
    {
@@ -396,9 +508,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			//g_Surface.BuildTextureCoords(0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1));
 			//g_Surface.BuildAnalyticSurface(SURFACE_RESOLUTION, SURFACE_RESOLUTION, -3, -3, 6.0f / (SURFACE_RESOLUTION - 1), 6.0f / (SURFACE_RESOLUTION - 1), Plane, PlaneNormalize);
 			//g_Surface.BuildTextureCoords(0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1));
-
+			//g_Surface.BuildParametricSurface(SURFACE_RESOLUTION, SURFACE_RESOLUTION, 0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1), Sphere1);
+			//g_Surface.BuildTextureCoords(0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1));
 			g_Surface.LoadSuzanne();
-			g_Surface.BuildTangentSpaceFromTexCoordsIndexed();
+			g_Surface.Optimize();
+			g_Surface.BuildTangentSpaceFromTexCoordsIndexed(true);
 			VECTOR4D White = { 1, 1, 1, 1 };
 			g_Surface.SetColor(White, White, White, White);
 		}
@@ -446,14 +560,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 			g_iFrames++;
 			
-			// Actualizar camara si fue movida
-			UpdateCamera();
 
 			RECT rect;
 			GetWindowRect(hWnd, &rect);
-			int width = rect.right - rect.left;
-			int height = rect.bottom - rect.top;
-			MATRIX4D AC = Scaling((float)height / width, 1, 1);
+			g_iWidth = rect.right - rect.left;
+			g_iHeight = rect.bottom - rect.top;
+			MATRIX4D AC = Scaling((float)g_iHeight / g_iWidth, 1, 1);
 
 			VECTOR4D DarkGray = { 0.25,0.25,0.25,1 };
 			VECTOR4D White = { 1,1,1,1 };
@@ -469,14 +581,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				1.0f, 
 				0);
 			unsigned long TriangleIndices[3] = { 0, 1, 2 };
-			g_World = Identity();// RotationY(theta);
+			g_World = Identity();//RotationY(theta);
 			g_Painter.m_Params.World = g_World;
 			g_Painter.m_Params.View = g_View;
 			g_Painter.m_Params.Projection = g_Projection*AC;
 
+			// Actualizar camara si fue movida
+			UpdateCamera();
+
 			VECTOR4D Color = { 0, 0, 0, 0 };
 			g_Painter.m_Params.Brightness = Color;
-			g_Painter.m_Params.Flags1 =   MAPPING_DIFFUSE | MAPPING_NORMAL_TRUE;
+			g_Painter.m_Params.Flags1 =    MAPPING_NORMAL_TRUE | MAPPING_DIFFUSE ;
 			ID3D11ShaderResourceView* pSRV = NULL;
 			g_Manager.GetDevice()->CreateShaderResourceView(g_pTexture, NULL, &pSRV);
 			g_Manager.GetContext()->PSSetShaderResources(0, 1, &pSRV);
@@ -594,6 +709,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	}
 	break;
+	case WM_MOUSEMOVE:
+	{
+		mouseX = GET_X_LPARAM(lParam);
+		mouseY = GET_Y_LPARAM(lParam);
+	}
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}

@@ -27,9 +27,8 @@ struct VERTEX_OUTPUT
     float4 Position : SV_Position;
 	float4 PositionNonProjected:POSITION;
 	float4 Normal:NORMAL;
-    float4 Tanget : TANGENT;
-    float4 Binormal : BINORMAL;
 	float4 Color:COLOR;
+    float4 A:NORMAL1, B:NORMAL2, C:NORMAL3;
     float4 TexCoord : TEXCOORD;
 };
 
@@ -87,6 +86,8 @@ cbuffer PARAMS:register(b0)
 VERTEX_OUTPUT VSMain(VERTEX_INPUT Input)
 {
 	VERTEX_OUTPUT Output;
+    matrix WV = mul(World, View);
+    matrix WVP = mul(WV, Projection);
     float4 Position = mul(Input.Position, mul(World,mul(View,Projection)));
 
     Output.Position = Position;
@@ -94,8 +95,16 @@ VERTEX_OUTPUT VSMain(VERTEX_INPUT Input)
     Output.Normal = mul(Input.Normal, mul(World, View));
 	Output.Color = Input.Color;
     Output.TexCoord = Input.TexCoord;
-    Output.Tanget = Input.Tanget;
-    Output.Binormal = Input.Binormal;
+
+    float4 T, B;
+
+    T = normalize(mul(Input.Tanget, WV));
+    B = normalize(mul(Input.Binormal, WV));
+
+    Output.A = float4(T.x, B.x, Output.Normal.x, 0);
+    Output.B = float4(T.y, B.y, Output.Normal.y, 0);
+    Output.C = float4(T.z, B.z, Output.Normal.z, 0);
+     
     return Output;
 
 }
@@ -119,6 +128,17 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
         Protuberancia.w = 0;
         N = normalize(Input.Normal + Protuberancia);
     }
+    else if (Flags.x & MAPPING_NORMAL_TRUE)
+    {
+        float4 NormalSample = NormalMapTrue.Sample(Sampler, Input.TexCoord.xy) * float4(2, 2, 1, 0) - float4(1, 1, 0, 0);
+        Protuberancia.x = dot(Input.A, NormalSample);
+        Protuberancia.y = dot(Input.B, NormalSample);
+        Protuberancia.z = dot(Input.C, NormalSample);
+        Protuberancia.w = 0;
+        N = normalize(Protuberancia);
+    }
+    else
+        N = normalize(Input.Normal);
 
     if (Flags.x & MAPPING_ENVIROMENTAL_FAST)
     {
@@ -200,7 +220,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     }
 
     if (Flags.x & MAPPING_DIFFUSE)
-        ColorDiffuse *= NormalMapTrue.Sample(Sampler, Input.TexCoord.xy);
+        ColorDiffuse *= Diffuse.Sample(Sampler, Input.TexCoord.xy);
 
     return Material.Emissive + 
            ColorDiffuse  * Material.Diffuse  + 

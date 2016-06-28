@@ -47,19 +47,19 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	};
 
 	LIGHT LightDef3 = {
-		{ LIGHT_ON, LIGHT_SPOT,0,0 },	// Flags
+		{ LIGHT_ON, LIGHT_POINT,0,0 },	// Flags
 		{ 0.1,0.1,0.1,0 },				// Ambient 
 		{ 1,1,1,1 },					// Diffuse
 		{ 1,1,0.7,0 },					// Specular
 		{ 1,0,0,0 },					// Attenuation
-		{ 0,0,4,1 },					// Position
-		{ 0,0,-1,0 },					// Direction
+		{ 3,3,3,1 },					// Position
+		{ -.5773,-.5773,-.5773,0 },		// Direction
 		{ 30,0,0,0 }						// Factors 
 	};
 
 	m_Params.lights[0] = LightDef;
 	m_Params.lights[1] = LightDef2;
-	//m_Params.lights[2] = LightDef3;
+	m_Params.lights[2] = LightDef3;
 }
 
 void CDXBasicPainter::Uninitialize()

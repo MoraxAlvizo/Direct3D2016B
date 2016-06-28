@@ -27,6 +27,8 @@ public:
 	void VertexShade(CDXBasicPainter::VERTEX(*pVS)(CDXBasicPainter::VERTEX V));
 	void LoadSuzanne();
 	void BuildTangentSpaceFromTexCoordsIndexed(void);
+	void BuildTangentSpaceFromTexCoordsIndexed(bool bGenerateNormal);
+	void Optimize();
 	~CMesh();
 };
 
