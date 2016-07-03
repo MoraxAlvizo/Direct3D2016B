@@ -9,6 +9,7 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	m_pVS = NULL;
 	m_pPS = NULL;
 	m_pCB = NULL;
+	m_pRTV = NULL;
 	m_Params.World = m_Params.View = m_Params.Projection = Identity();
 	VECTOR4D Zero = { 0, 0, 0, 0 };
 	m_Params.Brightness = Zero;
@@ -117,6 +118,7 @@ bool CDXBasicPainter::Initialize()
 	dbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	dbd.Usage = D3D11_USAGE_DYNAMIC;
 	m_pManager->GetDevice()->CreateBuffer(&dbd, 0, &m_pCB);
+
 	return true;
 }
 CDXBasicPainter::~CDXBasicPainter()
@@ -154,12 +156,13 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 		&dbd, &dsd, &pIB);
 	//2.- Instalar el VS , PS , IL
 	m_pManager->GetContext()->IASetInputLayout(m_pIL);
+
 	m_pManager->GetContext()->VSSetShader(m_pVS, 0, 0);
 	m_pManager->GetContext()->PSSetShader(m_pPS, 0, 0);
 	//3.- Definir el puerto de visión y la topologia
 	// a dibujar
 	D3D11_VIEWPORT ViewPort;
-	ID3D11Texture2D* pBackBuffer=NULL;
+	ID3D11Texture2D* pBackBuffer = NULL;
 	D3D11_TEXTURE2D_DESC dtd;
 	m_pManager->GetSwapChain()->GetBuffer(0
 		, IID_ID3D11Texture2D, (void**)&pBackBuffer);
@@ -173,10 +176,10 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	m_pManager->GetContext()->RSSetViewports(1, &ViewPort);
 	m_pManager->GetContext()->IASetPrimitiveTopology(
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//4.- Configurar la salida
 
-	m_pManager->GetContext()->OMSetRenderTargets(1,
-		&m_pManager->GetMainRTV(), m_pManager->GetMainDSV());
+	//4.- Configurar la salida
+	//ID3D11RenderTargetView* pRTVS[] = { m_pManager->GetMainRTV(), m_pRTV };
+	m_pManager->GetContext()->OMSetRenderTargets(1, &m_pRTV, m_pManager->GetMainDSV());
 	SAFE_RELEASE(pBackBuffer);
 
 	//5.- Dibujar
@@ -185,7 +188,9 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	m_pManager->GetContext()->IASetVertexBuffers(0, 1, &pVB, &Stride, &Offset);
 	m_pManager->GetContext()->IASetIndexBuffer(pIB, DXGI_FORMAT_R32_UINT, 0);
 	D3D11_MAPPED_SUBRESOURCE ms;
-	m_pManager->GetContext()->Map(m_pCB, 0, D3D11_MAP_WRITE_DISCARD,0, &ms);
+
+
+	m_pManager->GetContext()->Map(m_pCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
 	PARAMS Temp = m_Params;
 
 	Temp.World = Transpose(m_Params.World);
@@ -201,6 +206,7 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 
 	memcpy(ms.pData, &Temp, sizeof(PARAMS));
 	m_pManager->GetContext()->Unmap(m_pCB, 0);
+	
 	m_pManager->GetContext()->VSSetConstantBuffers(0, 1, &m_pCB);
 	m_pManager->GetContext()->PSSetConstantBuffers(0, 1, &m_pCB);
 	m_pManager->GetContext()->DrawIndexed(nIndices, 0, 0);

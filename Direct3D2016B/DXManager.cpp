@@ -107,6 +107,36 @@ bool CDXManager::Initialize(HWND hWnd,
 	SAFE_RELEASE(pBackBuffer);
 	return true;
 }
+
+void CDXManager::Resize(int cx, int cy)
+{
+	if (m_pDevice && m_pSwapChain)
+	{
+		SAFE_RELEASE(m_pDSV);
+		SAFE_RELEASE(m_pRTV);
+		SAFE_RELEASE(m_pDepthStencil);
+
+		m_pContext->ClearState();
+		m_pSwapChain->ResizeBuffers(2, cx, cy, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+		ID3D11Texture2D* pBackBuffer = 0;
+		m_pSwapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
+		m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pRTV);
+
+		// Creacion del buffer Z 
+		D3D11_TEXTURE2D_DESC dtd;
+		pBackBuffer->GetDesc(&dtd);
+		dtd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+		dtd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
+		m_pDevice->CreateTexture2D(&dtd, NULL, &m_pDepthStencil);
+		m_pDevice->CreateDepthStencilView(m_pDepthStencil, NULL, &m_pDSV);
+
+		SAFE_RELEASE(pBackBuffer);
+
+	}
+
+}
+
 void CDXManager::Uninitialize()
 {
 	SAFE_RELEASE(m_pContext);

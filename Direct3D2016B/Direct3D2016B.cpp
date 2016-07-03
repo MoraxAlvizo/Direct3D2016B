@@ -8,6 +8,7 @@
 #include "ImageBMP.h"
 #include "Mesh.h"
 #include "MeshMathSurface.h"
+#include "FX.h"
 #include <Windows.h>
 #include <Windowsx.h>
 #include <timeapi.h>
@@ -21,9 +22,17 @@ TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 CDXManager g_Manager;
 CDXBasicPainter g_Painter(&g_Manager);
+CFX g_FX(&g_Manager);
 CImageBMP*      g_pSysTexture; //CPU
 ID3D11Texture2D* g_pTexture;   //GPU
 ID3D11Texture2D* g_pNormalMapTrue; 
+ID3D11Texture2D* g_pEmissiveMap;
+
+// Render Targets
+ID3D11Texture2D* g_pRT0;			// Memoria
+ID3D11ShaderResourceView* g_pSRV0;	// Input
+ID3D11RenderTargetView* g_pRTV0;		// Output
+
 
 MATRIX4D g_World;
 MATRIX4D g_View;
@@ -59,6 +68,7 @@ int mouseX, mouseY;
 #define VK_U 0x55
 #define VK_O 0x4F
 
+/*
 float Plane(float x, float y)
 {
 	return 0.0f;
@@ -73,7 +83,7 @@ VECTOR4D PlaneNormalize	(float x, float y, float z)
 		0
 	};
 	return Normalize(Normal);
-}
+}*/
 
 float SinCos(float x, float y)
 {
@@ -190,7 +200,8 @@ void UpdateCamera()
 		O = O*R;
 	}
 
-	{
+	
+		
 		if (g_onFirstMouseMove)
 		{
 			lastX = g_iWidth/2;
@@ -207,7 +218,7 @@ void UpdateCamera()
 				diffX /= g_iWidth/2;
 
 				MATRIX4D R = RotationAxis(-diffX, YDir);
-				O = O*R;
+				//O = O*R;
 				
 			}
 			
@@ -216,48 +227,14 @@ void UpdateCamera()
 				float diffY = (float)mouseY - lastY;
 				diffY /= g_iHeight/2;
 				MATRIX4D R = RotationAxis(-diffY, XDir);
-				O = O*R;
+				//O = O*R;
 			}
 
 			lastX = mouseX;
 			lastY = mouseY;
 
-			/*
-			if (mouseX - lastX != 0)
-			{
-				if (mouseX < g_iWidth / 2)
-				{
-					float diffX = (float)(mouseX)-(g_iWidth / 2);
-					diffX /= g_iWidth;
-					diffX /= M_PI;
-
-					if (mouseX > lastX)
-						diffX *= -1;
-					MATRIX4D R = RotationAxis(-diffX, YDir);
-					O = O*R;
-				}
-
-				if (mouseX > g_iWidth / 2)
-				{
-					float diffX = (float)(g_iWidth / 2) - (mouseX);
-					diffX /= g_iWidth;
-					diffX /= M_PI;
-
-					if (mouseX < lastX)
-						diffX *= -1;
-
-					MATRIX4D R = RotationAxis(diffX, YDir);
-					O = O*R;
-				}
-
-				lastX = mouseX;
-			}
-			lastY = mouseY;
-			*/
-
 		}
 
-	}
 
 	InvV = O;
 
@@ -342,7 +319,7 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 	wcex.hInstance		= hInstance;
 	wcex.hIcon			= LoadIcon(hInstance, MAKEINTRESOURCE(IDI_DIRECT3D2016B));
 	wcex.hCursor		= LoadCursor(NULL, IDC_ARROW);
-	wcex.hbrBackground	= (HBRUSH)(COLOR_WINDOW+1);
+	wcex.hbrBackground	= 0; //(HBRUSH)(COLOR_WINDOW + 1);
 	wcex.lpszMenuName	= MAKEINTRESOURCE(IDC_DIRECT3D2016B);
 	wcex.lpszClassName	= szWindowClass;
 	wcex.hIconSm		= LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
@@ -373,7 +350,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
       return FALSE;
    }
    IDXGIAdapter* pAdapter=g_Manager.EnumAndChooseAdapter(NULL);
-   if (!pAdapter || !g_Manager.Initialize(g_hWnd, pAdapter))
+   if (!pAdapter || !g_Manager.Initialize(g_hWnd, pAdapter) || !g_FX.Initialize())
    {
 		   MessageBox(NULL,
 			   L"No se ha podido inicializar Direct3D 11",
@@ -392,7 +369,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	   MessageBox(NULL, L"No se pudo iniciar contexto de dibujo",
 		   L"Verificar recursos sombreadores", MB_ICONERROR);
 	   return FALSE;
-   }
+   } 
    g_pSysTexture = CImageBMP::
 	   CreateBitmapFromFile("..\\Assets\\tela.bmp",NULL);
    if (!g_pSysTexture)
@@ -446,7 +423,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    CImageBMP::DestroyBitmap(pImage);
 
-   pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\StarFieldBump.bmp", NULL);
+   pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\Normal.bmp", NULL);
 
    if (!pImage)
    {
@@ -458,6 +435,26 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    g_pNormalMapTrue = pImage->CreateTexture(&g_Manager);
 
    if (!g_pNormalMapTrue)
+   {
+	   MessageBox(NULL, L"No se pudo cargar textura al GPU",
+		   L"Verificar recursos sombreadores", MB_ICONERROR);
+	   return FALSE;
+   }
+
+   CImageBMP::DestroyBitmap(pImage);
+
+   pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\Emissive.bmp", NULL);
+
+   if (!pImage)
+   {
+	   MessageBox(NULL, L"No se pudo cargar textura desde archivo",
+		   L"Verificar recursos sombreadores", MB_ICONERROR);
+	   return FALSE;
+   }
+
+   g_pEmissiveMap = pImage->CreateTexture(&g_Manager);
+
+   if (!g_pEmissiveMap)
    {
 	   MessageBox(NULL, L"No se pudo cargar textura al GPU",
 		   L"Verificar recursos sombreadores", MB_ICONERROR);
@@ -547,6 +544,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		
 		if (g_Manager.GetSwapChain())
 		{
+			// Crear Render Target Auxiliar
+			
+			ID3D11Texture2D* pBackBuffer = 0;
+			g_Manager.GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
+			//ID3D11Texture2D* pBackBuffer = NULL;
+			//g_Manager.GetMainRTV()->GetResource((ID3D11Resource**) &pBackBuffer);
+			D3D11_TEXTURE2D_DESC dtd; 
+			pBackBuffer->GetDesc(&dtd);
+			dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE| D3D11_BIND_RENDER_TARGET);
+
+			HRESULT hr =  g_Manager.GetDevice()->CreateTexture2D(&dtd, 0, &g_pRT0);
+			hr =  g_Manager.GetDevice()->CreateShaderResourceView(g_pRT0, 0, &g_pSRV0);
+			hr =  g_Manager.GetDevice()->CreateRenderTargetView(g_pRT0, 0 , &g_pRTV0);
+
+
+			SAFE_RELEASE(pBackBuffer);
+			  
+
 			// Update FPS
 			float currentTime = (float)GetTickCount();
 
@@ -570,16 +585,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			VECTOR4D DarkGray = { 0.25,0.25,0.25,1 };
 			VECTOR4D White = { 1,1,1,1 };
 			VECTOR4D Gray = { .5,.5,.5,0 };
+
+			g_Painter.SetRenderTarget(g_pRTV0);
+			//g_Painter.SetRenderTarget(g_Manager.GetMainRTV());
 			g_Painter.m_Params.Material.Diffuse = Gray;
 			g_Painter.m_Params.Material.Ambient = Gray;
 
 			VECTOR4D NightBlue = { 0,0,.1, 0 };
+			g_Manager.GetContext()->ClearRenderTargetView(g_pRTV0, (float*)&White);
 			g_Manager.GetContext()->ClearRenderTargetView(g_Manager.GetMainRTV(), (float*)&NightBlue);
 			g_Manager.GetContext()->ClearDepthStencilView(
 				g_Manager.GetMainDSV(), 
 				D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 
 				1.0f, 
 				0);
+			
 			unsigned long TriangleIndices[3] = { 0, 1, 2 };
 			g_World = Identity();//RotationY(theta);
 			g_Painter.m_Params.World = g_World;
@@ -591,7 +611,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			VECTOR4D Color = { 0, 0, 0, 0 };
 			g_Painter.m_Params.Brightness = Color;
-			g_Painter.m_Params.Flags1 =    MAPPING_NORMAL_TRUE | MAPPING_DIFFUSE ;
+			g_Painter.m_Params.Flags1 =    MAPPING_NORMAL_TRUE | MAPPING_DIFFUSE | MAPPING_EMISSIVE;
 			ID3D11ShaderResourceView* pSRV = NULL;
 			g_Manager.GetDevice()->CreateShaderResourceView(g_pTexture, NULL, &pSRV);
 			g_Manager.GetContext()->PSSetShaderResources(0, 1, &pSRV);
@@ -604,13 +624,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			ID3D11ShaderResourceView* pSRVNormalMapTrue = NULL;
 			g_Manager.GetDevice()->CreateShaderResourceView(g_pNormalMapTrue, NULL, &pSRVNormalMapTrue);
 			g_Manager.GetContext()->PSSetShaderResources(3, 1, &pSRVNormalMapTrue);
-
+			ID3D11ShaderResourceView* pSRVEmissiveMap = NULL;
+			g_Manager.GetDevice()->CreateShaderResourceView(g_pEmissiveMap, NULL, &pSRVEmissiveMap);
+			g_Manager.GetContext()->PSSetShaderResources(4, 1, &pSRVEmissiveMap);
 
 			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size());
+
+			// Set the main render target view
+			//g_Manager.GetContext()->ClearState();
+			//g_FX.SetRenderTarget(g_Manager.GetMainRTV());
+			g_Manager.GetContext()->OMSetRenderTargets(1, &g_Manager.GetMainRTV(), g_Manager.GetMainDSV());
+			g_Manager.GetContext()->PSSetShaderResources(0, 1, &g_pSRV0);
+			g_FX.Process(g_iWidth, g_iHeight);
+
 			g_Manager.GetSwapChain()->Present(1,0);
 			SAFE_RELEASE(pSRV);
 			SAFE_RELEASE(pSRVNormalMap);
 			SAFE_RELEASE(pSRVEnvMap);
+			SAFE_RELEASE(pSRVNormalMapTrue);
+			SAFE_RELEASE(pSRVEmissiveMap);
+			SAFE_RELEASE(g_pSRV0);
+			SAFE_RELEASE(g_pRTV0);
+			SAFE_RELEASE(g_pRT0);
 		}
 		ValidateRect(hWnd, NULL);
 		break;
@@ -713,7 +748,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		mouseX = GET_X_LPARAM(lParam);
 		mouseY = GET_Y_LPARAM(lParam);
+
 	}
+	break;
+	case WM_SIZE:
+	{
+		g_iWidth = LOWORD(lParam);
+		g_iHeight = HIWORD(lParam);
+		g_Manager.Resize(g_iWidth, g_iHeight);
+	}
+	break;
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}

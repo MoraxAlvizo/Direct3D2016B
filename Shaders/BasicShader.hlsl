@@ -70,6 +70,7 @@ struct LIGHT
 #define MAPPING_NORMAL              0x20
 #define MAPPING_ENVIROMENTAL_FAST   0x40
 #define MAPPING_NORMAL_TRUE			0x80
+#define MAPPING_EMISSIVE			0x100
 
 cbuffer PARAMS:register(b0)
 {
@@ -88,19 +89,21 @@ VERTEX_OUTPUT VSMain(VERTEX_INPUT Input)
 	VERTEX_OUTPUT Output;
     matrix WV = mul(World, View);
     matrix WVP = mul(WV, Projection);
-    float4 Position = mul(Input.Position, mul(World,mul(View,Projection)));
+    float4 Position = mul(Input.Position, WVP);
 
     Output.Position = Position;
-    Output.PositionNonProjected = mul(Input.Position,mul(World, View));
+    Output.PositionNonProjected = mul(Input.Position,WV);
     Output.Normal = mul(Input.Normal, mul(World, View));
 	Output.Color = Input.Color;
     Output.TexCoord = Input.TexCoord;
 
     float4 T, B;
-
+    // Transformar el espacio tangente al espacio de vista
     T = normalize(mul(Input.Tanget, WV));
     B = normalize(mul(Input.Binormal, WV));
 
+    // Transponer la base orthonormal (T,B,N) en espacio de vista,
+    // para ir de espacio de modelo a espacio de vista
     Output.A = float4(T.x, B.x, Output.Normal.x, 0);
     Output.B = float4(T.y, B.y, Output.Normal.y, 0);
     Output.C = float4(T.z, B.z, Output.Normal.z, 0);
@@ -112,6 +115,7 @@ Texture2D Diffuse:register(t0);
 Texture2D NormalMap : register(t1);
 Texture2D EnviromentalMap : register(t2);
 Texture2D NormalMapTrue : register(t3);
+Texture2D EmissiveMap : register(t4);
 SamplerState Sampler : register(s0);
 
 float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
@@ -120,8 +124,14 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     float4 Protuberancia = 0;
     float4 ColorEnviomental = 0;
     float4 ColorSpecular = 0;
-    float4 N = normalize(Input.Normal + Protuberancia);
+    float4 ColorEmissive = 0;
+    float4 N = 0;
 
+
+    if (Flags.x & MAPPING_EMISSIVE)
+    {
+        ColorEmissive = EmissiveMap.Sample(Sampler, Input.TexCoord.xy);
+    }
     if (Flags.x & MAPPING_NORMAL)
     {
         Protuberancia = 0.3 * NormalMap.Sample(Sampler, Input.TexCoord.xy);
@@ -130,6 +140,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     }
     else if (Flags.x & MAPPING_NORMAL_TRUE)
     {
+        //float2 TextCoord =float2(0,1) + Input.TexCoord.xy*float2(1,-1);
         float4 NormalSample = NormalMapTrue.Sample(Sampler, Input.TexCoord.xy) * float4(2, 2, 1, 0) - float4(1, 1, 0, 0);
         Protuberancia.x = dot(Input.A, NormalSample);
         Protuberancia.y = dot(Input.B, NormalSample);
@@ -226,6 +237,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
            ColorDiffuse  * Material.Diffuse  + 
            ColorSpecular * Material.Specular +
            ColorEnviomental * Material.Ambient+
+           ColorEmissive +
            Brightness;
 }
 

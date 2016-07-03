@@ -15,6 +15,7 @@ class CDXManager
 public:
 	static IDXGIAdapter* EnumAndChooseAdapter(HWND hWnd);
 	bool Initialize(HWND hWnd, IDXGIAdapter* pAdapter);
+	void Resize(int cx, int cy);
 	void Uninitialize(void);
 	IDXGISwapChain* GetSwapChain(){ return m_pSwapChain; }
 	ID3D11Device* GetDevice(){ return m_pDevice; }

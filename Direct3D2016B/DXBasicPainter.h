@@ -10,7 +10,10 @@ protected:
 	ID3D11VertexShader* m_pVS;
 	ID3D11PixelShader* m_pPS;
 	ID3D11Buffer*      m_pCB;
+	ID3D11RenderTargetView* m_pRTV;
 public:
+
+	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTV = pRTV; }
 	struct MATERIAL
 	{
 		VECTOR4D Ambient;
@@ -49,14 +52,15 @@ public:
 			unsigned int Flags1, notused0, notused1, notused2;
 		};
 		//Flags1
-#define LIGHTING_AMBIENT			0x01
-#define LIGHTING_DIFFUSE			0x02
-#define LIGHTING_SPECULAR			0x04
-#define LIGHTING_EMISSIVE			0x08
-#define MAPPING_DIFFUSE				0x10
-#define MAPPING_NORMAL				0x20
-#define MAPPING_ENVIROMENTAL_FAST	0x40
-#define MAPPING_NORMAL_TRUE			0x80
+#define LIGHTING_AMBIENT			0x001
+#define LIGHTING_DIFFUSE			0x002
+#define LIGHTING_SPECULAR			0x004
+#define LIGHTING_EMISSIVE			0x008
+#define MAPPING_DIFFUSE				0x010
+#define MAPPING_NORMAL				0x020
+#define MAPPING_ENVIROMENTAL_FAST	0x040
+#define MAPPING_NORMAL_TRUE			0x080
+#define MAPPING_EMISSIVE			0x100
 
 		MATRIX4D World;
 		MATRIX4D View;
@@ -78,10 +82,13 @@ public:
 	CDXBasicPainter(CDXManager* pOwner);
 	bool Initialize();
 	void Uninitialize();
+
 	void DrawIndexed(VERTEX* pVertices,
 		unsigned long nVertices,
 		unsigned long *pIndices,
 		unsigned long nIndices);
+
+	
 	~CDXBasicPainter();
 };
 
