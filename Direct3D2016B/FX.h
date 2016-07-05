@@ -18,7 +18,6 @@ class CFX
 	vector<ID3D11PixelShader*> m_vecFX;
 	ID3D11ShaderResourceView* m_pSRVInput0;
 	ID3D11RenderTargetView * m_pRTVOutput;
-	ID3D11RenderTargetView* m_pRTV;
 
 	struct VERTEX
 	{
@@ -29,19 +28,22 @@ class CFX
 		static D3D11_INPUT_ELEMENT_DESC InputLayout[];
 	};
 
-	VERTEX vFrame[4];
-	unsigned long   iFrame[6];
+	VERTEX m_vFrame[4];
+	unsigned long   m_lIndicesFrame[6];
 public:
 
 	struct PARAMS
 	{
 		VECTOR4D Delta;
+		VECTOR4D RadialBlur;
+		VECTOR4D DirectionalBlur;
 	}m_Params;
 	CFX(CDXManager* pOwner);
 	bool Initialize();
-	void Process(unsigned long w, unsigned long h);
+	void Process(unsigned long idEffect,unsigned long w, unsigned long h);
 	void Uninitialize();
-	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTV = pRTV; }
+	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTVOutput = pRTV; }
+	void SetInput(ID3D11ShaderResourceView* pSRV) { m_pSRVInput0 = pSRV; }
 	~CFX();
 };
 

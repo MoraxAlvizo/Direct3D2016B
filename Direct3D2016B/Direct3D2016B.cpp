@@ -33,6 +33,10 @@ ID3D11Texture2D* g_pRT0;			// Memoria
 ID3D11ShaderResourceView* g_pSRV0;	// Input
 ID3D11RenderTargetView* g_pRTV0;		// Output
 
+ID3D11Texture2D* g_pRT1;			// Memoria
+ID3D11ShaderResourceView* g_pSRV1;	// Input
+ID3D11RenderTargetView* g_pRTV1;		// Output
+
 
 MATRIX4D g_World;
 MATRIX4D g_View;
@@ -558,6 +562,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			hr =  g_Manager.GetDevice()->CreateShaderResourceView(g_pRT0, 0, &g_pSRV0);
 			hr =  g_Manager.GetDevice()->CreateRenderTargetView(g_pRT0, 0 , &g_pRTV0);
 
+			hr = g_Manager.GetDevice()->CreateTexture2D(&dtd, 0, &g_pRT1);
+			hr = g_Manager.GetDevice()->CreateShaderResourceView(g_pRT1, 0, &g_pSRV1);
+			hr = g_Manager.GetDevice()->CreateRenderTargetView(g_pRT1, 0, &g_pRTV1);
+
 
 			SAFE_RELEASE(pBackBuffer);
 			  
@@ -592,7 +600,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Painter.m_Params.Material.Ambient = Gray;
 
 			VECTOR4D NightBlue = { 0,0,.1, 0 };
-			g_Manager.GetContext()->ClearRenderTargetView(g_pRTV0, (float*)&White);
+			g_Manager.GetContext()->ClearRenderTargetView(g_pRTV0, (float*)&NightBlue);
 			g_Manager.GetContext()->ClearRenderTargetView(g_Manager.GetMainRTV(), (float*)&NightBlue);
 			g_Manager.GetContext()->ClearDepthStencilView(
 				g_Manager.GetMainDSV(), 
@@ -631,11 +639,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size());
 
 			// Set the main render target view
-			//g_Manager.GetContext()->ClearState();
-			//g_FX.SetRenderTarget(g_Manager.GetMainRTV());
-			g_Manager.GetContext()->OMSetRenderTargets(1, &g_Manager.GetMainRTV(), g_Manager.GetMainDSV());
-			g_Manager.GetContext()->PSSetShaderResources(0, 1, &g_pSRV0);
-			g_FX.Process(g_iWidth, g_iHeight);
+			g_FX.SetRenderTarget(g_pRTV1);
+			g_FX.SetInput(g_pSRV0);
+			g_FX.m_Params.DirectionalBlur.x = cos(theta);
+			g_FX.m_Params.DirectionalBlur.y = sin(theta);
+			g_FX.m_Params.DirectionalBlur.z = 0.005;
+			g_FX.Process(3,g_iWidth, g_iHeight);
+
+			g_FX.SetRenderTarget(g_Manager.GetMainRTV());
+			g_FX.SetInput(g_pSRV1);
+			g_FX.m_Params.DirectionalBlur.x = cos(theta);
+			g_FX.m_Params.DirectionalBlur.y = sin(theta);
+			g_FX.m_Params.DirectionalBlur.z = 0.005;
+			g_FX.Process(4, g_iWidth, g_iHeight);
 
 			g_Manager.GetSwapChain()->Present(1,0);
 			SAFE_RELEASE(pSRV);
@@ -646,6 +662,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SAFE_RELEASE(g_pSRV0);
 			SAFE_RELEASE(g_pRTV0);
 			SAFE_RELEASE(g_pRT0);
+			SAFE_RELEASE(g_pSRV1);
+			SAFE_RELEASE(g_pRTV1);
+			SAFE_RELEASE(g_pRT1);
 		}
 		ValidateRect(hWnd, NULL);
 		break;

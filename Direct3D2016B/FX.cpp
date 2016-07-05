@@ -33,31 +33,31 @@ CFX::CFX(CDXManager* pOwner)
 	m_pRTVOutput = NULL;
 	m_pVS = NULL;
 	m_pIL = NULL;
-	m_pRTV = NULL;
+
 
 	memset(&m_Params, 0, sizeof(PARAMS));
 
-	vFrame[0].Position = { -1,-1,0,1 };
-	vFrame[1].Position = {  1,-1,0,1 };
-	vFrame[2].Position = { -1, 1,0,1 };
-	vFrame[3].Position = {  1, 1,0,1 };
+	m_vFrame[0].Position = { -1, 1,0,1 };
+	m_vFrame[1].Position = {  1, 1,0,1 };
+	m_vFrame[2].Position = {  1, -1,0,1 };
+	m_vFrame[3].Position = { -1, -1,0,1 };
 
-	vFrame[0].TexCoord = { 0,0,0,0 };
-	vFrame[1].TexCoord = { 1,0,0,0 };
-	vFrame[2].TexCoord = { 0,1,0,0 };
-	vFrame[3].TexCoord = { 1,1,0,0 };
+	m_vFrame[0].TexCoord = { 0,0,0,0 };
+	m_vFrame[1].TexCoord = { 1,0,0,0 };
+	m_vFrame[2].TexCoord = { 1,1,0,0 };
+	m_vFrame[3].TexCoord = { 0,1,0,0 };
 
-	vFrame[0].Color = { 0,0,1,0 };
-	vFrame[1].Color = { 1,0,0,0 };
-	vFrame[2].Color = { 0,1,0,0 };
-	vFrame[3].Color = { 1,1,0,0 };
+	m_vFrame[0].Color = { 0,0,1,0 };
+	m_vFrame[1].Color = { 1,0,0,0 };
+	m_vFrame[2].Color = { 0,1,0,0 };
+	m_vFrame[3].Color = { 1,1,0,0 };
 
-	iFrame[0] = 0;
-	iFrame[1] = 2;
-	iFrame[2] = 1;
-	iFrame[3] = 1;
-	iFrame[4] = 2;
-	iFrame[5] = 3;
+	m_lIndicesFrame[0] = 0;
+	m_lIndicesFrame[1] = 1;
+	m_lIndicesFrame[2] = 3;
+	m_lIndicesFrame[3] = 3;
+	m_lIndicesFrame[4] = 1;
+	m_lIndicesFrame[5] = 2;
 }
 
 
@@ -87,16 +87,24 @@ bool CFX::Initialize()
 		SAFE_RELEASE(m_pVS);
 		return false;
 	}
-	ID3D11PixelShader *pPS = m_pOwner->CompilePixelShader(
-		L"..\\Shaders\\FX.hlsl", "PSEdgeDetect");
-	if (!pPS)
-	{
-		SAFE_RELEASE(m_pVS);
-		SAFE_RELEASE(m_pIL);
-		return false;
-	}
 
-	m_vecFX.push_back(pPS);
+	char* Effects[] = { "PSEdgeDetect" , "PSRadianBlur", "PSDirectionalBlur", "PSGaussHorizontalBlur", "PSGaussVerticalBlur" };
+	for (auto FXName : Effects)
+	{
+		ID3D11PixelShader *pPS = m_pOwner->CompilePixelShader(
+			L"..\\Shaders\\FX.hlsl", FXName);
+		if (!pPS)
+		{
+			SAFE_RELEASE(m_pVS);
+			SAFE_RELEASE(m_pIL);
+			for (unsigned long i = 0; i < m_vecFX.size(); i++)
+				SAFE_RELEASE(m_vecFX[i]);
+			
+			m_vecFX.clear();
+			return false;
+		}
+		m_vecFX.push_back(pPS);
+	}
 
 	D3D11_BUFFER_DESC dbd;
 	memset(&dbd, 0, sizeof(dbd));
@@ -107,7 +115,7 @@ bool CFX::Initialize()
 	m_pOwner->GetDevice()->CreateBuffer(&dbd, 0, &m_pCB);
 	return true;
 }
-void CFX::Process(unsigned long w, unsigned long h)
+void CFX::Process(unsigned long idEffect, unsigned long w, unsigned long h)
 {
 	unsigned long nVertices = 4;
 	unsigned long nIndices = 6;
@@ -127,12 +135,12 @@ void CFX::Process(unsigned long w, unsigned long h)
 	*/
 	dbd.Usage = D3D11_USAGE_IMMUTABLE;
 	D3D11_SUBRESOURCE_DATA dsd;
-	dsd.pSysMem = vFrame;
+	dsd.pSysMem = m_vFrame;
 	dsd.SysMemPitch = 0;
 	dsd.SysMemSlicePitch = 0;
 	m_pOwner->GetDevice()->CreateBuffer(
 		&dbd, &dsd, &pVB);
-	dsd.pSysMem = iFrame;
+	dsd.pSysMem = m_lIndicesFrame;
 	dbd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	dbd.ByteWidth = sizeof(unsigned long)*nIndices;
 	m_pOwner->GetDevice()->CreateBuffer(
@@ -140,7 +148,7 @@ void CFX::Process(unsigned long w, unsigned long h)
 	//2.- Instalar el VS , PS , IL
 	m_pOwner->GetContext()->IASetInputLayout(m_pIL);
 	m_pOwner->GetContext()->VSSetShader(m_pVS, 0, 0);
-	m_pOwner->GetContext()->PSSetShader(m_vecFX[0], 0, 0);
+	m_pOwner->GetContext()->PSSetShader(m_vecFX[idEffect], 0, 0);
 	//3.- Definir el puerto de visión y la topologia
 	// a dibujar
 	D3D11_VIEWPORT ViewPort;
@@ -159,6 +167,10 @@ void CFX::Process(unsigned long w, unsigned long h)
 	m_pOwner->GetContext()->IASetPrimitiveTopology(
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//4.- Configurar la salida. aqui lo omitimos por que ya fue seteado 
+	m_pOwner->GetContext()->OMSetRenderTargets(1, &m_pRTVOutput, 0);
+
+	//4.1 Setear el Render Target anterior ahora como textura
+	m_pOwner->GetContext()->PSSetShaderResources(0, 1, &m_pSRVInput0);
 	SAFE_RELEASE(pBackBuffer);
 
 	//5.- Dibujar
@@ -173,12 +185,12 @@ void CFX::Process(unsigned long w, unsigned long h)
 	PARAMS Temp = m_Params;
 
 	Temp.Delta = { 1 / (float)w,1 / (float)h,0,0 };
+	Temp.RadialBlur.x = .01;
+	//Temp.DirectionalBlur = { 1,0,.01f,0 };
+	
 
 	memcpy(ms.pData, &Temp, sizeof(PARAMS));
 	m_pOwner->GetContext()->Unmap(m_pCB, 0);
-
-
-
 	m_pOwner->GetContext()->VSSetConstantBuffers(0, 1, &m_pCB);
 	m_pOwner->GetContext()->PSSetConstantBuffers(0, 1, &m_pCB);
 	m_pOwner->GetContext()->DrawIndexed(nIndices, 0, 0);
@@ -188,5 +200,10 @@ void CFX::Process(unsigned long w, unsigned long h)
 }
 void CFX::Uninitialize()
 {
-
+	SAFE_RELEASE(m_pIL);
+	SAFE_RELEASE(m_pVS);
+	for (unsigned long i = 0; i < m_vecFX.size(); i++)
+		SAFE_RELEASE(m_vecFX[i]);
+	m_vecFX.clear();
+	SAFE_RELEASE(m_pCB);
 }
