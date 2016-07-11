@@ -2,21 +2,7 @@
 #include "FX.h"
 
 
-float Plane(float x, float y)
-{
-	return 0.0f;
-}
 
-VECTOR4D PlaneNormalize(float x, float y, float z)
-{
-	VECTOR4D Normal = {
-		0,
-		0,
-		1,
-		0
-	};
-	return Normalize(Normal);
-}
 
 D3D11_INPUT_ELEMENT_DESC CFX::VERTEX::InputLayout[] =
 {
@@ -88,7 +74,14 @@ bool CFX::Initialize()
 		return false;
 	}
 
-	char* Effects[] = { "PSEdgeDetect" , "PSRadianBlur", "PSDirectionalBlur", "PSGaussHorizontalBlur", "PSGaussVerticalBlur" };
+	char* Effects[] = { "PSEdgeDetect" ,			//0
+						"PSRadianBlur",				//1
+						"PSDirectionalBlur",		//2
+						"PSGaussHorizontalBlur",	//3
+						"PSGaussVerticalBlur",		//4
+						"PSBrightPass",				//5 
+						"PSMerged"					//6
+						};				
 	for (auto FXName : Effects)
 	{
 		ID3D11PixelShader *pPS = m_pOwner->CompilePixelShader(
@@ -115,7 +108,7 @@ bool CFX::Initialize()
 	m_pOwner->GetDevice()->CreateBuffer(&dbd, 0, &m_pCB);
 	return true;
 }
-void CFX::Process(unsigned long idEffect, unsigned long w, unsigned long h)
+void CFX::Process(unsigned long idEffect, float w, float h)
 {
 	unsigned long nVertices = 4;
 	unsigned long nIndices = 6;
@@ -151,14 +144,11 @@ void CFX::Process(unsigned long idEffect, unsigned long w, unsigned long h)
 	m_pOwner->GetContext()->PSSetShader(m_vecFX[idEffect], 0, 0);
 	//3.- Definir el puerto de visión y la topologia
 	// a dibujar
+	
 	D3D11_VIEWPORT ViewPort;
-	ID3D11Texture2D* pBackBuffer = NULL;
-	D3D11_TEXTURE2D_DESC dtd;
-	m_pOwner->GetSwapChain()->GetBuffer(0
-		, IID_ID3D11Texture2D, (void**)&pBackBuffer);
-	pBackBuffer->GetDesc(&dtd);
-	ViewPort.Width = (float)dtd.Width;
-	ViewPort.Height = (float)dtd.Height;
+
+	ViewPort.Width = (float)w;
+	ViewPort.Height = (float)h;
 	ViewPort.TopLeftX = 0;
 	ViewPort.TopLeftY = 0;
 	ViewPort.MaxDepth = 1.0f;
@@ -171,7 +161,8 @@ void CFX::Process(unsigned long idEffect, unsigned long w, unsigned long h)
 
 	//4.1 Setear el Render Target anterior ahora como textura
 	m_pOwner->GetContext()->PSSetShaderResources(0, 1, &m_pSRVInput0);
-	SAFE_RELEASE(pBackBuffer);
+	if(m_pSRVBrightPassed != NULL)
+		m_pOwner->GetContext()->PSSetShaderResources(1, 3, m_pSRVBrightPassed);
 
 	//5.- Dibujar
 	unsigned int Offset = 0;
@@ -184,10 +175,7 @@ void CFX::Process(unsigned long idEffect, unsigned long w, unsigned long h)
 	m_pOwner->GetContext()->Map(m_pCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
 	PARAMS Temp = m_Params;
 
-	Temp.Delta = { 1 / (float)w,1 / (float)h,0,0 };
-	Temp.RadialBlur.x = .01;
-	//Temp.DirectionalBlur = { 1,0,.01f,0 };
-	
+	Temp.Delta = { 1 / (float)w,1 / (float)h,0,0 };	
 
 	memcpy(ms.pData, &Temp, sizeof(PARAMS));
 	m_pOwner->GetContext()->Unmap(m_pCB, 0);

@@ -22,11 +22,13 @@ TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 CDXManager g_Manager;
 CDXBasicPainter g_Painter(&g_Manager);
+unsigned long g_lFlagsPainter = 0;//MAPPING_NORMAL_TRUE | MAPPING_DIFFUSE;
 CFX g_FX(&g_Manager);
 CImageBMP*      g_pSysTexture; //CPU
 ID3D11Texture2D* g_pTexture;   //GPU
 ID3D11Texture2D* g_pNormalMapTrue; 
 ID3D11Texture2D* g_pEmissiveMap;
+HMENU g_hMenu, g_hSubMenu;
 
 // Render Targets
 ID3D11Texture2D* g_pRT0;			// Memoria
@@ -37,11 +39,24 @@ ID3D11Texture2D* g_pRT1;			// Memoria
 ID3D11ShaderResourceView* g_pSRV1;	// Input
 ID3D11RenderTargetView* g_pRTV1;		// Output
 
+enum
+{
+	BP_MEDIO,
+	BP_CUARTO,
+	BP_OCTAVO,
+	BP_SIZE
+};
+
+
+ID3D11Texture2D* g_pRTBrightPass[BP_SIZE];			// Memoria
+ID3D11ShaderResourceView* g_pSRVBrightPass[BP_SIZE];	// Input
+ID3D11RenderTargetView* g_pRTVBrightPass[BP_SIZE];		// Output
 
 MATRIX4D g_World;
 MATRIX4D g_View;
 MATRIX4D g_Projection;
 CMeshMathSurface g_Surface;
+CMeshMathSurface g_Mirrow;
 ID3D11Texture2D* g_pNormalMap;
 ID3D11Texture2D* g_pEnvMap;
 
@@ -57,8 +72,8 @@ bool g_bTurnLeft = 0, g_bTurnRight = 0;
 bool g_bTurnUp = 0, g_bTurnDown = 0, g_bTurnS = 0, g_bTurnS1 = 0;
 bool g_onFirstMouseMove = 1;
 
-int g_iWidth;
-int g_iHeight;
+float g_iWidth;
+float g_iHeight;
 
 int lastX, lastY;
 int mouseX, mouseY;
@@ -72,10 +87,93 @@ int mouseX, mouseY;
 #define VK_U 0x55
 #define VK_O 0x4F
 
-/*
+// Add new popup menu
+#define ADDPOPUPMENU(hSubMenu, hmenu, string) \
+	AppendMenu(hmenu, MF_STRING | MF_POPUP, (UINT)hSubMenu, string);
+
+// Add a menu item
+#define ADDMENUITEM(hSubMenu, hmenu, ID, string) \
+	AppendMenu(hSubMenu, MF_STRING, ID, string);
+// Crear menu
+enum
+{
+	ID_MAPPING_DIFFUSE = 200,
+	ID_MAPPING_NORMAL	,
+	ID_MAPPING_ENVIROMENTAL_FAST,
+	ID_MAPPING_NORMAL_TRUE,
+	ID_MAPPING_EMISSIVE,
+	ID_FX_EDGE_DETECT,
+	ID_FX_RADIAN_BLUR, 
+	ID_FX_DIRECTIONAL_BLUR, 
+	ID_FX_GAUSS_BLUR , 
+	ID_FX_BLOOM_EFFECT, 
+	ID_FX_NONE,
+	ID_LIGHT_0,
+	ID_LIGHT_1,
+	ID_LIGHT_2,
+	ID_LIGHT_3,
+	ID_LIGHT_4,
+	ID_LIGHT_5,
+	ID_LIGHT_6,
+	ID_LIGHT_7
+};
+
+long g_lFXIDEffect = ID_FX_NONE;
+
+void CreateMainMenu(HWND hWnd)
+{
+
+	g_hMenu = CreateMenu();
+	g_hSubMenu = CreatePopupMenu();
+	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_DIFFUSE, L"&MAPPING DIFFUSE");
+	CheckMenuItem(g_hSubMenu, ID_MAPPING_DIFFUSE, MF_UNCHECKED);
+	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_NORMAL, L"&MAPPING NORMAL");
+	CheckMenuItem(g_hSubMenu, ID_MAPPING_NORMAL, MF_UNCHECKED);
+	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_ENVIROMENTAL_FAST, L"&MAPPING ENVIROMENTAL FAST");
+	CheckMenuItem(g_hSubMenu, ID_MAPPING_ENVIROMENTAL_FAST, MF_UNCHECKED);
+	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_NORMAL_TRUE, L"&MAPPING NORMAL TRUE");
+	CheckMenuItem(g_hSubMenu, ID_MAPPING_NORMAL_TRUE, MF_UNCHECKED);
+	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_EMISSIVE, L"&MAPPING EMISSIVE");
+	CheckMenuItem(g_hSubMenu, ID_MAPPING_EMISSIVE, MF_UNCHECKED);
+	AppendMenu(g_hMenu, MF_STRING | MF_POPUP, (UINT)g_hSubMenu, L"&3D Effects");
+
+
+	g_hSubMenu = CreatePopupMenu();
+	AppendMenu(g_hSubMenu, MF_STRING, ID_FX_EDGE_DETECT, L"&EDGE DETECT");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_FX_RADIAN_BLUR, L"&RADIAN BLUR");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_FX_DIRECTIONAL_BLUR, L"&DIRECTIONAL BLUR");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_FX_GAUSS_BLUR, L"&GAUSS BLUR");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_FX_BLOOM_EFFECT, L"&BLOOM EFFECT");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_FX_NONE, L"&NONE EFFECT");
+
+
+	CheckMenuRadioItem(g_hSubMenu, ID_FX_EDGE_DETECT, ID_FX_NONE,
+		ID_FX_NONE, MF_BYCOMMAND);
+
+	AppendMenu(g_hMenu, MF_STRING | MF_POPUP, (UINT)g_hSubMenu, L"&FX Effects");
+
+	g_hSubMenu = CreatePopupMenu();
+
+	AppendMenu(g_hSubMenu, MF_STRING, ID_LIGHT_0, L"&LIGHT 0");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_LIGHT_1, L"&LIGHT 1");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_LIGHT_2, L"&LIGHT 2");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_LIGHT_3, L"&LIGHT 3");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_LIGHT_4, L"&LIGHT 4");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_LIGHT_5, L"&LIGHT 5");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_LIGHT_6, L"&LIGHT 6");
+	AppendMenu(g_hSubMenu, MF_STRING, ID_LIGHT_7, L"&LIGHT 7");
+
+	CheckMenuItem(g_hSubMenu, ID_LIGHT_0, MF_CHECKED);
+	CheckMenuItem(g_hSubMenu, ID_LIGHT_1, MF_CHECKED);
+	CheckMenuItem(g_hSubMenu, ID_LIGHT_2, MF_CHECKED);
+	AppendMenu(g_hMenu, MF_STRING | MF_POPUP, (UINT)g_hSubMenu, L"&Lights");
+
+	SetMenu(hWnd, g_hMenu);
+}
+
 float Plane(float x, float y)
 {
-	return 0.0f;
+	return -5.0f;
 }
 
 VECTOR4D PlaneNormalize	(float x, float y, float z)
@@ -87,7 +185,7 @@ VECTOR4D PlaneNormalize	(float x, float y, float z)
 		0
 	};
 	return Normalize(Normal);
-}*/
+}
 
 float SinCos(float x, float y)
 {
@@ -278,7 +376,7 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_DIRECT3D2016B));
-
+	CreateMainMenu(g_hWnd);
 
 	// Main message loop:
 	while (GetMessage(&msg, NULL, 0, 0))
@@ -500,21 +598,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 		g_World = Identity();
 		{
-			VECTOR4D EyePos = { 6, 6, 6, 1 };
+			VECTOR4D White = { 1, 1, 1, 1 };
+			VECTOR4D EyePos = { 6, 10, 6, 1 };
 			VECTOR4D Target = { 0, 0, 0, 1 };
 			VECTOR4D Up = { 0, 0, 1, 0 };
 			g_View = View(EyePos, Target, Up);
 			g_Projection = PerspectiveWidthHeightLH(0.05, 0.05, 0.1, 100);
 			//g_Surface.BuildAnalyticSurface(SURFACE_RESOLUTION, SURFACE_RESOLUTION, -1, -1, 2.0f / (SURFACE_RESOLUTION - 1), 2.0f / (SURFACE_RESOLUTION - 1), SinCos, SinCosNormal);
 			//g_Surface.BuildTextureCoords(0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1));
-			//g_Surface.BuildAnalyticSurface(SURFACE_RESOLUTION, SURFACE_RESOLUTION, -3, -3, 6.0f / (SURFACE_RESOLUTION - 1), 6.0f / (SURFACE_RESOLUTION - 1), Plane, PlaneNormalize);
-			//g_Surface.BuildTextureCoords(0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1));
+			g_Mirrow.BuildAnalyticSurface(2, 2, -5, -5, 10.0f / (2 - 1), 10.0f / (2 - 1), Plane, PlaneNormalize);
+			g_Mirrow.BuildTextureCoords(0, 0, 1.0f / (2 - 1), 1.0f / (2 - 1));
+			g_Mirrow.BuildTangentSpaceFromTexCoordsIndexed(false);
+			g_Mirrow.SetColor(White, White, White, White);
 			//g_Surface.BuildParametricSurface(SURFACE_RESOLUTION, SURFACE_RESOLUTION, 0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1), Sphere1);
 			//g_Surface.BuildTextureCoords(0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1));
 			g_Surface.LoadSuzanne();
 			g_Surface.Optimize();
 			g_Surface.BuildTangentSpaceFromTexCoordsIndexed(true);
-			VECTOR4D White = { 1, 1, 1, 1 };
+			
 			g_Surface.SetColor(White, White, White, White);
 		}
 		SetTimer(hWnd, 1, 10, NULL);
@@ -534,12 +635,134 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		// Parse the menu selections:
 		switch (wmId)
 		{
+		case ID_MAPPING_DIFFUSE :
+			g_lFlagsPainter ^= MAPPING_DIFFUSE;
+			if(g_lFlagsPainter & MAPPING_DIFFUSE)
+				CheckMenuItem(g_hMenu, ID_MAPPING_DIFFUSE, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_MAPPING_DIFFUSE, MF_UNCHECKED);
+			break;
+		case ID_MAPPING_NORMAL:
+			g_lFlagsPainter ^= MAPPING_NORMAL;
+			if (g_lFlagsPainter & MAPPING_NORMAL)
+				CheckMenuItem(g_hMenu, ID_MAPPING_NORMAL, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_MAPPING_NORMAL, MF_UNCHECKED);
+			break;
+		case ID_MAPPING_ENVIROMENTAL_FAST:
+			g_lFlagsPainter ^= MAPPING_ENVIROMENTAL_FAST;
+			if (g_lFlagsPainter & MAPPING_ENVIROMENTAL_FAST)
+				CheckMenuItem(g_hMenu, ID_MAPPING_ENVIROMENTAL_FAST, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_MAPPING_ENVIROMENTAL_FAST, MF_UNCHECKED);
+			break;
+		case ID_MAPPING_NORMAL_TRUE:
+			g_lFlagsPainter ^= MAPPING_NORMAL_TRUE;
+			if (g_lFlagsPainter & MAPPING_NORMAL_TRUE)
+				CheckMenuItem(g_hMenu, ID_MAPPING_NORMAL_TRUE, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_MAPPING_NORMAL_TRUE, MF_UNCHECKED);
+			break;
+		case ID_MAPPING_EMISSIVE:
+			g_lFlagsPainter ^= MAPPING_EMISSIVE;
+			if (g_lFlagsPainter & MAPPING_EMISSIVE)
+				CheckMenuItem(g_hMenu, ID_MAPPING_EMISSIVE, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_MAPPING_EMISSIVE, MF_UNCHECKED);
+			break;
+		case ID_FX_EDGE_DETECT:
+			CheckMenuRadioItem(g_hMenu, ID_FX_EDGE_DETECT, ID_FX_NONE,
+				ID_FX_EDGE_DETECT, MF_BYCOMMAND);
+			g_lFXIDEffect = wmId;
+			break;
+		case ID_FX_RADIAN_BLUR:
+			CheckMenuRadioItem(g_hMenu, ID_FX_EDGE_DETECT, ID_FX_NONE,
+				ID_FX_RADIAN_BLUR, MF_BYCOMMAND);
+			g_lFXIDEffect = wmId;
+			break;
+		case ID_FX_DIRECTIONAL_BLUR:
+			CheckMenuRadioItem(g_hMenu, ID_FX_EDGE_DETECT, ID_FX_NONE,
+				ID_FX_DIRECTIONAL_BLUR, MF_BYCOMMAND);
+			g_lFXIDEffect = wmId;
+			break;
+		case ID_FX_GAUSS_BLUR:
+			CheckMenuRadioItem(g_hMenu, ID_FX_EDGE_DETECT, ID_FX_NONE,
+				ID_FX_GAUSS_BLUR, MF_BYCOMMAND);
+			g_lFXIDEffect = wmId;
+			break;
+		case ID_FX_BLOOM_EFFECT:
+			CheckMenuRadioItem(g_hMenu, ID_FX_EDGE_DETECT, ID_FX_NONE,
+				ID_FX_BLOOM_EFFECT, MF_BYCOMMAND);
+			g_lFXIDEffect = wmId;
+			break;
+		case ID_FX_NONE:
+			CheckMenuRadioItem(g_hMenu, ID_FX_EDGE_DETECT, ID_FX_NONE,
+				ID_FX_NONE, MF_BYCOMMAND);
+			g_lFXIDEffect = wmId;
+			break;
+		case ID_LIGHT_0:
+			g_Painter.m_Params.lights[0].Flags ^= LIGHT_ON;
+			if (g_Painter.m_Params.lights[0].Flags & LIGHT_ON)
+				CheckMenuItem(g_hMenu, ID_LIGHT_0, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_LIGHT_0, MF_UNCHECKED);
+			break;
+		case ID_LIGHT_1:
+			g_Painter.m_Params.lights[1].Flags ^= LIGHT_ON;
+			if (g_Painter.m_Params.lights[1].Flags & LIGHT_ON)
+				CheckMenuItem(g_hMenu, ID_LIGHT_1, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_LIGHT_1, MF_UNCHECKED);
+			break;
+		case ID_LIGHT_2:
+			g_Painter.m_Params.lights[2].Flags ^= LIGHT_ON;
+			if (g_Painter.m_Params.lights[2].Flags & LIGHT_ON)
+				CheckMenuItem(g_hMenu, ID_LIGHT_2, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_LIGHT_2, MF_UNCHECKED);
+			break;
+		case ID_LIGHT_3:
+			g_Painter.m_Params.lights[3].Flags ^= LIGHT_ON;
+			if (g_Painter.m_Params.lights[3].Flags & LIGHT_ON)
+				CheckMenuItem(g_hMenu, ID_LIGHT_3, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_LIGHT_3, MF_UNCHECKED);
+			break;
+		case ID_LIGHT_4:
+			g_Painter.m_Params.lights[4].Flags ^= LIGHT_ON;
+			if (g_Painter.m_Params.lights[4].Flags & LIGHT_ON)
+				CheckMenuItem(g_hMenu, ID_LIGHT_4, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_LIGHT_4, MF_UNCHECKED);
+			break;
+		case ID_LIGHT_5:
+			g_Painter.m_Params.lights[5].Flags ^= LIGHT_ON;
+			if (g_Painter.m_Params.lights[5].Flags & LIGHT_ON)
+				CheckMenuItem(g_hMenu, ID_LIGHT_5, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_LIGHT_5, MF_UNCHECKED);
+			break;
+		case ID_LIGHT_6:
+			g_Painter.m_Params.lights[6].Flags ^= LIGHT_ON;
+			if (g_Painter.m_Params.lights[6].Flags & LIGHT_ON)
+				CheckMenuItem(g_hMenu, ID_LIGHT_6, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_LIGHT_6, MF_UNCHECKED);
+			break;
+		case ID_LIGHT_7:
+			g_Painter.m_Params.lights[7].Flags ^= LIGHT_ON;
+			if (g_Painter.m_Params.lights[7].Flags & LIGHT_ON)
+				CheckMenuItem(g_hMenu, ID_LIGHT_7, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_LIGHT_7, MF_UNCHECKED);
+			break;
 		case IDM_ABOUT:
 			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
 			break;
 		case IDM_EXIT:
 			DestroyWindow(hWnd);
 			break;
+
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
 		}
@@ -554,9 +777,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Manager.GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 			//ID3D11Texture2D* pBackBuffer = NULL;
 			//g_Manager.GetMainRTV()->GetResource((ID3D11Resource**) &pBackBuffer);
+
 			D3D11_TEXTURE2D_DESC dtd; 
 			pBackBuffer->GetDesc(&dtd);
 			dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE| D3D11_BIND_RENDER_TARGET);
+
+			g_iWidth = dtd.Width;
+			g_iHeight = dtd.Height;
 
 			HRESULT hr =  g_Manager.GetDevice()->CreateTexture2D(&dtd, 0, &g_pRT0);
 			hr =  g_Manager.GetDevice()->CreateShaderResourceView(g_pRT0, 0, &g_pSRV0);
@@ -566,6 +793,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			hr = g_Manager.GetDevice()->CreateShaderResourceView(g_pRT1, 0, &g_pSRV1);
 			hr = g_Manager.GetDevice()->CreateRenderTargetView(g_pRT1, 0, &g_pRTV1);
 
+#define RECIPROCO (1.f/4.f)
+
+			for (unsigned long i = 0; i < BP_SIZE; i++)
+			{
+				dtd.Width = dtd.Width * RECIPROCO;
+				dtd.Height = dtd.Height * RECIPROCO;
+
+				hr = g_Manager.GetDevice()->CreateTexture2D(&dtd, 0, &g_pRTBrightPass[i]);
+				hr = g_Manager.GetDevice()->CreateShaderResourceView(g_pRTBrightPass[i], 0, &g_pSRVBrightPass[i]);
+				hr = g_Manager.GetDevice()->CreateRenderTargetView(g_pRTBrightPass[i], 0, &g_pRTVBrightPass[i]);
+			}
 
 			SAFE_RELEASE(pBackBuffer);
 			  
@@ -584,17 +822,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_iFrames++;
 			
 
-			RECT rect;
+			/*RECT rect;
 			GetWindowRect(hWnd, &rect);
 			g_iWidth = rect.right - rect.left;
-			g_iHeight = rect.bottom - rect.top;
+			g_iHeight = rect.bottom - rect.top;*/
 			MATRIX4D AC = Scaling((float)g_iHeight / g_iWidth, 1, 1);
 
 			VECTOR4D DarkGray = { 0.25,0.25,0.25,1 };
 			VECTOR4D White = { 1,1,1,1 };
 			VECTOR4D Gray = { .5,.5,.5,0 };
 
-			g_Painter.SetRenderTarget(g_pRTV0);
+			g_Painter.SetRenderTarget(g_lFXIDEffect != ID_FX_NONE? g_pRTV0: g_Manager.GetMainRTV());
 			//g_Painter.SetRenderTarget(g_Manager.GetMainRTV());
 			g_Painter.m_Params.Material.Diffuse = Gray;
 			g_Painter.m_Params.Material.Ambient = Gray;
@@ -609,7 +847,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				0);
 			
 			unsigned long TriangleIndices[3] = { 0, 1, 2 };
-			g_World = Identity();//RotationY(theta);
+			g_World = Identity();
 			g_Painter.m_Params.World = g_World;
 			g_Painter.m_Params.View = g_View;
 			g_Painter.m_Params.Projection = g_Projection*AC;
@@ -619,7 +857,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			VECTOR4D Color = { 0, 0, 0, 0 };
 			g_Painter.m_Params.Brightness = Color;
-			g_Painter.m_Params.Flags1 =    MAPPING_NORMAL_TRUE | MAPPING_DIFFUSE | MAPPING_EMISSIVE;
+			g_Painter.m_Params.Flags1 =    0 ;
 			ID3D11ShaderResourceView* pSRV = NULL;
 			g_Manager.GetDevice()->CreateShaderResourceView(g_pTexture, NULL, &pSRV);
 			g_Manager.GetContext()->PSSetShaderResources(0, 1, &pSRV);
@@ -636,22 +874,102 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Manager.GetDevice()->CreateShaderResourceView(g_pEmissiveMap, NULL, &pSRVEmissiveMap);
 			g_Manager.GetContext()->PSSetShaderResources(4, 1, &pSRVEmissiveMap);
 
-			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size());
+			VECTOR4D Plane = { 0,0,1,5 };
+			MATRIX4D Mirror =  ReflectionMatrix(Plane);
+			MATRIX4D OldView = g_Painter.m_Params.View;
 
-			// Set the main render target view
-			g_FX.SetRenderTarget(g_pRTV1);
-			g_FX.SetInput(g_pSRV0);
-			g_FX.m_Params.DirectionalBlur.x = cos(theta);
-			g_FX.m_Params.DirectionalBlur.y = sin(theta);
-			g_FX.m_Params.DirectionalBlur.z = 0.005;
-			g_FX.Process(3,g_iWidth, g_iHeight);
+			// Draw plane to mask 
+			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
+			g_Painter.DrawIndexed(&g_Mirrow.m_Vertices[0], g_Mirrow.m_Vertices.size(), &g_Mirrow.m_Indices[0], g_Mirrow.m_Indices.size(),PAINTER_DRAW_MARK);
+			
+			// Limpiar la profuncidad
+			g_Manager.GetContext()->ClearDepthStencilView(
+				g_Manager.GetMainDSV(),
+				D3D11_CLEAR_DEPTH,
+				1.0f,
+				0);
+			// Dibujar en espejo
+			g_World = Identity();
+			g_Painter.m_Params.World = g_World;
+			g_Painter.m_Params.View = Mirror*g_Painter.m_Params.View;
+			g_Painter.m_Params.Brightness = Color;
+			g_Painter.m_Params.Flags1 = g_lFlagsPainter;
 
-			g_FX.SetRenderTarget(g_Manager.GetMainRTV());
-			g_FX.SetInput(g_pSRV1);
-			g_FX.m_Params.DirectionalBlur.x = cos(theta);
-			g_FX.m_Params.DirectionalBlur.y = sin(theta);
-			g_FX.m_Params.DirectionalBlur.z = 0.005;
-			g_FX.Process(4, g_iWidth, g_iHeight);
+			// Dibujar mundo real
+			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawRHRState());
+			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW_ON_MARK);
+			g_Painter.m_Params.View = OldView;
+			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
+			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW);
+			
+			//g_FX.SetRenderTarget(g_Manager.GetMainRTV());
+			switch (g_lFXIDEffect)
+			{
+			case ID_FX_EDGE_DETECT:
+			{
+				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
+				g_FX.SetInput(g_pSRV0);
+				g_FX.Process(0, g_iWidth, g_iHeight);
+			}
+			break;
+			case ID_FX_RADIAN_BLUR:
+			{
+				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
+				g_FX.SetInput(g_pSRV0);
+				g_FX.m_Params.RadialBlur.x = .01;
+				g_FX.Process(1, g_iWidth, g_iHeight);
+			}
+			break;
+			case ID_FX_DIRECTIONAL_BLUR:
+			{
+				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
+				g_FX.SetInput(g_pSRV0);
+				g_FX.m_Params.DirectionalBlur = { 1,0,.01f,0 };
+				g_FX.Process(2, g_iWidth, g_iHeight);
+			}
+			break;
+			case ID_FX_GAUSS_BLUR:
+			{
+				g_FX.SetRenderTarget(g_pRTV1);
+				g_FX.SetInput(g_pSRV0);
+				g_FX.m_Params.DirectionalBlur.x = cos(theta);
+				g_FX.m_Params.DirectionalBlur.y = sin(theta);
+				g_FX.m_Params.DirectionalBlur.z = 0.005;
+				g_FX.Process(3,g_iWidth, g_iHeight);
+
+				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
+				g_FX.SetInput(g_pSRV1);
+				g_FX.m_Params.DirectionalBlur.x = cos(theta);
+				g_FX.m_Params.DirectionalBlur.y = sin(theta);
+				g_FX.m_Params.DirectionalBlur.z = 0.005;
+				g_FX.Process(4, g_iWidth, g_iHeight);
+			}
+			break;
+			case ID_FX_BLOOM_EFFECT:
+			{
+				float w = g_iWidth, h = g_iHeight;
+
+				for (unsigned long i = 0; i < BP_SIZE; i++)
+				{
+					w *= RECIPROCO;
+					h *= RECIPROCO;
+					g_FX.SetRenderTarget(g_pRTVBrightPass[i]);
+					g_FX.SetInput(g_pSRV0);
+					g_FX.SetInputBrightPassed(NULL);
+					g_FX.m_Params.Umbral.x = .85;
+					g_FX.Process(5, (float)w, (float)h);
+				}
+
+				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
+				g_FX.SetInput(g_pSRV0);
+				g_FX.SetInputBrightPassed(g_pSRVBrightPass);
+				g_FX.Process(6, g_iWidth, g_iHeight);
+
+			}
+			break;
+			default:
+				break;
+			}
 
 			g_Manager.GetSwapChain()->Present(1,0);
 			SAFE_RELEASE(pSRV);
@@ -665,6 +983,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			SAFE_RELEASE(g_pSRV1);
 			SAFE_RELEASE(g_pRTV1);
 			SAFE_RELEASE(g_pRT1);
+			for (unsigned long i = 0; i < BP_SIZE; i++)
+			{
+				SAFE_RELEASE(g_pSRVBrightPass[i]);
+				SAFE_RELEASE(g_pRTVBrightPass[i]);
+				SAFE_RELEASE(g_pRTBrightPass[i]);
+			}
 		}
 		ValidateRect(hWnd, NULL);
 		break;

@@ -87,3 +87,5 @@ void BuildRayFromPerspective(MATRIX4D& PV,
 	float x, float y,
 	VECTOR4D& RayOrigin,
 	VECTOR4D& RayDir);
+
+MATRIX4D ReflectionMatrix(VECTOR4D& Plane);

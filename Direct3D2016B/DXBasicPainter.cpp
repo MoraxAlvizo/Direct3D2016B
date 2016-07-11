@@ -10,6 +10,7 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	m_pPS = NULL;
 	m_pCB = NULL;
 	m_pRTV = NULL;
+	m_pDrawLH = m_pDrawRH = NULL;
 	m_Params.World = m_Params.View = m_Params.Projection = Identity();
 	VECTOR4D Zero = { 0, 0, 0, 0 };
 	m_Params.Brightness = Zero;
@@ -35,7 +36,6 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 		{1,0,0,0}
 	};
 
-
 	LIGHT LightDef2 = {
 		{ LIGHT_ON, LIGHT_SPOT,0,0 },  // Flags
 		{ 0.1,0.1,0.1,0 },				// Ambient 
@@ -58,9 +58,33 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 		{ 30,0,0,0 }						// Factors 
 	};
 
+	LIGHT LightDef4 = {
+		{ 0, LIGHT_POINT,0,0 },	// Flags
+		{ 0.1,0.1,0.1,0 },				// Ambient 
+		{ 1,1,1,1 },					// Diffuse
+		{ 1,1,0.7,0 },					// Specular
+		{ 1,0,0,0 },					// Attenuation
+		{ 3,3,-3,1 },					// Position
+		{ -.5773,-.5773,.5773,0 },		// Direction
+		{ 30,0,0,0 }						// Factors 
+	};
+
+	LIGHT LightDef5 = {
+		{ 0, LIGHT_POINT,0,0 },	// Flags
+		{ 0.1,0.1,0.1,0 },				// Ambient 
+		{ 1,1,1,1 },					// Diffuse
+		{ 1,1,0.7,0 },					// Specular
+		{ 1,0,0,0 },					// Attenuation
+		{ 3,-3,3,1 },					// Position
+		{ -.5773,.5773,-.5773,0 },		// Direction
+		{ 30,0,0,0 }						// Factors 
+	};
+
 	m_Params.lights[0] = LightDef;
 	m_Params.lights[1] = LightDef2;
 	m_Params.lights[2] = LightDef3;
+	m_Params.lights[3] = LightDef4;
+	m_Params.lights[4] = LightDef5;
 }
 
 void CDXBasicPainter::Uninitialize()
@@ -69,6 +93,8 @@ void CDXBasicPainter::Uninitialize()
 	SAFE_RELEASE(m_pVS);
 	SAFE_RELEASE(m_pPS);
 	SAFE_RELEASE(m_pCB);
+	SAFE_RELEASE(m_pDrawLH);
+	SAFE_RELEASE(m_pDrawRH);
 }
 
 D3D11_INPUT_ELEMENT_DESC CDXBasicPainter::VERTEX::InputLayout[] =
@@ -119,6 +145,63 @@ bool CDXBasicPainter::Initialize()
 	dbd.Usage = D3D11_USAGE_DYNAMIC;
 	m_pManager->GetDevice()->CreateBuffer(&dbd, 0, &m_pCB);
 
+	// Creacion de los estados del Rastetizador para dibujo en mano izquierda y mano derecha
+	D3D11_RASTERIZER_DESC drd;
+	memset(&drd, 0, sizeof(drd));
+
+	drd.AntialiasedLineEnable = false;
+	drd.CullMode = D3D11_CULL_BACK;
+	drd.DepthBias = 0.0f;
+	drd.DepthBiasClamp = 0.0f;
+	drd.FillMode = D3D11_FILL_SOLID;
+	drd.FrontCounterClockwise = false;
+	drd.MultisampleEnable = false;
+	drd.ScissorEnable = false;
+	drd.SlopeScaledDepthBias = 0.0f;
+
+	m_pManager->GetDevice()->CreateRasterizerState(&drd, &m_pDrawLH);
+
+	drd.CullMode = D3D11_CULL_FRONT;
+	m_pManager->GetDevice()->CreateRasterizerState(&drd, &m_pDrawRH);
+
+	// Creacion de estados de profuncidad/stencil Dibujar / Marcar / Dibujar en Marcado
+	/* 1. Marcar la zona del espejo, con geometria coplanar al plano de reflexion
+	   2. Dibujar la geometria reflejada sobre lo que ha sido marcado
+	   3. Dibujar la geometria real */
+
+	D3D11_DEPTH_STENCIL_DESC ddsd;
+
+	ddsd.DepthEnable = true;
+	ddsd.StencilEnable = true;
+	ddsd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	ddsd.DepthFunc = D3D11_COMPARISON_LESS;
+	ddsd.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	ddsd.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+	ddsd.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	ddsd.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	ddsd.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	ddsd.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+
+	ddsd.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+	ddsd.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	ddsd.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	ddsd.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+
+	m_pManager->GetDevice()->CreateDepthStencilState(&ddsd, &m_pDSSMask);
+
+	ddsd.FrontFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+	ddsd.BackFace.StencilFunc = D3D11_COMPARISON_EQUAL;
+
+	m_pManager->GetDevice()->CreateDepthStencilState(&ddsd, &m_pDSSDrawOnMask);
+
+	ddsd.StencilEnable = false;
+
+	m_pManager->GetDevice()->CreateDepthStencilState(&ddsd, &m_pDSSDraw);
+	// Dibujar el cuadrado con este para marcar
+	//m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSMask, 0x01);
+	// Limpiar la profuncidad
+	// Dibujar espejo
+	// Dibujar mundo real
 	return true;
 }
 CDXBasicPainter::~CDXBasicPainter()
@@ -127,7 +210,7 @@ CDXBasicPainter::~CDXBasicPainter()
 }
 
 void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
-	unsigned long* pIndices, unsigned long nIndices)
+	unsigned long* pIndices, unsigned long nIndices, unsigned long flags)
 {
 	//1.- Crear los buffer de vértices e indices en el GPU.
 	ID3D11Buffer  *pVB = NULL, *pIB = NULL;
@@ -178,7 +261,12 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	//4.- Configurar la salida
-	//ID3D11RenderTargetView* pRTVS[] = { m_pManager->GetMainRTV(), m_pRTV };
+	if(flags & PAINTER_DRAW_MARK)
+		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSMask, 0x01);
+	else if(flags & PAINTER_DRAW_ON_MARK)
+		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDrawOnMask, 0x01);
+	else
+		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDraw, 0x01);
 	m_pManager->GetContext()->OMSetRenderTargets(1, &m_pRTV, m_pManager->GetMainDSV());
 	SAFE_RELEASE(pBackBuffer);
 
@@ -201,7 +289,6 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	{
 		Temp.lights[i].Position = m_Params.lights[i].Position*m_Params.View;
 		Temp.lights[i].Direction = m_Params.lights[i].Direction*m_Params.View;
-
 	}
 
 	memcpy(ms.pData, &Temp, sizeof(PARAMS));

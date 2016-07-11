@@ -504,3 +504,15 @@ MATRIX4D Orthogonalize(MATRIX4D &M)
 	R.m23 = z;
 	return R;
 }
+
+MATRIX4D ReflectionMatrix(VECTOR4D& Plane)
+{
+	MATRIX4D R =
+	{
+		1 - 2 * Plane.x*Plane.x  ,  -2 * Plane.x*Plane.y	, -2 * Plane.x*Plane.z		, 0 ,
+		-2 * Plane.y*Plane.x     ,  1 - 2 * Plane.y*Plane.y , -2 * Plane.y*Plane.z		, 0 ,
+		-2 *Plane.z *Plane.x     ,  -2 *Plane.z*Plane.y		, 1 - 2 * Plane.z*Plane.z	, 0 ,
+		-2 *Plane.w *Plane.x	 ,  -2 *Plane.w*Plane.y		, -2 *Plane.w*Plane.z		, 1 ,
+	};
+	return R;
+}

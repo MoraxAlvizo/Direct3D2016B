@@ -125,7 +125,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     float4 ColorEnviomental = 0;
     float4 ColorSpecular = 0;
     float4 ColorEmissive = 0;
-    float4 N = 0;
+    float4 N = normalize(Input.Normal);
 
 
     if (Flags.x & MAPPING_EMISSIVE)
@@ -138,7 +138,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
         Protuberancia.w = 0;
         N = normalize(Input.Normal + Protuberancia);
     }
-    else if (Flags.x & MAPPING_NORMAL_TRUE)
+    if (Flags.x & MAPPING_NORMAL_TRUE)
     {
         //float2 TextCoord =float2(0,1) + Input.TexCoord.xy*float2(1,-1);
         float4 NormalSample = NormalMapTrue.Sample(Sampler, Input.TexCoord.xy) * float4(2, 2, 1, 0) - float4(1, 1, 0, 0);
@@ -148,8 +148,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
         Protuberancia.w = 0;
         N = normalize(Protuberancia);
     }
-    else
-        N = normalize(Input.Normal);
+
 
     if (Flags.x & MAPPING_ENVIROMENTAL_FAST)
     {

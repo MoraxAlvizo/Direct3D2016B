@@ -31,10 +31,17 @@ cbuffer PARAMS
     float4 Delta;
     float4 RadialBlur;      // x:fuerza
     float4 DirectionalBlur; // xy direccion, z: fuerza
+    float4 Umbral;
     // Add here more params as requiered
 };
 
 Texture2D Frame : register(t0);
+Texture2D BrightPassM : register(t1);
+Texture2D BrightPassC : register(t2);
+Texture2D BrightPassO : register(t3);
+
+
+
 SamplerState Sampler : register(s0);
 float4 PSEdgeDetect(VERTEX_OUTPUT Input) : SV_Target
 {
@@ -100,4 +107,26 @@ float4 PSGaussVerticalBlur(VERTEX_OUTPUT Input) : SV_Target
     }
 
     return Color;
+}
+
+float4 PSBrightPass(VERTEX_OUTPUT Input): SV_Target
+{
+    float4 Color = Frame.Sample(Sampler, Input.TexCoord.xy);
+    float L = dot( float4(0.3, 0.5, 0.2, 0),Color);
+
+    return L > Umbral.x ? Color : float4(0,0,0,0);
+}
+
+float4 PSMerged(VERTEX_OUTPUT Input) : SV_Target
+{
+    float4 ColorM = BrightPassM.Sample(Sampler, Input.TexCoord.xy);
+    float4 ColorC = BrightPassC.Sample(Sampler, Input.TexCoord.xy);
+    float4 ColorO = BrightPassO.Sample(Sampler, Input.TexCoord.xy);
+    float4 ColorA = Frame.Sample(Sampler, Input.TexCoord.xy);
+
+    ColorC = (ColorC + ColorO) - (ColorC * ColorO);
+    ColorM = (ColorC + ColorM) - (ColorC * ColorM);
+
+    return (ColorA + ColorM) - (ColorA * ColorM);
+    //return ColorC;
 }

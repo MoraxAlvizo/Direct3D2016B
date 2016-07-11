@@ -11,9 +11,21 @@ protected:
 	ID3D11PixelShader* m_pPS;
 	ID3D11Buffer*      m_pCB;
 	ID3D11RenderTargetView* m_pRTV;
+	ID3D11RasterizerState* m_pDrawLH;
+	ID3D11RasterizerState* m_pDrawRH;
+	ID3D11DepthStencilState* m_pDSSMask;
+	ID3D11DepthStencilState* m_pDSSDrawOnMask;
+	ID3D11DepthStencilState* m_pDSSDraw;
+
+#define PAINTER_DRAW_MARK		0x01
+#define PAINTER_DRAW_ON_MARK	0x02
+#define PAINTER_DRAW			0x04
+
 public:
 
 	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTV = pRTV; }
+	ID3D11RasterizerState* GetDrawRHRState() { return m_pDrawRH; }
+	ID3D11RasterizerState* GetDrawLHRState() { return m_pDrawLH; }
 	struct MATERIAL
 	{
 		VECTOR4D Ambient;
@@ -86,7 +98,8 @@ public:
 	void DrawIndexed(VERTEX* pVertices,
 		unsigned long nVertices,
 		unsigned long *pIndices,
-		unsigned long nIndices);
+		unsigned long nIndices, 
+		unsigned long flags);
 
 	
 	~CDXBasicPainter();

@@ -17,6 +17,7 @@ class CFX
 	ID3D11VertexShader* m_pVS;
 	vector<ID3D11PixelShader*> m_vecFX;
 	ID3D11ShaderResourceView* m_pSRVInput0;
+	ID3D11ShaderResourceView** m_pSRVBrightPassed;
 	ID3D11RenderTargetView * m_pRTVOutput;
 
 	struct VERTEX
@@ -37,13 +38,16 @@ public:
 		VECTOR4D Delta;
 		VECTOR4D RadialBlur;
 		VECTOR4D DirectionalBlur;
+		VECTOR4D Umbral;
 	}m_Params;
 	CFX(CDXManager* pOwner);
 	bool Initialize();
-	void Process(unsigned long idEffect,unsigned long w, unsigned long h);
+	void Process(unsigned long idEffect,float w, float h);
 	void Uninitialize();
 	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTVOutput = pRTV; }
 	void SetInput(ID3D11ShaderResourceView* pSRV) { m_pSRVInput0 = pSRV; }
+	void SetInputBrightPassed(ID3D11ShaderResourceView** pSRVBrightPassed) { m_pSRVBrightPassed = pSRVBrightPassed; }
+
 	~CFX();
 };
 
