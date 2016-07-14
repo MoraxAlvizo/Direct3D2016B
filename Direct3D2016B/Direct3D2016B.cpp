@@ -102,6 +102,7 @@ enum
 	ID_MAPPING_ENVIROMENTAL_FAST,
 	ID_MAPPING_NORMAL_TRUE,
 	ID_MAPPING_EMISSIVE,
+	ID_MAPPING_SHADOW,
 	ID_FX_EDGE_DETECT,
 	ID_FX_RADIAN_BLUR, 
 	ID_FX_DIRECTIONAL_BLUR, 
@@ -135,6 +136,8 @@ void CreateMainMenu(HWND hWnd)
 	CheckMenuItem(g_hSubMenu, ID_MAPPING_NORMAL_TRUE, MF_UNCHECKED);
 	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_EMISSIVE, L"&MAPPING EMISSIVE");
 	CheckMenuItem(g_hSubMenu, ID_MAPPING_EMISSIVE, MF_UNCHECKED);
+	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_SHADOW, L"&MAPPING SHADOW");
+	CheckMenuItem(g_hSubMenu, ID_MAPPING_SHADOW, MF_UNCHECKED);
 	AppendMenu(g_hMenu, MF_STRING | MF_POPUP, (UINT)g_hSubMenu, L"&3D Effects");
 
 
@@ -164,8 +167,6 @@ void CreateMainMenu(HWND hWnd)
 	AppendMenu(g_hSubMenu, MF_STRING, ID_LIGHT_7, L"&LIGHT 7");
 
 	CheckMenuItem(g_hSubMenu, ID_LIGHT_0, MF_CHECKED);
-	CheckMenuItem(g_hSubMenu, ID_LIGHT_1, MF_CHECKED);
-	CheckMenuItem(g_hSubMenu, ID_LIGHT_2, MF_CHECKED);
 	AppendMenu(g_hMenu, MF_STRING | MF_POPUP, (UINT)g_hSubMenu, L"&Lights");
 
 	SetMenu(hWnd, g_hMenu);
@@ -670,6 +671,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			else
 				CheckMenuItem(g_hMenu, ID_MAPPING_EMISSIVE, MF_UNCHECKED);
 			break;
+		case ID_MAPPING_SHADOW:
+			g_lFlagsPainter ^= MAPPING_SHADOW;
+			if (g_lFlagsPainter & MAPPING_SHADOW)
+				CheckMenuItem(g_hMenu, ID_MAPPING_SHADOW, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_MAPPING_SHADOW, MF_UNCHECKED);
+			break;
 		case ID_FX_EDGE_DETECT:
 			CheckMenuRadioItem(g_hMenu, ID_FX_EDGE_DETECT, ID_FX_NONE,
 				ID_FX_EDGE_DETECT, MF_BYCOMMAND);
@@ -793,7 +801,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			hr = g_Manager.GetDevice()->CreateShaderResourceView(g_pRT1, 0, &g_pSRV1);
 			hr = g_Manager.GetDevice()->CreateRenderTargetView(g_pRT1, 0, &g_pRTV1);
 
-#define RECIPROCO (1.f/4.f)
+#define RECIPROCO (1.f/2.f)
 
 			for (unsigned long i = 0; i < BP_SIZE; i++)
 			{
@@ -889,17 +897,28 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				1.0f,
 				0);
 			// Dibujar en espejo
-			g_World = Identity();
+			g_World = RotationX(theta);//Identity();
 			g_Painter.m_Params.World = g_World;
 			g_Painter.m_Params.View = Mirror*g_Painter.m_Params.View;
 			g_Painter.m_Params.Brightness = Color;
 			g_Painter.m_Params.Flags1 = g_lFlagsPainter;
-
-			// Dibujar mundo real
 			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawRHRState());
 			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW_ON_MARK);
+			
+			VECTOR4D LightPos = { 0, 0, 20, 1 };
+			VECTOR4D Target = { 0, 0, 0, 1 };
+			VECTOR4D Up = { 0, 1, 0, 0 };
+			g_Painter.m_Params.LightView = View(LightPos, Target, Up);
+			g_Painter.m_Params.LightProjection = PerspectiveWidthHeightLH(1 ,1, 1, 100);
+			
 			g_Painter.m_Params.View = OldView;
 			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
+
+			// Dibujar mapa de sombras
+			g_Painter.ClearShadow();
+			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW,true);
+
+			// Dibujar mundo real
 			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW);
 			
 			//g_FX.SetRenderTarget(g_Manager.GetMainRTV());

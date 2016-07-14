@@ -30,6 +30,7 @@ struct VERTEX_OUTPUT
 	float4 Color:COLOR;
     float4 A:NORMAL1, B:NORMAL2, C:NORMAL3;
     float4 TexCoord : TEXCOORD;
+    float4 LightPosition : POSITION1;
 };
 
 struct MATERIAL
@@ -62,15 +63,16 @@ struct LIGHT
 
 };
 
-#define LIGHTING_AMBIENT            0x01
-#define LIGHTING_DIFFUSE            0x02
-#define LIGHTING_SPECULAR           0x04
-#define LIGHTING_EMISSIVE           0x08
-#define MAPPING_DIFFUSE             0x10
-#define MAPPING_NORMAL              0x20
-#define MAPPING_ENVIROMENTAL_FAST   0x40
-#define MAPPING_NORMAL_TRUE			0x80
+#define LIGHTING_AMBIENT            0x001
+#define LIGHTING_DIFFUSE            0x002
+#define LIGHTING_SPECULAR           0x004
+#define LIGHTING_EMISSIVE           0x008
+#define MAPPING_DIFFUSE             0x010
+#define MAPPING_NORMAL              0x020
+#define MAPPING_ENVIROMENTAL_FAST   0x040
+#define MAPPING_NORMAL_TRUE			0x080
 #define MAPPING_EMISSIVE			0x100
+#define MAPPING_SHADOW				0x200
 
 cbuffer PARAMS:register(b0)
 {
@@ -78,6 +80,8 @@ cbuffer PARAMS:register(b0)
     matrix World; //Model to World Trnasform
     matrix View;
     matrix Projection;
+    matrix LightView;
+    matrix LightProjection;
     float4 Brightness; //Pixel Shader Brightness control
     MATERIAL Material;
     LIGHT lights[8];
@@ -107,15 +111,19 @@ VERTEX_OUTPUT VSMain(VERTEX_INPUT Input)
     Output.A = float4(T.x, B.x, Output.Normal.x, 0);
     Output.B = float4(T.y, B.y, Output.Normal.y, 0);
     Output.C = float4(T.z, B.z, Output.Normal.z, 0);
+
+    Output.LightPosition = mul(Input.Position, mul(mul(World, LightView), LightProjection)  );
      
     return Output;
 
 }
+
 Texture2D Diffuse:register(t0);
 Texture2D NormalMap : register(t1);
 Texture2D EnviromentalMap : register(t2);
 Texture2D NormalMapTrue : register(t3);
 Texture2D EmissiveMap : register(t4);
+Texture2D ShadowMap : register(t5);
 SamplerState Sampler : register(s0);
 
 float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
@@ -149,12 +157,31 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
         N = normalize(Protuberancia);
     }
 
-
     if (Flags.x & MAPPING_ENVIROMENTAL_FAST)
     {
-        ColorEnviomental = EnviromentalMap.Sample(Sampler, (N.xy * float2(0.5, -0.5) + 0.5) / 2 );
+        ColorEnviomental = EnviromentalMap.Sample(Sampler, (N.xy * float2(0.5, -0.5) + 0.5)  );
     }
 
+    float Shadowed = 1;
+    
+    if(Flags.x & MAPPING_SHADOW)
+    {
+        // 1. Calcular la coordenada de textura a partir de la posicion 
+        //    interpolada en espacio de luz
+        float4 ShadowPos = Input.LightPosition / Input.LightPosition.w;
+        ShadowPos.xy = (ShadowPos.xy * float2(0.5, -0.5)) + 0.5;
+
+        if(saturate(ShadowPos.x) == ShadowPos.x && 
+           saturate(ShadowPos.y) == ShadowPos.y)
+        {   
+            float depth = ShadowMap.Sample(Sampler, ShadowPos.xy).r;
+
+            if((ShadowPos.z - depth) > 0.001)
+            {
+                Shadowed = 0;
+            }
+        }
+    }
     
     for (int i = 0; i < 8; i++)
     {
@@ -166,7 +193,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
                     {
                         float ILambert = max(0, -dot(N, lights[i].Direction));
                         
-                        ColorDiffuse += ILambert * lights[i].Diffuse;
+                        ColorDiffuse += ILambert * lights[i].Diffuse * Shadowed;
 
                         // Tarea : Calcular la componente specular de la luz direccional
                         // Vector de vista V
@@ -174,7 +201,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
                         float4 H = normalize(V - lights[i].Direction);
 
                         float IPhong = pow(max(0, dot(H, N)), Material.Power.x);
-                        ColorSpecular += IPhong * lights[i].Specular;
+                        ColorSpecular += IPhong * lights[i].Specular * Shadowed;
                         
                     }
                     break;
@@ -232,13 +259,30 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     if (Flags.x & MAPPING_DIFFUSE)
         ColorDiffuse *= Diffuse.Sample(Sampler, Input.TexCoord.xy);
 
+    
     return Material.Emissive + 
            ColorDiffuse  * Material.Diffuse  + 
            ColorSpecular * Material.Specular +
            ColorEnviomental * Material.Ambient+
            ColorEmissive +
            Brightness;
+
 }
 
+struct SHADOW_OUTPUT
+{
+    float4 Position : SV_Position;
+};
 
+SHADOW_OUTPUT VSShadow(VERTEX_INPUT input)
+{
+    SHADOW_OUTPUT Output;
+    Output.Position = mul(input.Position, mul(mul(World, LightView), LightProjection));
 
+    return Output;
+}
+
+float PSShadow(SHADOW_OUTPUT Input) : SV_Target
+{
+    return Input.Position.z;
+}

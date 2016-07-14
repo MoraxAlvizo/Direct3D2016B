@@ -16,13 +16,20 @@ protected:
 	ID3D11DepthStencilState* m_pDSSMask;
 	ID3D11DepthStencilState* m_pDSSDrawOnMask;
 	ID3D11DepthStencilState* m_pDSSDraw;
+	
+	//Soporte para Sombres
+	ID3D11ShaderResourceView* m_pSRVShadowMap;
+	ID3D11DepthStencilView*   m_pDSVShadowMap;  // Para producir buffer de profundidad
+	ID3D11RenderTargetView*   m_pRTVShadowMap;   // Para producir mapa de sombras
+	ID3D11VertexShader*		  m_pVSShadow;
+	ID3D11PixelShader*		  m_pPSShadow;
 
 #define PAINTER_DRAW_MARK		0x01
 #define PAINTER_DRAW_ON_MARK	0x02
 #define PAINTER_DRAW			0x04
 
 public:
-
+	void ClearShadow();
 	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTV = pRTV; }
 	ID3D11RasterizerState* GetDrawRHRState() { return m_pDrawRH; }
 	ID3D11RasterizerState* GetDrawLHRState() { return m_pDrawLH; }
@@ -73,13 +80,18 @@ public:
 #define MAPPING_ENVIROMENTAL_FAST	0x040
 #define MAPPING_NORMAL_TRUE			0x080
 #define MAPPING_EMISSIVE			0x100
+#define MAPPING_SHADOW				0x200
 
+#define SHADOW_MAP_RESOLUTION	1024 // resolucion de textura
 		MATRIX4D World;
 		MATRIX4D View;
 		MATRIX4D Projection;
+		MATRIX4D LightView;
+		MATRIX4D LightProjection;
 		VECTOR4D Brightness;
 		MATERIAL Material;
 		LIGHT lights[8];
+
 	}m_Params;
 	struct VERTEX
 	{
@@ -99,7 +111,8 @@ public:
 		unsigned long nVertices,
 		unsigned long *pIndices,
 		unsigned long nIndices, 
-		unsigned long flags);
+		unsigned long flags, 
+		bool bShadow = false);
 
 	
 	~CDXBasicPainter();

@@ -11,6 +11,11 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	m_pCB = NULL;
 	m_pRTV = NULL;
 	m_pDrawLH = m_pDrawRH = NULL;
+	m_pSRVShadowMap= NULL;
+	m_pDSVShadowMap = NULL;  // Para producir buffer de profundidad
+	m_pRTVShadowMap = NULL;   // Para producir mapa de sombras
+	m_pVSShadow = NULL;
+	m_pPSShadow = NULL;
 	m_Params.World = m_Params.View = m_Params.Projection = Identity();
 	VECTOR4D Zero = { 0, 0, 0, 0 };
 	m_Params.Brightness = Zero;
@@ -19,7 +24,7 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 		{1,1,1,1},  // Ambient
 		{1,1,1,1},	// Diffuse
 		{1,1,1,1},	// Specular
-		{0,0,0,0},	// Emissive
+		{0 ,0,0,0},	// Emissive
 		{100,0,0,0}  // Power
 	};
 	m_Params.Material = MatDef;
@@ -37,7 +42,7 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	};
 
 	LIGHT LightDef2 = {
-		{ LIGHT_ON, LIGHT_SPOT,0,0 },  // Flags
+		{ 0, LIGHT_SPOT,0,0 },  // Flags
 		{ 0.1,0.1,0.1,0 },				// Ambient 
 		{ 5,5,5,5 },			// Diffuse
 		{ 5,5,5,0 },					// Specular
@@ -48,7 +53,7 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	};
 
 	LIGHT LightDef3 = {
-		{ LIGHT_ON, LIGHT_POINT,0,0 },	// Flags
+		{ 0, LIGHT_POINT,0,0 },	// Flags
 		{ 0.1,0.1,0.1,0 },				// Ambient 
 		{ 1,1,1,1 },					// Diffuse
 		{ 1,1,0.7,0 },					// Specular
@@ -137,6 +142,12 @@ bool CDXBasicPainter::Initialize()
 		SAFE_RELEASE(m_pIL);
 		return false;
 	}
+
+	m_pVSShadow = m_pManager->CompileVertexShader(
+		L"..\\Shaders\\BasicShader.hlsl", "VSShadow", &pVSCode);
+	SAFE_RELEASE(pVSCode);
+	m_pPSShadow = m_pManager->CompilePixelShader(
+		L"..\\Shaders\\BasicShader.hlsl", "PSShadow");
 	D3D11_BUFFER_DESC dbd;
 	memset(&dbd, 0, sizeof(dbd));
 	dbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -202,6 +213,32 @@ bool CDXBasicPainter::Initialize()
 	// Limpiar la profuncidad
 	// Dibujar espejo
 	// Dibujar mundo real
+	
+	// Recursos para sombras
+	ID3D11Texture2D* pMemory = NULL;
+	D3D11_TEXTURE2D_DESC dtd;
+	memset(&dtd, 0, sizeof(dtd));
+	dtd.ArraySize = 1;
+	dtd.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	dtd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+	dtd.MipLevels = 1;
+	dtd.SampleDesc.Count = 1;
+	dtd.Usage = D3D11_USAGE_DEFAULT;
+	dtd.Width = SHADOW_MAP_RESOLUTION;
+	dtd.Height = SHADOW_MAP_RESOLUTION;
+
+	m_pManager->GetDevice()->CreateTexture2D(&dtd, NULL, &pMemory);
+	m_pManager->GetDevice()->CreateDepthStencilView(pMemory, NULL, &m_pDSVShadowMap);
+
+	SAFE_RELEASE(pMemory);
+
+	dtd.Format = DXGI_FORMAT_R32_FLOAT;
+	dtd.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	m_pManager->GetDevice()->CreateTexture2D(&dtd, NULL, &pMemory);
+	m_pManager->GetDevice()->CreateShaderResourceView(pMemory, NULL, &m_pSRVShadowMap);
+	m_pManager->GetDevice()->CreateRenderTargetView(pMemory, NULL, &m_pRTVShadowMap);
+	
+	SAFE_RELEASE(pMemory);
 	return true;
 }
 CDXBasicPainter::~CDXBasicPainter()
@@ -209,8 +246,15 @@ CDXBasicPainter::~CDXBasicPainter()
 	Uninitialize();
 }
 
+void CDXBasicPainter::ClearShadow()
+{
+	m_pManager->GetContext()->ClearDepthStencilView(m_pDSVShadowMap, D3D11_CLEAR_DEPTH, 1.0f, 0);
+	VECTOR4D One = { 1,1,1,1 };
+	m_pManager->GetContext()->ClearRenderTargetView(m_pRTVShadowMap, (float*)&One);
+}
+
 void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
-	unsigned long* pIndices, unsigned long nIndices, unsigned long flags)
+	unsigned long* pIndices, unsigned long nIndices, unsigned long flags, bool bShadow )
 {
 	//1.- Crear los buffer de vértices e indices en el GPU.
 	ID3D11Buffer  *pVB = NULL, *pIB = NULL;
@@ -240,8 +284,8 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	//2.- Instalar el VS , PS , IL
 	m_pManager->GetContext()->IASetInputLayout(m_pIL);
 
-	m_pManager->GetContext()->VSSetShader(m_pVS, 0, 0);
-	m_pManager->GetContext()->PSSetShader(m_pPS, 0, 0);
+	m_pManager->GetContext()->VSSetShader(bShadow ? m_pVSShadow: m_pVS, 0, 0);
+	m_pManager->GetContext()->PSSetShader(bShadow ? m_pPSShadow: m_pPS, 0, 0);
 	//3.- Definir el puerto de visión y la topologia
 	// a dibujar
 	D3D11_VIEWPORT ViewPort;
@@ -250,8 +294,8 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	m_pManager->GetSwapChain()->GetBuffer(0
 		, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 	pBackBuffer->GetDesc(&dtd);
-	ViewPort.Width = (float)dtd.Width;
-	ViewPort.Height = (float)dtd.Height;
+	ViewPort.Width = !bShadow? (float)dtd.Width: SHADOW_MAP_RESOLUTION;
+	ViewPort.Height = !bShadow? (float)dtd.Height: SHADOW_MAP_RESOLUTION;
 	ViewPort.TopLeftX = 0;
 	ViewPort.TopLeftY = 0;
 	ViewPort.MaxDepth = 1.0f;
@@ -267,7 +311,11 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDrawOnMask, 0x01);
 	else
 		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDraw, 0x01);
-	m_pManager->GetContext()->OMSetRenderTargets(1, &m_pRTV, m_pManager->GetMainDSV());
+
+	m_pManager->GetContext()->OMSetRenderTargets(1, bShadow ? &m_pRTVShadowMap : &m_pRTV, bShadow ? m_pDSVShadowMap: m_pManager->GetMainDSV());
+
+	if (!bShadow)
+		m_pManager->GetContext()->PSSetShaderResources(5, 1, &m_pSRVShadowMap);
 	SAFE_RELEASE(pBackBuffer);
 
 	//5.- Dibujar
@@ -284,7 +332,8 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	Temp.World = Transpose(m_Params.World);
 	Temp.View = Transpose(m_Params.View);
 	Temp.Projection = Transpose(m_Params.Projection);
-
+	Temp.LightProjection = Transpose(m_Params.LightProjection);
+	Temp.LightView = Transpose(m_Params.LightView);
 	for (int i = 0; i < 8; i++)
 	{
 		Temp.lights[i].Position = m_Params.lights[i].Position*m_Params.View;
