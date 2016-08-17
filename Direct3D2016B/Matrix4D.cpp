@@ -76,12 +76,12 @@ VECTOR4D Cross3(VECTOR4D&A, VECTOR4D &B)
 	R.w = 0;
 	return R;
 }
-float    Dot(VECTOR4D& A, VECTOR4D& B)
+float Dot(VECTOR4D& A, VECTOR4D& B)
 {
 	return  A.x*B.x+ A.y*B.y+ A.z*B.z+ A.w*B.w ;
 }
 #include <math.h>
-float    Magnity(VECTOR4D& A)
+float Magnity(VECTOR4D& A)
 {
 	return sqrtf(Dot(A, A));
 }

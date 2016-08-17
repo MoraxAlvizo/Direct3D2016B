@@ -11,13 +11,23 @@ D3D11_INPUT_ELEMENT_DESC CFX::VERTEX::InputLayout[] =
 	{ "COLOR",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,32,D3D11_INPUT_PER_VERTEX_DATA,0 }
 };
 
+#define M_PI 3.14159265358979323846
+VECTOR4D Sphere(float u, float v)
+{
+	float r = 1.f;
+	VECTOR4D v1;
+	v1.x = r*cos(2 * M_PI *u)*sin(M_PI *v);
+	v1.y = r*sin(2 * M_PI*u)*sin(M_PI*v);
+	v1.z = r*cos(M_PI*v);
+	v1.w = 1;
+	return v1;
+}
 
 CFX::CFX(CDXManager* pOwner)
 {
 	m_pOwner = pOwner;
 	m_pCB = NULL;
 	m_pRTVOutput = NULL;
-	m_pVS = NULL;
 	m_pIL = NULL;
 
 
@@ -44,6 +54,18 @@ CFX::CFX(CDXManager* pOwner)
 	m_lIndicesFrame[3] = 3;
 	m_lIndicesFrame[4] = 1;
 	m_lIndicesFrame[5] = 2;
+#define SURFACE_RESOLUTION 5
+	m_Sphere.BuildParametricSurface(SURFACE_RESOLUTION, SURFACE_RESOLUTION, 0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1), Sphere);
+
+	m_vSphere.resize(m_Sphere.m_Vertices.size());
+
+	for (unsigned long i = 0; i < m_Sphere.m_Vertices.size(); i++)
+		m_vSphere[i].Position = m_Sphere.m_Vertices[i].Position;
+
+	m_lIndicesSphere.resize(m_Sphere.m_Indices.size());
+
+	for (unsigned long i = 0; i < m_Sphere.m_Indices.size(); i++)
+		m_lIndicesSphere[i] = m_Sphere.m_Indices[i];
 }
 
 
@@ -55,24 +77,41 @@ bool CFX::Initialize()
 {
 	Uninitialize();
 	ID3D10Blob* pVSCode = NULL;
-	m_pVS = m_pOwner->CompileVertexShader(
+	ID3D11VertexShader *pVS = m_pOwner->CompileVertexShader(
 		L"..\\Shaders\\FX.hlsl", "VSMain", &pVSCode);
-	if (!m_pVS)
+	if (!pVS)
 	{
 		SAFE_RELEASE(pVSCode);
 		return false;
 	}
+
+	m_vecVS.push_back(pVS);
+
 	HRESULT hr =
 		m_pOwner->GetDevice()->CreateInputLayout(
 			VERTEX::InputLayout,
 			sizeof(VERTEX::InputLayout) / sizeof(D3D11_INPUT_ELEMENT_DESC),
 			pVSCode->GetBufferPointer(), pVSCode->GetBufferSize(), &m_pIL);
 	SAFE_RELEASE(pVSCode);
+
 	if (FAILED(hr))
 	{
-		SAFE_RELEASE(m_pVS);
+		SAFE_RELEASE(pVS);
 		return false;
 	}
+
+	pVS = m_pOwner->CompileVertexShader(
+		L"..\\Shaders\\FX.hlsl", "VSSky", &pVSCode);
+	if (!pVS)
+	{
+		SAFE_RELEASE(pVSCode);
+		return false;
+	}
+	SAFE_RELEASE(pVSCode);
+
+	m_vecVS.push_back(pVS);
+
+
 
 	char* Effects[] = { "PSEdgeDetect" ,			//0
 						"PSRadianBlur",				//1
@@ -80,7 +119,8 @@ bool CFX::Initialize()
 						"PSGaussHorizontalBlur",	//3
 						"PSGaussVerticalBlur",		//4
 						"PSBrightPass",				//5 
-						"PSMerged"					//6
+						"PSMerged",					//6
+						"PSSky"						//7
 						};				
 	for (auto FXName : Effects)
 	{
@@ -88,7 +128,6 @@ bool CFX::Initialize()
 			L"..\\Shaders\\FX.hlsl", FXName);
 		if (!pPS)
 		{
-			SAFE_RELEASE(m_pVS);
 			SAFE_RELEASE(m_pIL);
 			for (unsigned long i = 0; i < m_vecFX.size(); i++)
 				SAFE_RELEASE(m_vecFX[i]);
@@ -106,12 +145,33 @@ bool CFX::Initialize()
 	dbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	dbd.Usage = D3D11_USAGE_DYNAMIC;
 	m_pOwner->GetDevice()->CreateBuffer(&dbd, 0, &m_pCB);
+
+	D3D11_DEPTH_STENCIL_DESC ddsd;
+
+	ddsd.DepthEnable = true;
+	ddsd.StencilEnable = true;
+	ddsd.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	ddsd.DepthFunc = D3D11_COMPARISON_LESS;
+	ddsd.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK;
+	ddsd.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK;
+	ddsd.FrontFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	ddsd.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	ddsd.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+
+	ddsd.BackFace.StencilPassOp = D3D11_STENCIL_OP_REPLACE;
+	ddsd.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+	ddsd.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP;
+
+	ddsd.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+	ddsd.BackFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+
+	m_pOwner->GetDevice()->CreateDepthStencilState(&ddsd, &m_pDSSDrawOnNoMask);
 	return true;
 }
-void CFX::Process(unsigned long idEffect, float w, float h)
+void CFX::Process(unsigned long vsEffect, unsigned long psEffect, float w, float h)
 {
-	unsigned long nVertices = 4;
-	unsigned long nIndices = 6;
+	unsigned long nVertices = psEffect == 7 ? m_vSphere.size() :4;
+	unsigned long nIndices = psEffect == 7 ? m_lIndicesSphere.size() :6;
 
 	//1.- Crear los buffer de vértices e indices en el GPU.
 	ID3D11Buffer  *pVB = NULL, *pIB = NULL;
@@ -128,20 +188,21 @@ void CFX::Process(unsigned long idEffect, float w, float h)
 	*/
 	dbd.Usage = D3D11_USAGE_IMMUTABLE;
 	D3D11_SUBRESOURCE_DATA dsd;
-	dsd.pSysMem = m_vFrame;
+	dsd.pSysMem = psEffect == 7? &m_vSphere[0] : m_vFrame;
 	dsd.SysMemPitch = 0;
 	dsd.SysMemSlicePitch = 0;
 	m_pOwner->GetDevice()->CreateBuffer(
 		&dbd, &dsd, &pVB);
-	dsd.pSysMem = m_lIndicesFrame;
+
+	dsd.pSysMem = psEffect == 7 ? &m_lIndicesSphere[0] : m_lIndicesFrame;
 	dbd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	dbd.ByteWidth = sizeof(unsigned long)*nIndices;
 	m_pOwner->GetDevice()->CreateBuffer(
 		&dbd, &dsd, &pIB);
 	//2.- Instalar el VS , PS , IL
 	m_pOwner->GetContext()->IASetInputLayout(m_pIL);
-	m_pOwner->GetContext()->VSSetShader(m_pVS, 0, 0);
-	m_pOwner->GetContext()->PSSetShader(m_vecFX[idEffect], 0, 0);
+	m_pOwner->GetContext()->VSSetShader(m_vecVS[vsEffect], 0, 0);
+	m_pOwner->GetContext()->PSSetShader(m_vecFX[psEffect], 0, 0);
 	//3.- Definir el puerto de visión y la topologia
 	// a dibujar
 	
@@ -157,7 +218,9 @@ void CFX::Process(unsigned long idEffect, float w, float h)
 	m_pOwner->GetContext()->IASetPrimitiveTopology(
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	//4.- Configurar la salida. aqui lo omitimos por que ya fue seteado 
-	m_pOwner->GetContext()->OMSetRenderTargets(1, &m_pRTVOutput, 0);
+	if(psEffect == 7)
+		m_pOwner->GetContext()->OMSetDepthStencilState(m_pDSSDrawOnNoMask, 0x01);
+	m_pOwner->GetContext()->OMSetRenderTargets(1, &m_pRTVOutput, psEffect == 7 ? m_pOwner->GetMainDSV():0);
 
 	//4.1 Setear el Render Target anterior ahora como textura
 	m_pOwner->GetContext()->PSSetShaderResources(0, 1, &m_pSRVInput0);
@@ -175,6 +238,7 @@ void CFX::Process(unsigned long idEffect, float w, float h)
 	m_pOwner->GetContext()->Map(m_pCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
 	PARAMS Temp = m_Params;
 
+	Temp.WVP = Transpose(m_Params.WVP);
 	Temp.Delta = { 1 / (float)w,1 / (float)h,0,0 };	
 
 	memcpy(ms.pData, &Temp, sizeof(PARAMS));
@@ -189,7 +253,9 @@ void CFX::Process(unsigned long idEffect, float w, float h)
 void CFX::Uninitialize()
 {
 	SAFE_RELEASE(m_pIL);
-	SAFE_RELEASE(m_pVS);
+	for (unsigned long i = 0; i < m_vecVS.size(); i++)
+		SAFE_RELEASE(m_vecVS[i]);
+	m_vecVS.clear();
 	for (unsigned long i = 0; i < m_vecFX.size(); i++)
 		SAFE_RELEASE(m_vecFX[i]);
 	m_vecFX.clear();

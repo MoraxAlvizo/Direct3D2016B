@@ -32,6 +32,7 @@ cbuffer PARAMS
     float4 RadialBlur;      // x:fuerza
     float4 DirectionalBlur; // xy direccion, z: fuerza
     float4 Umbral;
+    matrix WVP;
     // Add here more params as requiered
 };
 
@@ -39,10 +40,17 @@ Texture2D Frame : register(t0);
 Texture2D BrightPassM : register(t1);
 Texture2D BrightPassC : register(t2);
 Texture2D BrightPassO : register(t3);
-
-
+TextureCube CubeMap : register(t4);
 
 SamplerState Sampler : register(s0);
+SamplerState TriLinearSam : register(s1)
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Wrap;
+    AddressV = Wrap;
+};
+
+
 float4 PSEdgeDetect(VERTEX_OUTPUT Input) : SV_Target
 {
     float4 left, right, up, down;
@@ -128,5 +136,26 @@ float4 PSMerged(VERTEX_OUTPUT Input) : SV_Target
     ColorM = (ColorC + ColorM) - (ColorC * ColorM);
 
     return (ColorA + ColorM) - (ColorA * ColorM);
-    //return ColorC;
+}
+
+
+struct VertexOut
+{
+    float4 PosH : SV_POSITION;
+    float4 PosL : POSITION;
+};
+
+VertexOut VSSky(VERTEX_INPUT vin)
+{
+    VertexOut vout;
+    // Set z = w so that z/w = 1 (i.e., skydome always on far plane).
+    vout.PosH = mul(vin.Position, WVP).xyzw;
+    // Use local vertex position as cubemap lookup vector.
+    vout.PosL = vin.Position;
+    return vout;
+}
+
+float4 PSSky(VertexOut pin) : SV_Target
+{
+    return CubeMap.Sample(TriLinearSam, pin.PosL.xzy);
 }

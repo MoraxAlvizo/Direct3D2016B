@@ -13,6 +13,7 @@
 #include <Windowsx.h>
 #include <timeapi.h>
 #include <sstream>
+#include "DDSTextureLoader.h"
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -22,12 +23,14 @@ TCHAR szTitle[MAX_LOADSTRING];					// The title bar text
 TCHAR szWindowClass[MAX_LOADSTRING];			// the main window class name
 CDXManager g_Manager;
 CDXBasicPainter g_Painter(&g_Manager);
-unsigned long g_lFlagsPainter = 0;//MAPPING_NORMAL_TRUE | MAPPING_DIFFUSE;
+unsigned long g_lFlagsPainter = 0;//FOG_ENABLE;//MAPPING_NORMAL_TRUE | MAPPING_DIFFUSE;
+bool g_bSky = false;
 CFX g_FX(&g_Manager);
 CImageBMP*      g_pSysTexture; //CPU
 ID3D11Texture2D* g_pTexture;   //GPU
 ID3D11Texture2D* g_pNormalMapTrue; 
 ID3D11Texture2D* g_pEmissiveMap;
+ID3D11Texture2D* g_pCubeMap;
 HMENU g_hMenu, g_hSubMenu;
 
 // Render Targets
@@ -46,6 +49,8 @@ enum
 	BP_OCTAVO,
 	BP_SIZE
 };
+
+ID3D11ShaderResourceView* g_pSRVCubeMap;
 
 
 ID3D11Texture2D* g_pRTBrightPass[BP_SIZE];			// Memoria
@@ -98,16 +103,19 @@ int mouseX, mouseY;
 enum
 {
 	ID_MAPPING_DIFFUSE = 200,
-	ID_MAPPING_NORMAL	,
+	ID_MAPPING_NORMAL,
 	ID_MAPPING_ENVIROMENTAL_FAST,
+	ID_MAPPING_ENVIROMENTAL_SKY,
 	ID_MAPPING_NORMAL_TRUE,
 	ID_MAPPING_EMISSIVE,
 	ID_MAPPING_SHADOW,
+	ID_SKY_EFFECT,
+	ID_FLOG_ENABLE,
 	ID_FX_EDGE_DETECT,
 	ID_FX_RADIAN_BLUR, 
 	ID_FX_DIRECTIONAL_BLUR, 
 	ID_FX_GAUSS_BLUR , 
-	ID_FX_BLOOM_EFFECT, 
+	ID_FX_BLOOM_EFFECT,
 	ID_FX_NONE,
 	ID_LIGHT_0,
 	ID_LIGHT_1,
@@ -132,12 +140,18 @@ void CreateMainMenu(HWND hWnd)
 	CheckMenuItem(g_hSubMenu, ID_MAPPING_NORMAL, MF_UNCHECKED);
 	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_ENVIROMENTAL_FAST, L"&MAPPING ENVIROMENTAL FAST");
 	CheckMenuItem(g_hSubMenu, ID_MAPPING_ENVIROMENTAL_FAST, MF_UNCHECKED);
+	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_ENVIROMENTAL_SKY, L"&MAPPING ENVIROMENTAL SKY");
+	CheckMenuItem(g_hSubMenu, ID_MAPPING_ENVIROMENTAL_SKY, MF_UNCHECKED);
 	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_NORMAL_TRUE, L"&MAPPING NORMAL TRUE");
 	CheckMenuItem(g_hSubMenu, ID_MAPPING_NORMAL_TRUE, MF_UNCHECKED);
 	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_EMISSIVE, L"&MAPPING EMISSIVE");
 	CheckMenuItem(g_hSubMenu, ID_MAPPING_EMISSIVE, MF_UNCHECKED);
 	AppendMenu(g_hSubMenu, MF_STRING, ID_MAPPING_SHADOW, L"&MAPPING SHADOW");
 	CheckMenuItem(g_hSubMenu, ID_MAPPING_SHADOW, MF_UNCHECKED);
+	AppendMenu(g_hSubMenu, MF_STRING, ID_SKY_EFFECT, L"&SKY");
+	CheckMenuItem(g_hSubMenu, ID_SKY_EFFECT, MF_UNCHECKED);
+	AppendMenu(g_hSubMenu, MF_STRING, ID_FLOG_ENABLE, L"&Flog");
+	CheckMenuItem(g_hSubMenu, ID_FLOG_ENABLE, MF_UNCHECKED);
 	AppendMenu(g_hMenu, MF_STRING | MF_POPUP, (UINT)g_hSubMenu, L"&3D Effects");
 
 
@@ -270,6 +284,9 @@ void UpdateCamera()
 
 	g_Painter.m_Params.lights[1].Position = EyePos;
 	g_Painter.m_Params.lights[1].Direction = ZDir;
+
+	// Set camara pos in params 
+	g_Painter.m_Params.CameraPosition = EyePos;
 	float speed = .02;
 
 	if (g_bTurnLeft)
@@ -566,6 +583,26 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    CImageBMP::DestroyBitmap(pImage);
 
+   pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\cubemap.bmp", NULL);
+
+   if (!pImage)
+   {
+	   MessageBox(NULL, L"No se pudo cargar textura desde archivo",
+		   L"Verificar recursos sombreadores", MB_ICONERROR);
+	   return FALSE;
+   }
+
+   g_pCubeMap = pImage->CreateTexture(&g_Manager);
+
+   if (!g_pCubeMap)
+   {
+	   MessageBox(NULL, L"No se pudo cargar textura al GPU",
+		   L"Verificar recursos sombreadores", MB_ICONERROR);
+	   return FALSE;
+   }
+
+   CImageBMP::DestroyBitmap(pImage);
+
    // Init FPS
    g_iFrames = 0;
    g_dStarttime = GetTickCount();
@@ -657,6 +694,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			else
 				CheckMenuItem(g_hMenu, ID_MAPPING_ENVIROMENTAL_FAST, MF_UNCHECKED);
 			break;
+		case ID_MAPPING_ENVIROMENTAL_SKY:
+			g_lFlagsPainter ^= MAPPING_ENVIROMENTAL_SKY;
+			if (g_lFlagsPainter & MAPPING_ENVIROMENTAL_SKY)
+				CheckMenuItem(g_hMenu, ID_MAPPING_ENVIROMENTAL_SKY, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_MAPPING_ENVIROMENTAL_SKY, MF_UNCHECKED);
+			break;
 		case ID_MAPPING_NORMAL_TRUE:
 			g_lFlagsPainter ^= MAPPING_NORMAL_TRUE;
 			if (g_lFlagsPainter & MAPPING_NORMAL_TRUE)
@@ -677,6 +721,25 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				CheckMenuItem(g_hMenu, ID_MAPPING_SHADOW, MF_CHECKED);
 			else
 				CheckMenuItem(g_hMenu, ID_MAPPING_SHADOW, MF_UNCHECKED);
+			break;
+		case ID_FLOG_ENABLE:
+			g_lFlagsPainter ^= FOG_ENABLE;
+			if (g_lFlagsPainter & FOG_ENABLE)
+				CheckMenuItem(g_hMenu, ID_MAPPING_SHADOW, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_MAPPING_SHADOW, MF_UNCHECKED);
+			break;
+		case ID_SKY_EFFECT:
+			if (g_bSky)
+			{
+				g_bSky = false;
+				CheckMenuItem(g_hMenu, ID_SKY_EFFECT, MF_UNCHECKED);
+			}	
+			else
+			{
+				g_bSky = true;
+				CheckMenuItem(g_hMenu, ID_SKY_EFFECT, MF_CHECKED);
+			}
 			break;
 		case ID_FX_EDGE_DETECT:
 			CheckMenuRadioItem(g_hMenu, ID_FX_EDGE_DETECT, ID_FX_NONE,
@@ -780,6 +843,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (g_Manager.GetSwapChain())
 		{
 			// Crear Render Target Auxiliar
+			if (!g_pSRVCubeMap)
+			{
+				DirectX::CreateDDSTextureFromFile(g_Manager.GetDevice(), L"..\\Assets\\desertcube1024.dds", NULL, &g_pSRVCubeMap);
+			}
 			
 			ID3D11Texture2D* pBackBuffer = 0;
 			g_Manager.GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
@@ -882,9 +949,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Manager.GetDevice()->CreateShaderResourceView(g_pEmissiveMap, NULL, &pSRVEmissiveMap);
 			g_Manager.GetContext()->PSSetShaderResources(4, 1, &pSRVEmissiveMap);
 
+			// Set cube texture 
+			g_Manager.GetContext()->PSSetShaderResources(6, 1, &g_pSRVCubeMap);
+
 			VECTOR4D Plane = { 0,0,1,5 };
 			MATRIX4D Mirror =  ReflectionMatrix(Plane);
 			MATRIX4D OldView = g_Painter.m_Params.View;
+
+			/////////////////////////////////////////////////////////////////
+
+			//////////////////////////////////////////////////////////////////
 
 			// Draw plane to mask 
 			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
@@ -922,13 +996,23 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW);
 			
 			//g_FX.SetRenderTarget(g_Manager.GetMainRTV());
+			if (g_bSky)
+			{
+				
+				g_Manager.GetContext()->PSSetShaderResources(4, 1, &g_pSRVCubeMap);
+				g_FX.m_Params.WVP = Scaling(50, 50, 50) *g_View * g_Projection *AC;  
+				g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
+				g_FX.SetRenderTarget(g_lFXIDEffect != ID_FX_NONE ? g_pRTV0 : g_Manager.GetMainRTV());
+				g_FX.Process(1, 7, g_iWidth, g_iHeight);
+
+			}
 			switch (g_lFXIDEffect)
 			{
 			case ID_FX_EDGE_DETECT:
 			{
 				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
 				g_FX.SetInput(g_pSRV0);
-				g_FX.Process(0, g_iWidth, g_iHeight);
+				g_FX.Process(0,0, g_iWidth, g_iHeight);
 			}
 			break;
 			case ID_FX_RADIAN_BLUR:
@@ -936,7 +1020,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
 				g_FX.SetInput(g_pSRV0);
 				g_FX.m_Params.RadialBlur.x = .01;
-				g_FX.Process(1, g_iWidth, g_iHeight);
+				g_FX.Process(0,1, g_iWidth, g_iHeight);
 			}
 			break;
 			case ID_FX_DIRECTIONAL_BLUR:
@@ -944,7 +1028,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
 				g_FX.SetInput(g_pSRV0);
 				g_FX.m_Params.DirectionalBlur = { 1,0,.01f,0 };
-				g_FX.Process(2, g_iWidth, g_iHeight);
+				g_FX.Process(0,2, g_iWidth, g_iHeight);
 			}
 			break;
 			case ID_FX_GAUSS_BLUR:
@@ -954,14 +1038,14 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				g_FX.m_Params.DirectionalBlur.x = cos(theta);
 				g_FX.m_Params.DirectionalBlur.y = sin(theta);
 				g_FX.m_Params.DirectionalBlur.z = 0.005;
-				g_FX.Process(3,g_iWidth, g_iHeight);
+				g_FX.Process(0,3,g_iWidth, g_iHeight);
 
 				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
 				g_FX.SetInput(g_pSRV1);
 				g_FX.m_Params.DirectionalBlur.x = cos(theta);
 				g_FX.m_Params.DirectionalBlur.y = sin(theta);
 				g_FX.m_Params.DirectionalBlur.z = 0.005;
-				g_FX.Process(4, g_iWidth, g_iHeight);
+				g_FX.Process(0,4, g_iWidth, g_iHeight);
 			}
 			break;
 			case ID_FX_BLOOM_EFFECT:
@@ -976,16 +1060,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 					g_FX.SetInput(g_pSRV0);
 					g_FX.SetInputBrightPassed(NULL);
 					g_FX.m_Params.Umbral.x = .85;
-					g_FX.Process(5, (float)w, (float)h);
+					g_FX.Process(0,5, (float)w, (float)h);
 				}
 
 				g_FX.SetRenderTarget(g_Manager.GetMainRTV());
 				g_FX.SetInput(g_pSRV0);
 				g_FX.SetInputBrightPassed(g_pSRVBrightPass);
-				g_FX.Process(6, g_iWidth, g_iHeight);
+				g_FX.Process(0,6, g_iWidth, g_iHeight);
 
 			}
 			break;
+
 			default:
 				break;
 			}
@@ -1008,6 +1093,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				SAFE_RELEASE(g_pRTVBrightPass[i]);
 				SAFE_RELEASE(g_pRTBrightPass[i]);
 			}
+
+
 		}
 		ValidateRect(hWnd, NULL);
 		break;

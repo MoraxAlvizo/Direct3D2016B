@@ -31,6 +31,8 @@ struct VERTEX_OUTPUT
     float4 A:NORMAL1, B:NORMAL2, C:NORMAL3;
     float4 TexCoord : TEXCOORD;
     float4 LightPosition : POSITION1;
+    float4 ReflectionVector : TEXCOORD1;
+    float4 FogAmount : TEXCOORD2;
 };
 
 struct MATERIAL
@@ -73,6 +75,8 @@ struct LIGHT
 #define MAPPING_NORMAL_TRUE			0x080
 #define MAPPING_EMISSIVE			0x100
 #define MAPPING_SHADOW				0x200
+#define MAPPING_ENVIROMENTAL_SKY	0x400
+#define FOG_ENABLE              	0x800
 
 cbuffer PARAMS:register(b0)
 {
@@ -83,6 +87,7 @@ cbuffer PARAMS:register(b0)
     matrix LightView;
     matrix LightProjection;
     float4 Brightness; //Pixel Shader Brightness control
+    float4 CameraPosition;
     MATERIAL Material;
     LIGHT lights[8];
 };
@@ -113,6 +118,20 @@ VERTEX_OUTPUT VSMain(VERTEX_INPUT Input)
     Output.C = float4(T.z, B.z, Output.Normal.z, 0);
 
     Output.LightPosition = mul(Input.Position, mul(mul(World, LightView), LightProjection)  );
+
+    // Sky env 
+    float4 worldPosition = mul(Input.Position, World);
+    float4 incident = normalize(worldPosition - CameraPosition);
+    float4 normal = normalize(mul(float4(Input.Normal), World));
+
+    Output.ReflectionVector = reflect(incident, normal);
+
+    if (Flags.x & FOG_ENABLE)
+    {
+        float4 viewDirection = CameraPosition - worldPosition;
+        Output.FogAmount = saturate((length(viewDirection) - /*fogStart*/10.0f) / (20.0f /*fogRange*/));
+    }
+        
      
     return Output;
 
@@ -124,7 +143,16 @@ Texture2D EnviromentalMap : register(t2);
 Texture2D NormalMapTrue : register(t3);
 Texture2D EmissiveMap : register(t4);
 Texture2D ShadowMap : register(t5);
+TextureCube SkyEnviromentalMap : register(t6);
+
+
 SamplerState Sampler : register(s0);
+SamplerState TriLinearSam : register(s1)
+{
+    Filter = MIN_MAG_MIP_LINEAR;
+    AddressU = Wrap;
+    AddressV = Wrap;
+};
 
 float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
 {
@@ -133,6 +161,7 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     float4 ColorEnviomental = 0;
     float4 ColorSpecular = 0;
     float4 ColorEmissive = 0;
+    float4 ColorOutput = 0;
     float4 N = normalize(Input.Normal);
 
 
@@ -160,6 +189,10 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     if (Flags.x & MAPPING_ENVIROMENTAL_FAST)
     {
         ColorEnviomental = EnviromentalMap.Sample(Sampler, (N.xy * float2(0.5, -0.5) + 0.5)  );
+    }
+    if (Flags.x & MAPPING_ENVIROMENTAL_SKY)
+    {
+        ColorEnviomental = SkyEnviromentalMap.Sample(TriLinearSam, Input.ReflectionVector.xzy);
     }
 
     float Shadowed = 1;
@@ -258,14 +291,20 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
 
     if (Flags.x & MAPPING_DIFFUSE)
         ColorDiffuse *= Diffuse.Sample(Sampler, Input.TexCoord.xy);
-
     
-    return Material.Emissive + 
+    ColorOutput  = Material.Emissive +
            ColorDiffuse  * Material.Diffuse  + 
            ColorSpecular * Material.Specular +
            ColorEnviomental * Material.Ambient+
            ColorEmissive +
            Brightness;
+
+    if (Flags.x & FOG_ENABLE)
+    {
+        ColorOutput = lerp(ColorOutput, float4(0, 0, .1, 0), Input.FogAmount);
+    }
+
+    return ColorOutput;
 
 }
 

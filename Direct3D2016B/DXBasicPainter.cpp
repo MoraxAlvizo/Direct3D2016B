@@ -205,6 +205,11 @@ bool CDXBasicPainter::Initialize()
 
 	m_pManager->GetDevice()->CreateDepthStencilState(&ddsd, &m_pDSSDrawOnMask);
 
+	ddsd.FrontFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+	ddsd.BackFace.StencilFunc = D3D11_COMPARISON_NOT_EQUAL;
+
+	m_pManager->GetDevice()->CreateDepthStencilState(&ddsd, &m_pDSSDrawOnNoMask);
+
 	ddsd.StencilEnable = false;
 
 	m_pManager->GetDevice()->CreateDepthStencilState(&ddsd, &m_pDSSDraw);
@@ -309,6 +314,8 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSMask, 0x01);
 	else if(flags & PAINTER_DRAW_ON_MARK)
 		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDrawOnMask, 0x01);
+	else if (flags & PAINTER_DRAW_ON_NOT_MARK)
+		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDrawOnNoMask, 0x01);
 	else
 		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDraw, 0x01);
 

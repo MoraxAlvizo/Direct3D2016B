@@ -14,11 +14,13 @@ class CFX
 	CDXManager* m_pOwner;
 	ID3D11InputLayout* m_pIL;
 	ID3D11Buffer* m_pCB;
-	ID3D11VertexShader* m_pVS;
+	vector<ID3D11VertexShader*> m_vecVS;
 	vector<ID3D11PixelShader*> m_vecFX;
 	ID3D11ShaderResourceView* m_pSRVInput0;
 	ID3D11ShaderResourceView** m_pSRVBrightPassed;
 	ID3D11RenderTargetView * m_pRTVOutput;
+	CMeshMathSurface m_Sphere;
+	ID3D11DepthStencilState* m_pDSSDrawOnNoMask;
 
 	struct VERTEX
 	{
@@ -31,6 +33,9 @@ class CFX
 
 	VERTEX m_vFrame[4];
 	unsigned long   m_lIndicesFrame[6];
+
+	vector<VERTEX> m_vSphere;
+	vector<unsigned long>   m_lIndicesSphere;
 public:
 
 	struct PARAMS
@@ -39,10 +44,11 @@ public:
 		VECTOR4D RadialBlur;
 		VECTOR4D DirectionalBlur;
 		VECTOR4D Umbral;
+		MATRIX4D WVP;
 	}m_Params;
 	CFX(CDXManager* pOwner);
 	bool Initialize();
-	void Process(unsigned long idEffect,float w, float h);
+	void Process(unsigned long vsEffect, unsigned long psEffect, float w, float h);
 	void Uninitialize();
 	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTVOutput = pRTV; }
 	void SetInput(ID3D11ShaderResourceView* pSRV) { m_pSRVInput0 = pSRV; }
