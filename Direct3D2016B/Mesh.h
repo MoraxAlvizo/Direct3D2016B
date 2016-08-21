@@ -3,6 +3,8 @@
 #include <vector>
 #include <map>
 #include "DXBasicPainter.h"
+#include <assimp/scene.h>
+
 using namespace std;
 class CMesh
 {
@@ -15,6 +17,7 @@ public:
 	};
 	vector<CDXBasicPainter::VERTEX> m_Vertices;
 	vector<unsigned long> m_Indices;
+	MATRIX4D m_World; // 
 public:
 	CMesh();
 	bool RayCast(VECTOR4D& RayOrigin,

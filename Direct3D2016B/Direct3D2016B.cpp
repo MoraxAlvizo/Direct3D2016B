@@ -14,6 +14,12 @@
 #include <timeapi.h>
 #include <sstream>
 #include "DDSTextureLoader.h"
+
+/* assimp include files. These three are usually needed. */
+#include <assimp/cimport.h>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 #define MAX_LOADSTRING 100
 
 // Global Variables:
@@ -61,6 +67,7 @@ MATRIX4D g_World;
 MATRIX4D g_View;
 MATRIX4D g_Projection;
 CMeshMathSurface g_Surface;
+vector<CMesh> g_Scene;
 CMeshMathSurface g_Mirrow;
 ID3D11Texture2D* g_pNormalMap;
 ID3D11Texture2D* g_pEnvMap;
@@ -636,6 +643,68 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_CREATE:
 		g_World = Identity();
 		{
+
+			/* the global Assimp scene object */
+			const struct aiScene* scene = aiImportFile("..\\Assets\\human.blend", aiProcessPreset_TargetRealtime_MaxQuality);
+
+			g_Scene.resize(scene->mNumMeshes);
+			for (unsigned long i = 0; i < scene->mNumMeshes; i++)
+			{
+				g_Scene[i].m_Vertices.resize(scene->mMeshes[i]->mNumVertices);
+				for (unsigned long j = 0; j < scene->mMeshes[i]->mNumVertices; j++)
+				{
+					g_Scene[i].m_Vertices[j].Position = {
+						scene->mMeshes[i]->mVertices[j].x,
+						scene->mMeshes[i]->mVertices[j].y,
+						scene->mMeshes[i]->mVertices[j].z,
+						1 };
+
+					MATRIX4D t;
+					t.m00 = scene->mRootNode->mChildren[i]->mTransformation.a1;
+					t.m01 = scene->mRootNode->mChildren[i]->mTransformation.a2;
+					t.m02 = scene->mRootNode->mChildren[i]->mTransformation.a3;
+					t.m03 = scene->mRootNode->mChildren[i]->mTransformation.a4;
+					t.m10 = scene->mRootNode->mChildren[i]->mTransformation.b1;
+					t.m11 = scene->mRootNode->mChildren[i]->mTransformation.b2;
+					t.m12 = scene->mRootNode->mChildren[i]->mTransformation.b3;
+					t.m13 = scene->mRootNode->mChildren[i]->mTransformation.b4;
+					t.m20 = scene->mRootNode->mChildren[i]->mTransformation.c1;
+					t.m21 = scene->mRootNode->mChildren[i]->mTransformation.c2;
+					t.m22 = scene->mRootNode->mChildren[i]->mTransformation.c3;
+					t.m23 = scene->mRootNode->mChildren[i]->mTransformation.c4;
+					t.m30 = scene->mRootNode->mChildren[i]->mTransformation.d1;
+					t.m31 = scene->mRootNode->mChildren[i]->mTransformation.d2;
+					t.m32 = scene->mRootNode->mChildren[i]->mTransformation.d3;
+					t.m33 = scene->mRootNode->mChildren[i]->mTransformation.d4;
+
+					g_Scene[i].m_World = Transpose (t);
+				}
+
+				g_Scene[i].m_Indices.resize(scene->mMeshes[i]->mNumFaces * scene->mMeshes[i]->mFaces[0].mNumIndices);
+				for (unsigned long j = 0; j < scene->mMeshes[i]->mNumFaces; j++)
+				{
+					for (unsigned long k = 0; k < scene->mMeshes[i]->mFaces[j].mNumIndices; k++)
+					{
+						g_Scene[i].m_Indices[j*scene->mMeshes[i]->mFaces[j].mNumIndices + k] = scene->mMeshes[i]->mFaces[j].mIndices[k];
+					}
+					
+				}
+				for (unsigned long j = 0; j < g_Scene[i].m_Vertices.size(); j++)
+				{
+					VECTOR4D TexCoord = { 0,0,0,0 };
+					TexCoord.x = g_Scene[i].m_Vertices[j].Position.x;
+					TexCoord.y = g_Scene[i].m_Vertices[j].Position.z;
+					TexCoord.z = g_Scene[i].m_Vertices[j].Position.y;
+					TexCoord = Normalize(TexCoord);
+					TexCoord.x = TexCoord.x * 0.5 + 0.5;
+					TexCoord.y = TexCoord.y * 0.5 + 0.5;
+
+					g_Scene[i].m_Vertices[j].TexCoord = TexCoord;
+				}
+				//g_Scene[i].Optimize();
+				g_Scene[i].BuildTangentSpaceFromTexCoordsIndexed(true);
+			}
+
 			VECTOR4D White = { 1, 1, 1, 1 };
 			VECTOR4D EyePos = { 6, 10, 6, 1 };
 			VECTOR4D Target = { 0, 0, 0, 1 };
@@ -651,7 +720,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			//g_Surface.BuildParametricSurface(SURFACE_RESOLUTION, SURFACE_RESOLUTION, 0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1), Sphere1);
 			//g_Surface.BuildTextureCoords(0, 0, 1.0f / (SURFACE_RESOLUTION - 1), 1.0f / (SURFACE_RESOLUTION - 1));
 			g_Surface.LoadSuzanne();
-			g_Surface.Optimize();
+			//g_Surface.Optimize();
 			g_Surface.BuildTangentSpaceFromTexCoordsIndexed(true);
 			
 			g_Surface.SetColor(White, White, White, White);
@@ -977,8 +1046,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Painter.m_Params.Brightness = Color;
 			g_Painter.m_Params.Flags1 = g_lFlagsPainter;
 			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawRHRState());
-			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW_ON_MARK);
-			
+
+			for (unsigned long i = 0; i < g_Scene.size(); i++)
+			{
+				g_Painter.m_Params.World = g_Scene[i].m_World;
+				g_Painter.DrawIndexed(&g_Scene[i].m_Vertices[0], g_Scene[i].m_Vertices.size(), &g_Scene[i].m_Indices[0], g_Scene[i].m_Indices.size(), PAINTER_DRAW_ON_MARK);
+			}
+
 			VECTOR4D LightPos = { 0, 0, 20, 1 };
 			VECTOR4D Target = { 0, 0, 0, 1 };
 			VECTOR4D Up = { 0, 1, 0, 0 };
@@ -993,7 +1067,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW,true);
 
 			// Dibujar mundo real
-			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW);
+			//g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW);
+			for (unsigned long i = 0; i < g_Scene.size(); i++)
+			{
+				g_Painter.m_Params.World =  g_Scene[i].m_World;
+				g_Painter.DrawIndexed(&g_Scene[i].m_Vertices[0], g_Scene[i].m_Vertices.size(), &g_Scene[i].m_Indices[0], g_Scene[i].m_Indices.size(), PAINTER_DRAW);
+			}
 			
 			//g_FX.SetRenderTarget(g_Manager.GetMainRTV());
 			if (g_bSky)
