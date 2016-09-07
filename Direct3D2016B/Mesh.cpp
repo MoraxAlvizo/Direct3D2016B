@@ -2,6 +2,7 @@
 #include "Mesh.h"
 CMesh::CMesh()
 {
+	m_World = Identity();
 }
 CMesh::~CMesh()
 {
@@ -325,4 +326,20 @@ void CMesh::Optimize()
 	Indices.resize(IndicesOut);
 	m_Indices = Indices;
 	m_Indices.shrink_to_fit();
+}
+
+void CMesh::GenerarCentroides()
+{
+	m_Centroides.resize(m_Indices.size());
+	for (int i = 0; i < m_Indices.size(); i += 3)
+	{
+		VECTOR4D A = m_Vertices[m_Indices[i]].Position * m_World;
+		VECTOR4D B = m_Vertices[m_Indices[i + 1]].Position* m_World;
+		VECTOR4D C = m_Vertices[m_Indices[i + 2]].Position* m_World;
+
+		m_Centroides[i / 3].id = i / 3;
+		m_Centroides[i / 3].position = (A + B + C) / 3;
+		m_Centroides[i / 3].normal = Normalize(m_Centroides[i / 3].position);
+
+	}
 }

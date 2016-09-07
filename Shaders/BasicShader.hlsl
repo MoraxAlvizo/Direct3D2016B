@@ -65,18 +65,19 @@ struct LIGHT
 
 };
 
-#define LIGHTING_AMBIENT            0x001
-#define LIGHTING_DIFFUSE            0x002
-#define LIGHTING_SPECULAR           0x004
-#define LIGHTING_EMISSIVE           0x008
-#define MAPPING_DIFFUSE             0x010
-#define MAPPING_NORMAL              0x020
-#define MAPPING_ENVIROMENTAL_FAST   0x040
-#define MAPPING_NORMAL_TRUE			0x080
-#define MAPPING_EMISSIVE			0x100
-#define MAPPING_SHADOW				0x200
-#define MAPPING_ENVIROMENTAL_SKY	0x400
-#define FOG_ENABLE              	0x800
+#define LIGHTING_AMBIENT            0x0001
+#define LIGHTING_DIFFUSE            0x0002
+#define LIGHTING_SPECULAR           0x0004
+#define LIGHTING_EMISSIVE           0x0008
+#define MAPPING_DIFFUSE             0x0010
+#define MAPPING_NORMAL              0x0020
+#define MAPPING_ENVIROMENTAL_FAST   0x0040
+#define MAPPING_NORMAL_TRUE			0x0080
+#define MAPPING_EMISSIVE			0x0100
+#define MAPPING_SHADOW				0x0200
+#define MAPPING_ENVIROMENTAL_SKY	0x0400
+#define FOG_ENABLE              	0x0800
+#define DRAW_JUST_WITH_COLOR		0x1000
 
 cbuffer PARAMS:register(b0)
 {
@@ -163,6 +164,9 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
     float4 ColorEmissive = 0;
     float4 ColorOutput = 0;
     float4 N = normalize(Input.Normal);
+
+	if (Flags.x & DRAW_JUST_WITH_COLOR)
+		return Input.Color;
 
 
     if (Flags.x & MAPPING_EMISSIVE)

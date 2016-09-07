@@ -67,3 +67,14 @@ Debug\*
 *.filters
 *.ipch
 *.zip
+*.blend
+*.pdf
+*.dll
+*.db
+*.aps
+*.iobj
+*.ipdb
+Release/*
+*.iobj
+Release/Direct3D2016B.ipdb
+*.ipdb

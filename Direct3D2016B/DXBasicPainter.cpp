@@ -306,8 +306,10 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	ViewPort.MaxDepth = 1.0f;
 	ViewPort.MinDepth = 0.0f;
 	m_pManager->GetContext()->RSSetViewports(1, &ViewPort);
+
 	m_pManager->GetContext()->IASetPrimitiveTopology(
-		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		flags & PAINTER_WITH_LINESTRIP? D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP: D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
 
 	//4.- Configurar la salida
 	if(flags & PAINTER_DRAW_MARK)
@@ -319,7 +321,9 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	else
 		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDraw, 0x01);
 
-	m_pManager->GetContext()->OMSetRenderTargets(1, bShadow ? &m_pRTVShadowMap : &m_pRTV, bShadow ? m_pDSVShadowMap: m_pManager->GetMainDSV());
+	m_pManager->GetContext()->OMSetRenderTargets(1, 
+		bShadow ? &m_pRTVShadowMap : &m_pRTV, 
+		bShadow ? m_pDSVShadowMap: m_pManager->GetMainDSV());
 
 	if (!bShadow)
 		m_pManager->GetContext()->PSSetShaderResources(5, 1, &m_pSRVShadowMap);

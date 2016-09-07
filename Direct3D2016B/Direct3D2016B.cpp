@@ -14,6 +14,7 @@
 #include <timeapi.h>
 #include <sstream>
 #include "DDSTextureLoader.h"
+#include "Octree.h"
 
 /* assimp include files. These three are usually needed. */
 #include <assimp/cimport.h>
@@ -47,6 +48,8 @@ ID3D11RenderTargetView* g_pRTV0;		// Output
 ID3D11Texture2D* g_pRT1;			// Memoria
 ID3D11ShaderResourceView* g_pSRV1;	// Input
 ID3D11RenderTargetView* g_pRTV1;		// Output
+
+COctree* g_pOctree2 = NULL;
 
 enum
 {
@@ -83,6 +86,8 @@ bool g_bForward= 0, g_bBackward = 0;
 bool g_bTurnLeft = 0, g_bTurnRight = 0;
 bool g_bTurnUp = 0, g_bTurnDown = 0, g_bTurnS = 0, g_bTurnS1 = 0;
 bool g_onFirstMouseMove = 1;
+bool g_bMoveSphere1 = 0;
+bool g_bMoveSphere2 = 0;
 
 float g_iWidth;
 float g_iHeight;
@@ -98,6 +103,8 @@ int mouseX, mouseY;
 #define VK_I 0x49
 #define VK_U 0x55
 #define VK_O 0x4F
+#define VK_1 97
+#define VK_2 98
 
 // Add new popup menu
 #define ADDPOPUPMENU(hSubMenu, hmenu, string) \
@@ -118,6 +125,7 @@ enum
 	ID_MAPPING_SHADOW,
 	ID_SKY_EFFECT,
 	ID_FLOG_ENABLE,
+	ID_MIRROW_ENABLE,
 	ID_FX_EDGE_DETECT,
 	ID_FX_RADIAN_BLUR, 
 	ID_FX_DIRECTIONAL_BLUR, 
@@ -159,6 +167,8 @@ void CreateMainMenu(HWND hWnd)
 	CheckMenuItem(g_hSubMenu, ID_SKY_EFFECT, MF_UNCHECKED);
 	AppendMenu(g_hSubMenu, MF_STRING, ID_FLOG_ENABLE, L"&Flog");
 	CheckMenuItem(g_hSubMenu, ID_FLOG_ENABLE, MF_UNCHECKED);
+	AppendMenu(g_hSubMenu, MF_STRING, ID_MIRROW_ENABLE, L"&Mirror");
+	CheckMenuItem(g_hSubMenu, ID_MIRROW_ENABLE, MF_UNCHECKED);
 	AppendMenu(g_hMenu, MF_STRING | MF_POPUP, (UINT)g_hSubMenu, L"&3D Effects");
 
 
@@ -344,7 +354,7 @@ void UpdateCamera()
 				float diffX = (float)(mouseX)-(lastX);
 				diffX /= g_iWidth/2;
 
-				MATRIX4D R = RotationAxis(-diffX, YDir);
+				MATRIX4D R = RotationAxis(-speed*(diffX > 0 ? 1 : -1), YDir);
 				//O = O*R;
 				
 			}
@@ -353,7 +363,8 @@ void UpdateCamera()
 			{
 				float diffY = (float)mouseY - lastY;
 				diffY /= g_iHeight/2;
-				MATRIX4D R = RotationAxis(-diffY, XDir);
+				
+				MATRIX4D R = RotationAxis(-speed*(diffY > 0?1:0), XDir);
 				//O = O*R;
 			}
 
@@ -640,12 +651,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	switch (message)
 	{
+	case WM_CHAR:
+		if (wParam == 'p')
+			g_lFlagsPainter ^= DRAW_OCTREE;
+		
+		break;
 	case WM_CREATE:
 		g_World = Identity();
 		{
 
 			/* the global Assimp scene object */
-			const struct aiScene* scene = aiImportFile("..\\Assets\\human.blend", aiProcessPreset_TargetRealtime_MaxQuality);
+			const struct aiScene* scene = aiImportFile("..\\Assets\\spheres.blend", aiProcessPreset_TargetRealtime_MaxQuality);
 
 			g_Scene.resize(scene->mNumMeshes);
 			for (unsigned long i = 0; i < scene->mNumMeshes; i++)
@@ -703,6 +719,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				//g_Scene[i].Optimize();
 				g_Scene[i].BuildTangentSpaceFromTexCoordsIndexed(true);
+				g_Scene[i].GenerarCentroides();
 			}
 
 			VECTOR4D White = { 1, 1, 1, 1 };
@@ -724,6 +741,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Surface.BuildTangentSpaceFromTexCoordsIndexed(true);
 			
 			g_Surface.SetColor(White, White, White, White);
+
+			// Crear Render Target Auxiliar
+			if (!g_pSRVCubeMap)
+			{
+				DirectX::CreateDDSTextureFromFile(g_Manager.GetDevice(), L"..\\Assets\\snowcube1024.dds", NULL, &g_pSRVCubeMap);
+			}
 		}
 		SetTimer(hWnd, 1, 10, NULL);
 		return 0;
@@ -797,6 +820,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				CheckMenuItem(g_hMenu, ID_MAPPING_SHADOW, MF_CHECKED);
 			else
 				CheckMenuItem(g_hMenu, ID_MAPPING_SHADOW, MF_UNCHECKED);
+			break;
+		case ID_MIRROW_ENABLE:
+			g_lFlagsPainter ^= DRAW_MIRROR;
+			if (g_lFlagsPainter & DRAW_MIRROR)
+				CheckMenuItem(g_hMenu, ID_MIRROW_ENABLE, MF_CHECKED);
+			else
+				CheckMenuItem(g_hMenu, ID_MIRROW_ENABLE, MF_UNCHECKED);
 			break;
 		case ID_SKY_EFFECT:
 			if (g_bSky)
@@ -911,27 +941,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		
 		if (g_Manager.GetSwapChain())
 		{
-			// Crear Render Target Auxiliar
-			if (!g_pSRVCubeMap)
+			if (!g_pOctree2)
 			{
-				DirectX::CreateDDSTextureFromFile(g_Manager.GetDevice(), L"..\\Assets\\desertcube1024.dds", NULL, &g_pSRVCubeMap);
+				g_pOctree2 = new COctree({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
+				{ BOX_SIZE / 2, BOX_SIZE / 2, BOX_SIZE / 2 }, 0, &g_Painter);
+
+				//Create objects
+				//int i = 1;
+				for (unsigned long i = 0; i < g_Scene.size(); i++)
+				{
+					vector<centroid> centroids = g_Scene[i].getCentroides();
+
+					for (int z = 0; z < centroids.size(); z++)
+					{
+						g_pOctree2->add((Point*) &(centroids[z].position));
+					}
+				}
+
+				/*centroids = g_Scene[1].getCentroides();
+				for (int z = 0; z < centroids.size(); z++)
+				{
+				p_octree2->add((Point*)&(centroids[z].position));
+				}*/
 			}
-			
+
 			ID3D11Texture2D* pBackBuffer = 0;
 			g_Manager.GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 			//ID3D11Texture2D* pBackBuffer = NULL;
 			//g_Manager.GetMainRTV()->GetResource((ID3D11Resource**) &pBackBuffer);
 
-			D3D11_TEXTURE2D_DESC dtd; 
+			D3D11_TEXTURE2D_DESC dtd;
 			pBackBuffer->GetDesc(&dtd);
-			dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE| D3D11_BIND_RENDER_TARGET);
+			dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
 
 			g_iWidth = dtd.Width;
 			g_iHeight = dtd.Height;
 
-			HRESULT hr =  g_Manager.GetDevice()->CreateTexture2D(&dtd, 0, &g_pRT0);
-			hr =  g_Manager.GetDevice()->CreateShaderResourceView(g_pRT0, 0, &g_pSRV0);
-			hr =  g_Manager.GetDevice()->CreateRenderTargetView(g_pRT0, 0 , &g_pRTV0);
+			HRESULT hr = g_Manager.GetDevice()->CreateTexture2D(&dtd, 0, &g_pRT0);
+			hr = g_Manager.GetDevice()->CreateShaderResourceView(g_pRT0, 0, &g_pSRV0);
+			hr = g_Manager.GetDevice()->CreateRenderTargetView(g_pRT0, 0, &g_pRTV0);
 
 			hr = g_Manager.GetDevice()->CreateTexture2D(&dtd, 0, &g_pRT1);
 			hr = g_Manager.GetDevice()->CreateShaderResourceView(g_pRT1, 0, &g_pSRV1);
@@ -950,21 +998,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			}
 
 			SAFE_RELEASE(pBackBuffer);
-			  
+
 
 			// Update FPS
 			float currentTime = (float)GetTickCount();
 
 			if (currentTime - g_dStarttime > 500)
 			{
-				float time = (currentTime - g_dStarttime)/1000; // Time in seconds
+				float time = (currentTime - g_dStarttime) / 1000; // Time in seconds
 				g_fFps = (double)g_iFrames / (time);
 				g_dStarttime = currentTime;
 				g_iFrames = 0;
 				g_bChangeFPS = true;
 			}
 			g_iFrames++;
-			
+
 
 			/*RECT rect;
 			GetWindowRect(hWnd, &rect);
@@ -976,7 +1024,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			VECTOR4D White = { 1,1,1,1 };
 			VECTOR4D Gray = { .5,.5,.5,0 };
 
-			g_Painter.SetRenderTarget(g_lFXIDEffect != ID_FX_NONE? g_pRTV0: g_Manager.GetMainRTV());
+			g_Painter.SetRenderTarget(g_lFXIDEffect != ID_FX_NONE ? g_pRTV0 : g_Manager.GetMainRTV());
 			//g_Painter.SetRenderTarget(g_Manager.GetMainRTV());
 			g_Painter.m_Params.Material.Diffuse = Gray;
 			g_Painter.m_Params.Material.Ambient = Gray;
@@ -985,11 +1033,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Manager.GetContext()->ClearRenderTargetView(g_pRTV0, (float*)&NightBlue);
 			g_Manager.GetContext()->ClearRenderTargetView(g_Manager.GetMainRTV(), (float*)&NightBlue);
 			g_Manager.GetContext()->ClearDepthStencilView(
-				g_Manager.GetMainDSV(), 
-				D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 
-				1.0f, 
+				g_Manager.GetMainDSV(),
+				D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+				1.0f,
 				0);
-			
+
 			unsigned long TriangleIndices[3] = { 0, 1, 2 };
 			g_World = Identity();
 			g_Painter.m_Params.World = g_World;
@@ -1001,7 +1049,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			VECTOR4D Color = { 0, 0, 0, 0 };
 			g_Painter.m_Params.Brightness = Color;
-			g_Painter.m_Params.Flags1 =    0 ;
+			g_Painter.m_Params.Flags1 = 0;
 			ID3D11ShaderResourceView* pSRV = NULL;
 			g_Manager.GetDevice()->CreateShaderResourceView(g_pTexture, NULL, &pSRV);
 			g_Manager.GetContext()->PSSetShaderResources(0, 1, &pSRV);
@@ -1020,64 +1068,86 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			// Set cube texture 
 			g_Manager.GetContext()->PSSetShaderResources(6, 1, &g_pSRVCubeMap);
+			g_Painter.m_Params.Flags1 = g_lFlagsPainter;
 
-			VECTOR4D Plane = { 0,0,1,5 };
-			MATRIX4D Mirror =  ReflectionMatrix(Plane);
-			MATRIX4D OldView = g_Painter.m_Params.View;
 
 			/////////////////////////////////////////////////////////////////
-
+			// DRAW MIRROR
 			//////////////////////////////////////////////////////////////////
-
-			// Draw plane to mask 
-			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
-			g_Painter.DrawIndexed(&g_Mirrow.m_Vertices[0], g_Mirrow.m_Vertices.size(), &g_Mirrow.m_Indices[0], g_Mirrow.m_Indices.size(),PAINTER_DRAW_MARK);
-			
-			// Limpiar la profuncidad
-			g_Manager.GetContext()->ClearDepthStencilView(
-				g_Manager.GetMainDSV(),
-				D3D11_CLEAR_DEPTH,
-				1.0f,
-				0);
-			// Dibujar en espejo
-			g_World = RotationX(theta);//Identity();
-			g_Painter.m_Params.World = g_World;
-			g_Painter.m_Params.View = Mirror*g_Painter.m_Params.View;
-			g_Painter.m_Params.Brightness = Color;
-			g_Painter.m_Params.Flags1 = g_lFlagsPainter;
-			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawRHRState());
-
-			for (unsigned long i = 0; i < g_Scene.size(); i++)
+			if (g_lFlagsPainter & DRAW_MIRROR)
 			{
-				g_Painter.m_Params.World = g_Scene[i].m_World;
-				g_Painter.DrawIndexed(&g_Scene[i].m_Vertices[0], g_Scene[i].m_Vertices.size(), &g_Scene[i].m_Indices[0], g_Scene[i].m_Indices.size(), PAINTER_DRAW_ON_MARK);
+				VECTOR4D Plane = { 0,0,1,5 };
+				MATRIX4D Mirror = ReflectionMatrix(Plane);
+				MATRIX4D OldView = g_Painter.m_Params.View;
+
+				// Draw plane to mask 
+				g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
+				g_Painter.DrawIndexed(&g_Mirrow.m_Vertices[0], g_Mirrow.m_Vertices.size(), &g_Mirrow.m_Indices[0], g_Mirrow.m_Indices.size(), PAINTER_DRAW_MARK);
+
+				// Limpiar la profuncidad
+				g_Manager.GetContext()->ClearDepthStencilView(
+					g_Manager.GetMainDSV(),
+					D3D11_CLEAR_DEPTH,
+					1.0f,
+					0);
+				// Dibujar en espejo
+				g_World = RotationX(theta);//Identity();
+				g_Painter.m_Params.World = g_World;
+				g_Painter.m_Params.View = Mirror*g_Painter.m_Params.View;
+				g_Painter.m_Params.Brightness = Color;
+				
+				g_Manager.GetContext()->RSSetState(g_Painter.GetDrawRHRState());
+
+				for (unsigned long i = 0; i < g_Scene.size(); i++)
+				{
+					g_Painter.m_Params.World = g_Scene[i].m_World;
+					g_Painter.DrawIndexed(&g_Scene[i].m_Vertices[0], g_Scene[i].m_Vertices.size(), &g_Scene[i].m_Indices[0], g_Scene[i].m_Indices.size(), PAINTER_DRAW_ON_MARK);
+				}
+
+				g_Painter.m_Params.View = OldView;
 			}
 
-			VECTOR4D LightPos = { 0, 0, 20, 1 };
-			VECTOR4D Target = { 0, 0, 0, 1 };
-			VECTOR4D Up = { 0, 1, 0, 0 };
-			g_Painter.m_Params.LightView = View(LightPos, Target, Up);
-			g_Painter.m_Params.LightProjection = PerspectiveWidthHeightLH(1 ,1, 1, 100);
-			
-			g_Painter.m_Params.View = OldView;
-			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
+			if (g_lFlagsPainter & MAPPING_SHADOW)
+			{
+				VECTOR4D LightPos = { 0, 0, 20, 1 };
+				VECTOR4D Target = { 0, 0, 0, 1 };
+				VECTOR4D Up = { 0, 1, 0, 0 };
+				g_Painter.m_Params.LightView = View(LightPos, Target, Up);
+				g_Painter.m_Params.LightProjection = PerspectiveWidthHeightLH(1, 1, 1, 100);
 
-			// Dibujar mapa de sombras
-			g_Painter.ClearShadow();
-			g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW,true);
+
+				g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
+				// Dibujar mapa de sombras
+				g_Painter.ClearShadow();
+				g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW, true);
+
+			}
 
 			// Dibujar mundo real
 			//g_Painter.DrawIndexed(&g_Surface.m_Vertices[0], g_Surface.m_Vertices.size(), &g_Surface.m_Indices[0], g_Surface.m_Indices.size(), PAINTER_DRAW);
+			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
+
+			if(g_bMoveSphere1)
+				g_Scene[0].m_World = g_Scene[0].m_World * Translation(0,0, -0.1);
+			if (g_bMoveSphere2)
+				g_Scene[2].m_World = g_Scene[2].m_World * Translation(0,0, -0.1);
 			for (unsigned long i = 0; i < g_Scene.size(); i++)
 			{
 				g_Painter.m_Params.World =  g_Scene[i].m_World;
 				g_Painter.DrawIndexed(&g_Scene[i].m_Vertices[0], g_Scene[i].m_Vertices.size(), &g_Scene[i].m_Indices[0], g_Scene[i].m_Indices.size(), PAINTER_DRAW);
 			}
+
+			if (g_lFlagsPainter & DRAW_OCTREE)
+			{
+				g_Painter.m_Params.World = Identity();
+				g_Painter.m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
+				g_pOctree2->DrawOctree();
+			}
+			
 			
 			//g_FX.SetRenderTarget(g_Manager.GetMainRTV());
 			if (g_bSky)
 			{
-				
 				g_Manager.GetContext()->PSSetShaderResources(4, 1, &g_pSRVCubeMap);
 				g_FX.m_Params.WVP = Scaling(50, 50, 50) *g_View * g_Projection *AC;  
 				g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
@@ -1220,6 +1290,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case VK_O:
 			g_bTurnS1 = false;
 			break;
+		case VK_1:
+			g_bMoveSphere1 = false;
+			break;
+		case VK_2:
+			g_bMoveSphere2 = false;
+			break;
 		default:
 			break;
 		}
@@ -1265,6 +1341,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			break;
 		case VK_O:
 			g_bTurnS1 = true;
+			break;
+		case VK_1:
+			g_bMoveSphere1 = true;
+			break;
+		case VK_2:
+			g_bMoveSphere2 = true;
 			break;
 		default:
 			break;

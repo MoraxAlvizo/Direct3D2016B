@@ -29,6 +29,7 @@ protected:
 #define PAINTER_DRAW_ON_MARK		0x02
 #define PAINTER_DRAW_ON_NOT_MARK	0x04
 #define PAINTER_DRAW				0x08
+#define PAINTER_WITH_LINESTRIP      0x10
 
 public:
 	void ClearShadow();
@@ -68,7 +69,7 @@ public:
 	};
 	struct PARAMS
 	{
-		struct 
+		struct
 		{
 			unsigned int Flags1, notused0, notused1, notused2;
 		};
@@ -85,6 +86,9 @@ public:
 #define MAPPING_SHADOW				0x200
 #define MAPPING_ENVIROMENTAL_SKY	0x400
 #define FOG_ENABLE              	0x800
+#define DRAW_JUST_WITH_COLOR		0x1000
+#define DRAW_MIRROR					0x2000
+#define DRAW_OCTREE					0x4000
 
 #define SHADOW_MAP_RESOLUTION	1024 // resolucion de textura
 		MATRIX4D World;

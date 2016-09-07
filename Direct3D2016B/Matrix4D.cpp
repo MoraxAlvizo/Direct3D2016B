@@ -1,6 +1,7 @@
 
 #include "stdafx.h"
 #include "Matrix4D.h"
+#include <math.h>
 
 VECTOR4D operator*(VECTOR4D& A, long B)
 {
@@ -67,6 +68,13 @@ VECTOR4D operator+(VECTOR4D& A, VECTOR4D& B)
 	VECTOR4D R = { A.x+B.x, A.y+B.y, A.z+B.z, A.w+B.w };
 	return R;
 }
+
+VECTOR4D operator/(VECTOR4D & A, float  B)
+{
+	VECTOR4D R = { A.x / B, A.y / B, A.z / B, A.w / B };
+	return R;
+}
+
 VECTOR4D Cross3(VECTOR4D&A, VECTOR4D &B)
 {
 	VECTOR4D R;
@@ -80,7 +88,7 @@ float Dot(VECTOR4D& A, VECTOR4D& B)
 {
 	return  A.x*B.x+ A.y*B.y+ A.z*B.z+ A.w*B.w ;
 }
-#include <math.h>
+
 float Magnity(VECTOR4D& A)
 {
 	return sqrtf(Dot(A, A));
