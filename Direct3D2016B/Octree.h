@@ -17,7 +17,7 @@ const int MIN_BALLS_PER_OCTREE = 2;
 // entonces lo que vamos hacer es dividirlo mas.
 const int MAX_BALLS_PER_OCTREE = 10;
 
-const float BOX_SIZE = 8.0f;
+const float BOX_SIZE = 20.0f;
 #define DEPTH 4
 
 
@@ -68,6 +68,8 @@ public:
 	// en sus hijos.Necesitamos tener muy encuenta este numero ya que nos va a indicar
 	// cuando dividir o juntar los nodos.
 	int numPoints;
+
+	VECTOR4D m_Color;
 private:
 	// filePoint() se encarga de agregar o eliminar pelotas al nodo adecuado en el octree (se
 	// basa en la posicion de la pelota). Basicamente va a encontra a cual hijo esa pelota

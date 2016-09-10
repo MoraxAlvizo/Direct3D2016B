@@ -328,10 +328,8 @@ void COctree::DrawOctree()
 	cube[6].Position = { c2.x,c1.y,c2.z,1 };
 	cube[7].Position = { c2.x,c2.y,c2.z,1 };
 
-	VECTOR4D Color = { 1,0,0,0 };
-
 	for (int i = 0; i < 8; i++)
-		cube[i].Color = Color;
+		cube[i].Color = m_Color;
 
 	m_lIndicesFrame[0] = 0;
 	m_lIndicesFrame[1] = 1;

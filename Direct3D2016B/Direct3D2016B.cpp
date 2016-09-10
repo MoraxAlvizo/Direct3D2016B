@@ -1,6 +1,7 @@
 // Direct3D2016B.cpp : Defines the entry point for the application.
 //
 
+
 #include "stdafx.h"
 #include "Direct3D2016B.h"
 #include "DXManager.h"
@@ -15,11 +16,14 @@
 #include <sstream>
 #include "DDSTextureLoader.h"
 #include "Octree.h"
+#include "MeshCollision.h"
+#include "OctreeCube.h"
 
 /* assimp include files. These three are usually needed. */
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <cfloat>
 
 #define MAX_LOADSTRING 100
 
@@ -49,7 +53,7 @@ ID3D11Texture2D* g_pRT1;			// Memoria
 ID3D11ShaderResourceView* g_pSRV1;	// Input
 ID3D11RenderTargetView* g_pRTV1;		// Output
 
-COctree* g_pOctree2 = NULL;
+COctreeCube* g_pOctree2 = NULL;
 
 enum
 {
@@ -70,7 +74,7 @@ MATRIX4D g_World;
 MATRIX4D g_View;
 MATRIX4D g_Projection;
 CMeshMathSurface g_Surface;
-vector<CMesh> g_Scene;
+vector<CMeshCollision> g_Scene;
 CMeshMathSurface g_Mirrow;
 ID3D11Texture2D* g_pNormalMap;
 ID3D11Texture2D* g_pEnvMap;
@@ -394,6 +398,9 @@ int APIENTRY _tWinMain(_In_ HINSTANCE hInstance,
                      _In_ LPTSTR    lpCmdLine,
                      _In_ int       nCmdShow)
 {
+	//Get a console handle
+	HWND myconsole = GetConsoleWindow();
+
 	UNREFERENCED_PARAMETER(hPrevInstance);
 	UNREFERENCED_PARAMETER(lpCmdLine);
  	// TODO: Place code here.
@@ -657,15 +664,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		
 		break;
 	case WM_CREATE:
+		ShowWindow(GetConsoleWindow(), SW_SHOW);
 		g_World = Identity();
 		{
-
 			/* the global Assimp scene object */
 			const struct aiScene* scene = aiImportFile("..\\Assets\\spheres.blend", aiProcessPreset_TargetRealtime_MaxQuality);
 
 			g_Scene.resize(scene->mNumMeshes);
 			for (unsigned long i = 0; i < scene->mNumMeshes; i++)
 			{
+				float maxX, maxY, maxZ;
+				float minX, minY, minZ;
+
+				maxX = maxY = maxZ = FLT_MIN;
+				minX = minY = minZ = FLT_MAX;
+
 				g_Scene[i].m_Vertices.resize(scene->mMeshes[i]->mNumVertices);
 				for (unsigned long j = 0; j < scene->mMeshes[i]->mNumVertices; j++)
 				{
@@ -674,27 +687,46 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 						scene->mMeshes[i]->mVertices[j].y,
 						scene->mMeshes[i]->mVertices[j].z,
 						1 };
+					if (scene->mMeshes[i]->mVertices[j].x > maxX)
+						maxX = scene->mMeshes[i]->mVertices[j].x ;
+					if (scene->mMeshes[i]->mVertices[j].y > maxY)
+						maxY = scene->mMeshes[i]->mVertices[j].y;
+					if (scene->mMeshes[i]->mVertices[j].z > maxZ)
+						maxZ = scene->mMeshes[i]->mVertices[j].z;
 
-					MATRIX4D t;
-					t.m00 = scene->mRootNode->mChildren[i]->mTransformation.a1;
-					t.m01 = scene->mRootNode->mChildren[i]->mTransformation.a2;
-					t.m02 = scene->mRootNode->mChildren[i]->mTransformation.a3;
-					t.m03 = scene->mRootNode->mChildren[i]->mTransformation.a4;
-					t.m10 = scene->mRootNode->mChildren[i]->mTransformation.b1;
-					t.m11 = scene->mRootNode->mChildren[i]->mTransformation.b2;
-					t.m12 = scene->mRootNode->mChildren[i]->mTransformation.b3;
-					t.m13 = scene->mRootNode->mChildren[i]->mTransformation.b4;
-					t.m20 = scene->mRootNode->mChildren[i]->mTransformation.c1;
-					t.m21 = scene->mRootNode->mChildren[i]->mTransformation.c2;
-					t.m22 = scene->mRootNode->mChildren[i]->mTransformation.c3;
-					t.m23 = scene->mRootNode->mChildren[i]->mTransformation.c4;
-					t.m30 = scene->mRootNode->mChildren[i]->mTransformation.d1;
-					t.m31 = scene->mRootNode->mChildren[i]->mTransformation.d2;
-					t.m32 = scene->mRootNode->mChildren[i]->mTransformation.d3;
-					t.m33 = scene->mRootNode->mChildren[i]->mTransformation.d4;
-
-					g_Scene[i].m_World = Transpose (t);
+					if (scene->mMeshes[i]->mVertices[j].x < minX)
+						minX = scene->mMeshes[i]->mVertices[j].x;
+					if (scene->mMeshes[i]->mVertices[j].y < minY)
+						minY = scene->mMeshes[i]->mVertices[j].y;
+					if (scene->mMeshes[i]->mVertices[j].z < minZ)
+						minZ = scene->mMeshes[i]->mVertices[j].z;
 				}
+
+				g_Scene[i].m_Box.min = { minX, minY, minZ, 1 };
+				g_Scene[i].m_Box.max = { maxX, maxY, maxZ, 1 };
+
+				g_Scene[i].m_octree = new COctree(g_Scene[i].m_Box.min, g_Scene[i].m_Box.max , 0, &g_Painter);
+				g_Scene[i].m_octree->m_Color = { i%2? 1.f:0.f , 1,i % 3 ? 1.f : 0.f,0 };
+
+				MATRIX4D t;
+				t.m00 = scene->mRootNode->mChildren[i]->mTransformation.a1;
+				t.m01 = scene->mRootNode->mChildren[i]->mTransformation.a2;
+				t.m02 = scene->mRootNode->mChildren[i]->mTransformation.a3;
+				t.m03 = scene->mRootNode->mChildren[i]->mTransformation.a4;
+				t.m10 = scene->mRootNode->mChildren[i]->mTransformation.b1;
+				t.m11 = scene->mRootNode->mChildren[i]->mTransformation.b2;
+				t.m12 = scene->mRootNode->mChildren[i]->mTransformation.b3;
+				t.m13 = scene->mRootNode->mChildren[i]->mTransformation.b4;
+				t.m20 = scene->mRootNode->mChildren[i]->mTransformation.c1;
+				t.m21 = scene->mRootNode->mChildren[i]->mTransformation.c2;
+				t.m22 = scene->mRootNode->mChildren[i]->mTransformation.c3;
+				t.m23 = scene->mRootNode->mChildren[i]->mTransformation.c4;
+				t.m30 = scene->mRootNode->mChildren[i]->mTransformation.d1;
+				t.m31 = scene->mRootNode->mChildren[i]->mTransformation.d2;
+				t.m32 = scene->mRootNode->mChildren[i]->mTransformation.d3;
+				t.m33 = scene->mRootNode->mChildren[i]->mTransformation.d4;
+
+				g_Scene[i].m_World = Transpose(t);
 
 				g_Scene[i].m_Indices.resize(scene->mMeshes[i]->mNumFaces * scene->mMeshes[i]->mFaces[0].mNumIndices);
 				for (unsigned long j = 0; j < scene->mMeshes[i]->mNumFaces; j++)
@@ -943,20 +975,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			if (!g_pOctree2)
 			{
-				g_pOctree2 = new COctree({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
-				{ BOX_SIZE / 2, BOX_SIZE / 2, BOX_SIZE / 2 }, 0, &g_Painter);
+				g_pOctree2 = new COctreeCube({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
+				{ BOX_SIZE / 2, BOX_SIZE / 2, BOX_SIZE / 2 }, 0);
 
 				//Create objects
 				//int i = 1;
 				for (unsigned long i = 0; i < g_Scene.size(); i++)
 				{
-					vector<centroid> centroids = g_Scene[i].getCentroides();
-
-					for (int z = 0; z < centroids.size(); z++)
-					{
-						g_pOctree2->add((Point*) &(centroids[z].position));
-					}
+					g_pOctree2->addObject(&g_Scene[i], 
+										  g_Scene[i].m_Box.min * g_Scene[i].m_World,
+										  g_Scene[i].m_Box.max * g_Scene[i].m_World);
 				}
+					
 
 				/*centroids = g_Scene[1].getCentroides();
 				for (int z = 0; z < centroids.size(); z++)
@@ -1128,7 +1158,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			g_Manager.GetContext()->RSSetState(g_Painter.GetDrawLHRState());
 
 			if(g_bMoveSphere1)
-				g_Scene[0].m_World = g_Scene[0].m_World * Translation(0,0, -0.1);
+				g_Scene[1].m_World = g_Scene[1].m_World * Translation(0,0, -0.1);
 			if (g_bMoveSphere2)
 				g_Scene[2].m_World = g_Scene[2].m_World * Translation(0,0, -0.1);
 			for (unsigned long i = 0; i < g_Scene.size(); i++)
@@ -1139,9 +1169,17 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 			if (g_lFlagsPainter & DRAW_OCTREE)
 			{
-				g_Painter.m_Params.World = Identity();
+				//g_Painter.m_Params.World = Identity();
 				g_Painter.m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
-				g_pOctree2->DrawOctree();
+				g_pOctree2->DrawOctree(&g_Painter);
+				g_pOctree2->printCHildren(0);
+
+				for (unsigned long i = 0; i < g_Scene.size(); i++)
+				{
+					g_Painter.m_Params.World = g_Scene[i].m_World;
+					g_Scene[i].m_octree->DrawOctree();
+					
+				}
 			}
 			
 			

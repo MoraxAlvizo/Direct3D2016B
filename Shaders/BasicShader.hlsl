@@ -168,7 +168,6 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
 	if (Flags.x & DRAW_JUST_WITH_COLOR)
 		return Input.Color;
 
-
     if (Flags.x & MAPPING_EMISSIVE)
     {
         ColorEmissive = EmissiveMap.Sample(Sampler, Input.TexCoord.xy);
