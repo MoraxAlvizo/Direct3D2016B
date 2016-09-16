@@ -31,6 +31,7 @@ public:
 	CDXManager* m_pDXManager;
 	CDXBasicPainter* m_pDXPainter;
 	HWND m_hWnd;
+	unsigned long m_lPainterFlags;
 
 	ID3D11Texture2D* m_pTexture;   //GPU
 	ID3D11Texture2D* m_pNormalMapTrue;

@@ -1,17 +1,24 @@
 <CollisionEngine>
 	<User> Omar </User>
-	<Scene> ..\Assets\spheres.blend </Scene>
-	<Effect> 7 </Effect>
+	<GPU> nvidia </GPU>
+	<Scene> ..\Assets\4Cube.blend </Scene>
+	<Effect> 0 </Effect>
 	<Effects3d>
-		<Emissive value="on"/>
-		<NormalMap value="on"/>
+		<EMISSIVE value="off"/>
+		<NORMALMAP value="off"/>
+		<DIFFUSE value="on"/>
+		<SHADOW value="off"/>
+		<NORMAL value="off"/>
+		<ENVIROMENTFAST value="off"/>
+		<ENVIROMENTSKY value="off"/>
+		<FOG value="off"/>
 	</Effects3d>
-	<MethodCutting> XFEM </MethodCutting>
+	<MethodCutting> FEM </MethodCutting>
 	<MethodCollisionScene> OCTREE </MethodCollisionScene>
 	<MethodCollisionPerObject> BVH </MethodCollisionPerObject>
-	<PlaneCut>
-		<Point x=1 y=1 z=1/>
-		<Point x=1 y=1 z=1/>
-		<Point x=1 y=1 z=1/>
+	<PlaneCut>	
+		<Point x="1" y="1" z="1" />
+		<Point x="1" y="1" z="1" />
+		<Point x="1" y="1" z="1" />
 	</PlaneCut>
 </CollisionEngine>

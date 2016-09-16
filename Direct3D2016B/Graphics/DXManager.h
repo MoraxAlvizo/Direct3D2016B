@@ -13,7 +13,7 @@ class CDXManager
 	ID3D11Texture2D* m_pDepthStencil; // Buffer Z
 	ID3D11DepthStencilView* m_pDSV; // Depth Stencil View
 public:
-	static IDXGIAdapter* EnumAndChooseAdapter(HWND hWnd);
+	static IDXGIAdapter* EnumAndChooseAdapter(HWND hWnd, wchar_t* name);
 	bool Initialize(HWND hWnd, IDXGIAdapter* pAdapter);
 	void Resize(int cx, int cy);
 	void Uninitialize(void);

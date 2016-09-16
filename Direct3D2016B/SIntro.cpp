@@ -22,6 +22,8 @@ void CSIntro::OnEntry(void)
 	m_pDXManager = main->m_pDXManager;
 	m_pDXPainter = main->m_pDXPainter;
 
+	printf("[HCM] %s:OnEntry\n", GetClassString());
+
 	m_FX = new CFX(m_pDXManager);
 	if (!m_FX->Initialize())
 	{
@@ -104,6 +106,7 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 
 void CSIntro::OnExit(void)
 {
+	printf("[HCM] %s:OnExit\n", GetClassString());
 	CSMain* main = (CSMain*)GetSuperState();
 	m_FX->Uninitialize();
 	KillTimer(main->m_hWnd, 1);

@@ -20,7 +20,15 @@ void CSMain::OnEntry(void)
 { 
 	m_pDXManager = new CDXManager();
 	m_pDXPainter = new CDXBasicPainter(m_pDXManager);
-	if (!m_pDXManager->Initialize(m_hWnd, CDXManager::EnumAndChooseAdapter(NULL)))
+
+	/* Load init parameters */
+	ReadInitFile();
+	printParams();
+
+	/* Print where I am */
+	printf("[HCM] %s:OnEntry\n", GetClassString());
+
+	if (!m_pDXManager->Initialize(m_hWnd, CDXManager::EnumAndChooseAdapter(NULL,m_Params.gpu)))
 	{
 		m_bInitCorrect = FALSE;
 		MessageBox(m_hWnd, L"No se pudo inicializar DirectX11", L"Error", MB_ICONERROR);
@@ -31,10 +39,6 @@ void CSMain::OnEntry(void)
 		m_bInitCorrect = FALSE;
 		MessageBox(m_hWnd, L"No se pudo inicializar shaders", L"Error", MB_ICONERROR);
 	}
-
-	ReadInitFile();
-	printParams();
-
 		
 }
 
@@ -63,6 +67,7 @@ unsigned long CSMain::OnEvent(CEventBase * pEvent)
 
 void CSMain::OnExit(void)
 {
+	printf("[HCM] %s:OnExit\n", GetClassString());
 	m_pDXPainter->Uninitialize();
 	m_pDXManager->Uninitialize();
 	SAFE_DELETE(m_pDXPainter);
@@ -78,6 +83,7 @@ void CSMain::OnExit(void)
 #define INIT_FILE_COLLISION_SCENE	0x020
 #define INIT_FILE_COLLISION_OBJECT	0x040
 #define INIT_FILE_PLANE_CUT			0x080
+#define INIT_FILE_GPU				0x100
 
 HRESULT CSMain::WriteAttributes(IXmlReader* pReader, long tag, wchar_t* localTag)
 {
@@ -86,6 +92,7 @@ HRESULT CSMain::WriteAttributes(IXmlReader* pReader, long tag, wchar_t* localTag
 	const WCHAR* pwszValue;
 	HRESULT hr = pReader->MoveToFirstAttribute();
 	long counter = 0;
+	static long pointPos = 0;
 	float x, y, z;
 
 	if (S_FALSE == hr)
@@ -121,14 +128,24 @@ HRESULT CSMain::WriteAttributes(IXmlReader* pReader, long tag, wchar_t* localTag
 				if (tag == INIT_FILE_TAG_3D_EFFECTS)
 				{
 					unsigned long bitToEnable = 0;
+
 					if (wcscmp(localTag, L"EMISSIVE") == 0)
 						bitToEnable = MAPPING_EMISSIVE;
 					else if (wcscmp(localTag, L"DIFFUSE") == 0)
 						bitToEnable = MAPPING_DIFFUSE;
-					else if (wcscmp(localTag, L"NORMAL MAP") == 0)
+					else if (wcscmp(localTag, L"NORMALMAP") == 0)
 						bitToEnable = MAPPING_NORMAL_TRUE;
 					else if (wcscmp(localTag, L"SHADOW") == 0)
 						bitToEnable = MAPPING_SHADOW;
+					else if (wcscmp(localTag, L"NORMAL") == 0)
+						bitToEnable = MAPPING_NORMAL;
+					else if (wcscmp(localTag, L"ENVIROMENTFAST") == 0)
+						bitToEnable = MAPPING_ENVIROMENTAL_FAST;
+					else if (wcscmp(localTag, L"ENVIROMENTSKY") == 0)
+						bitToEnable = MAPPING_ENVIROMENTAL_SKY;
+					else if (wcscmp(localTag, L"FOG") == 0)
+						bitToEnable = FOG_ENABLE;
+
 
 					if (wcscmp(pwszLocalName, L"value") == 0)
 					{
@@ -149,7 +166,7 @@ HRESULT CSMain::WriteAttributes(IXmlReader* pReader, long tag, wchar_t* localTag
 					if (counter == 2 && wcscmp(pwszLocalName, L"z") == 0)
 						z = wcstof(pwszValue, (wchar_t**)&pwszValue);
 					
-					m_Params.PlaneCut[0] = { x,y,z,1 };
+					counter++;
 				}
 
 			}
@@ -158,6 +175,13 @@ HRESULT CSMain::WriteAttributes(IXmlReader* pReader, long tag, wchar_t* localTag
 				break;
 		}
 	}
+	if (tag == INIT_FILE_PLANE_CUT)
+	{
+		m_Params.PlaneCut[pointPos] = { x,y,z,1 };
+		pointPos++;
+	}
+		
+
 	return hr;
 }
 
@@ -166,19 +190,82 @@ void CSMain::printParams()
 	printf("------------ Init parameters ----------------\n\n");
 
 	wprintf(L"USER: %s \n",m_Params.user);
+	wprintf(L"GPU: %s \n", m_Params.gpu);
 	wprintf(L"SCENE: %s \n", m_Params.scene);
-	printf("FXEffect: %l \n", m_Params.FXEffect);
-	printf("PainterFlags: %l\n", m_Params.PainterFlags);
-	printf("CUT METHOD: %s \n", m_Params.MethodCutting & CUTTING_FEM ? "FEM" : "XFEM");
-	printf("COLLISION METHOD SCENE: %s \n", m_Params.MethodCollisionScene & COLLISION_BVH ? "BVH" : "OCTREE");
-	printf("COLLISION METHOD OBJECT: %s \n", m_Params.MethodCollisionPerObject & COLLISION_BVH ? "BVH" : "OCTREE");
+
+	switch (m_Params.FXEffect)
+	{
+	case FX_BRIGHT_PASS:
+		printf("FXEffect: FX_BRIGHT_PASS \n");
+		break;
+	case FX_DIRECTIONAL_BLUR:
+		printf("FXEffect: FX_DIRECTIONAL_BLUR \n");
+		break;
+	case FX_EDGE_DETECT:
+		printf("FXEffect: FX_EDGE_DETECT \n");
+		break;
+	case FX_GAUSS_HORIZONTAL_BLUR:
+		printf("FXEffect: FX_GAUSS_HORIZONTAL_BLUR \n");
+		break;
+	case FX_GAUSS_VERTICAL_BLUR:
+		printf("FXEffect: FX_GAUSS_VERTICAL_BLUR \n");
+		break;
+	case FX_MERGED:
+		printf("FXEffect: FX_MERGED \n");
+		break;
+	case FX_RADIAN_BLUR:
+		printf("FXEffect: FX_RADIAN_BLUR \n");
+		break;
+	case FX_SKY:
+		printf("FXEffect: FX_SKY \n");
+		break;
+	default:
+		break;
+	}
+	printf("PainterFlags: \n\n");
+
+	for (unsigned long i = 1; m_Params.PainterFlags >= i ; i<<=1)
+	{
+		if((m_Params.PainterFlags & i) == MAPPING_DIFFUSE)
+			printf("\tMAPPING_DIFFUSE\n");
+		else if ((m_Params.PainterFlags & i) == MAPPING_EMISSIVE)
+			printf("\tMAPPING_EMISSIVE\n");
+		else if ((m_Params.PainterFlags & i) == MAPPING_NORMAL_TRUE)
+			printf("\tMAPPING_NORMAL_TRUE\n");
+		else if ((m_Params.PainterFlags & i) == MAPPING_NORMAL)
+			printf("\tMAPPING_NORMAL\n");
+		else if ((m_Params.PainterFlags & i) == MAPPING_SHADOW)
+			printf("\tMAPPING_SHADOW\n");
+		else if ((m_Params.PainterFlags & i) == MAPPING_ENVIROMENTAL_SKY)
+			printf("\tMAPPING_ENVIROMENTAL_SKY\n");
+		else if ((m_Params.PainterFlags & i) == FOG_ENABLE)
+			printf("\tFOG_ENABLE\n");
+
+	}
+	printf("\n");
+	printf("CUT METHOD: %s \n", m_Params.MethodCutting & CUTTING_FEM ? "FEM" : m_Params.MethodCutting & CUTTING_FEM ? "XFEM" : "NONE");
+	printf("COLLISION METHOD SCENE: %s \n", m_Params.MethodCollisionScene & COLLISION_BVH ? "BVH" : m_Params.MethodCollisionScene & COLLISION_OCTREE ? "OCTREE" : "NONE");
+	printf("COLLISION METHOD OBJECT: %s \n", m_Params.MethodCollisionPerObject & COLLISION_BVH ? "BVH" : m_Params.MethodCollisionPerObject & COLLISION_BVH ? "OCTREE" : "NONE");
 	printf("PLANE CUT:\n");
 
 	for (unsigned long i = 0; i < 4;i++)
-		printf(" Point[%l] = { %.2f, %.2f, %.2f } \n", i, m_Params.PlaneCut[i].x, m_Params.PlaneCut[i].y, m_Params.PlaneCut[i].z);
-
+		printf("\tPoint[%i] = { %f, %f, %f } \n", i, m_Params.PlaneCut[i].x, m_Params.PlaneCut[i].y, m_Params.PlaneCut[i].z);
+	printf("\n---------------------------------------------\n\n");
 }
 
+wchar_t* remobeWhitespace(wchar_t * buf)
+{
+	wchar_t* end = NULL;
+	while (*buf == L' ')
+		buf++;
+
+	end = buf;
+	while (*end != L'\0' && *end != L' ')
+		end++;
+
+	*end = L'\0';
+	return buf;
+}
 
 void CSMain::ReadInitFile()
 {
@@ -194,18 +281,15 @@ void CSMain::ReadInitFile()
 	long depth = 0;
 	long tag = 0;
 
-	if (FAILED(hr = SHCreateStreamOnFile(L"..\\Assets\\initfile.xml", STGM_READ, &pFileStream)))
+	if (FAILED(hr = SHCreateStreamOnFile(L"..\\Assets\\initfile.xml", STGM_DIRECT, &pFileStream)))
 	{
 		wprintf(L"Error creating file reader, error is %08.8lx", hr);
 	}
+
+	
 	if (FAILED(hr = CreateXmlReader(__uuidof(IXmlReader), (void**)&pReader, NULL)))
 	{
 		wprintf(L"Error creating xml reader, error is %08.8lx", hr);
-	}
-
-	if (FAILED(hr = pReader->SetProperty(XmlReaderProperty_DtdProcessing, DtdProcessing_Prohibit)))
-	{
-		wprintf(L"Error setting XmlReaderProperty_DtdProcessing, error is %08.8lx", hr);
 	}
 
 	if (FAILED(hr = pReader->SetInput(pFileStream)))
@@ -244,7 +328,7 @@ void CSMain::ReadInitFile()
 				if (wcscmp(pwszLocalName, L"User") == 0)
 					tag = INIT_FILE_TAG_USER;
 				else if (wcscmp(pwszLocalName, L"Scene") == 0)
-					tag = INIT_FILE_COLLISION_SCENE;
+					tag = INIT_FILE_TAG_SCENE;
 				else if (wcscmp(pwszLocalName, L"Effect") == 0)
 					tag = INIT_FILE_TAG_FX;
 				else if (wcscmp(pwszLocalName, L"Effects3d") == 0)
@@ -257,15 +341,22 @@ void CSMain::ReadInitFile()
 					tag = INIT_FILE_COLLISION_OBJECT;
 				else if (wcscmp(pwszLocalName, L"PlaneCut") == 0)
 					tag = INIT_FILE_PLANE_CUT;
+				else if (wcscmp(pwszLocalName, L"GPU") == 0)
+					tag = INIT_FILE_GPU;
 				else
 					tag = 0;
 			}
-			if (depth == 3 && tag == INIT_FILE_TAG_3D_EFFECTS || tag == INIT_FILE_PLANE_CUT)
-				if (FAILED(hr = WriteAttributes(pReader, tag, (wchar_t*)pwszPrefix)))
+			if (depth == 3 && (tag == INIT_FILE_TAG_3D_EFFECTS || tag == INIT_FILE_PLANE_CUT))
+			{
+				if (FAILED(hr = WriteAttributes(pReader, tag, (wchar_t*)pwszLocalName)))
 					wprintf(L"Error writing attributes, error is %08.8lx", hr);
+				depth--;
+			}
+				
 
-			if (pReader->IsEmptyElement())
-				wprintf(L" (empty)");
+			/*if (pReader->IsEmptyElement())*/
+				
+
 			break;
 		case XmlNodeType_EndElement:
 			depth--;
@@ -293,9 +384,15 @@ void CSMain::ReadInitFile()
 			switch (tag)
 			{
 			case INIT_FILE_TAG_USER:
+				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
 				wcscpy(this->m_Params.user, pwszValue);
 				break;
+			case INIT_FILE_GPU:
+				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
+				wcscpy(this->m_Params.gpu, pwszValue);
+				break;
 			case INIT_FILE_TAG_SCENE:
+				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
 				wcscpy(this->m_Params.scene, pwszValue);
 				break;
 			case INIT_FILE_TAG_FX:
@@ -304,25 +401,28 @@ void CSMain::ReadInitFile()
 			case INIT_FILE_TAG_3D_EFFECTS:
 				break;
 			case INIT_FILE_CUT_METHOD:
-				if (wcscmp(pwszValue, L"FEM") == 0)
+				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
+				if (wcsncmp(pwszValue, L"FEM", sizeof(L"FEM")) == 0)
 					m_Params.MethodCutting = CUTTING_FEM;
-				else if (wcscmp(pwszValue, L"XFEM") == 0)
+				else if (wcsncmp(pwszValue, L"XFEM", sizeof(L"XFEM")) == 0)
 					m_Params.MethodCutting = CUTTING_XFEM;
 				else /* Default */
 					m_Params.MethodCutting = CUTTING_FEM;
 				break;
 			case INIT_FILE_COLLISION_SCENE:
-				if (wcscmp(pwszValue, L"OCTREE") == 0)
+				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
+				if (wcsncmp(pwszValue, L"OCTREE", sizeof(L"OCTREE")) == 0)
 					m_Params.MethodCollisionScene = COLLISION_OCTREE;
-				else if (wcscmp(pwszValue, L"BVH") == 0)
+				else if (wcsncmp(pwszValue, L"BVH", sizeof(L"BVH")) == 0)
 					m_Params.MethodCollisionScene = COLLISION_BVH;
 				else /* Default */
 					m_Params.MethodCollisionScene = COLLISION_OCTREE;
 				break;
 			case INIT_FILE_COLLISION_OBJECT:
-				if (wcscmp(pwszValue, L"OCTREE") == 0)
+				pwszValue = remobeWhitespace((wchar_t* )pwszValue);
+				if (wcsncmp(pwszValue, L"OCTREE", sizeof(L"OCTREE")) == 0)
 					m_Params.MethodCollisionPerObject = COLLISION_OCTREE;
-				else if (wcscmp(pwszValue, L"BVH") == 0)
+				else if (wcsncmp(pwszValue, L"BVH", sizeof(L"BVH")) == 0)
 					m_Params.MethodCollisionPerObject = COLLISION_BVH;
 				else /* Default */
 					m_Params.MethodCollisionPerObject = COLLISION_OCTREE;

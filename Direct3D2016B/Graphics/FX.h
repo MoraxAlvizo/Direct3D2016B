@@ -9,6 +9,18 @@
 
 using namespace std;
 
+enum
+{
+	FX_EDGE_DETECT = 0,
+	FX_RADIAN_BLUR,
+	FX_DIRECTIONAL_BLUR,
+	FX_GAUSS_HORIZONTAL_BLUR,
+	FX_GAUSS_VERTICAL_BLUR,
+	FX_BRIGHT_PASS,
+	FX_MERGED,
+	FX_SKY
+};
+
 class CFX
 {
 	CDXManager* m_pOwner;

@@ -15,7 +15,7 @@ CDXManager::~CDXManager()
 	Uninitialize();
 }
 
-IDXGIAdapter* CDXManager::EnumAndChooseAdapter(HWND hWnd)
+IDXGIAdapter* CDXManager::EnumAndChooseAdapter(HWND hWnd, wchar_t* name)
 {
 	IDXGIFactory* pFactory = NULL;
 	CreateDXGIFactory(IID_IDXGIFactory, (void**)&pFactory);
@@ -28,7 +28,23 @@ IDXGIAdapter* CDXManager::EnumAndChooseAdapter(HWND hWnd)
 		DXGI_ADAPTER_DESC dad;
 		pAdapter->GetDesc(&dad);
 		wchar_t szMessage[1024];
-		wsprintf(szMessage, L"Description:%s\r\nDedicated Video Memory:%dMB\r\nShared System Memory:%dMB\r\nDedicated System Memory:%dMB\r\n",
+
+		/* Lowlower */
+		wchar_t * lowercase = dad.Description;
+		while (*lowercase != L'\0')
+		{
+			*lowercase = towlower(*lowercase);
+			lowercase++;
+		}	
+		
+		wchar_t * substring = wcsstr(dad.Description, name);
+		if (substring)
+		{
+			pFactory->Release();
+			return pAdapter;
+		}
+
+		/*wsprintf(szMessage, L"Description:%s\r\nDedicated Video Memory:%dMB\r\nShared System Memory:%dMB\r\nDedicated System Memory:%dMB\r\n",
 			dad.Description,
 			dad.DedicatedVideoMemory / (1024 * 1024),
 			dad.SharedSystemMemory / (1024 * 1024),
@@ -48,9 +64,10 @@ IDXGIAdapter* CDXManager::EnumAndChooseAdapter(HWND hWnd)
 			pAdapter->Release();
 			pFactory->Release();
 			return NULL;
-		}
+		}*/
 		iAdapter++;
 	}
+	pAdapter->Release();
 	pFactory->Release();
 	return NULL;
 }

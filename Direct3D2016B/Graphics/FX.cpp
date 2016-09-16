@@ -111,8 +111,6 @@ bool CFX::Initialize()
 
 	m_vecVS.push_back(pVS);
 
-
-
 	char* Effects[] = { "PSEdgeDetect" ,			//0
 						"PSRadianBlur",				//1
 						"PSDirectionalBlur",		//2

@@ -42,6 +42,8 @@ void CSOnGame::OnEntry(void)
 	VECTOR4D Target = { 0, 0, 0, 1 };
 	VECTOR4D Up = { 0, 0, 1, 0 };
 
+	printf("[HCM] %s:OnEntry\n", GetClassString());
+
 	/* Create View, Projection and World Matrix */
 	m_View = View(EyePos, Target, Up);
 	m_Projection = PerspectiveWidthHeightLH(0.05, 0.05, 0.1, 100);
@@ -53,12 +55,17 @@ void CSOnGame::OnEntry(void)
 	m_Surface.BuildTangentSpaceFromTexCoordsIndexed(true);
 	m_Surface.SetColor(White, White, White, White);
 
-	LoadScene("..\\Assets\\spheres.blend");
+	/* Load Scene */
+	char buffer[BUF_SIZE];
+	int ret;
+	ret = wcstombs(buffer, main->m_Params.scene, sizeof(buffer));
+	LoadScene(buffer);
 
 	/* Load pointers */
 	m_pDXManager = main->m_pDXManager;
 	m_pDXPainter = main->m_pDXPainter;
 	m_hWnd = main->m_hWnd;
+	m_lPainterFlags = main->m_Params.PainterFlags;
 
 	/* Load textures */
 	CImageBMP *texture = CImageBMP::CreateBitmapFromFile("..\\Assets\\tela.bmp", NULL);
@@ -190,8 +197,6 @@ void CSOnGame::OnEntry(void)
 	m_bForward =  m_bBackward = m_bTurnLeft = m_bTurnRight =
 	m_bTurnUp =  m_bTurnDown = m_bTurnS =  m_bTurnS1 =false;
 
-
-
 }
 
 unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
@@ -276,7 +281,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 				/* Set params */
 				m_pDXPainter->m_Params.Brightness = Black;
-				m_pDXPainter->m_Params.Flags1 = MAPPING_DIFFUSE ;
+				m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
 				
 				m_pDXPainter->m_Params.World = m_World;
 				m_pDXPainter->m_Params.View = m_View;
@@ -316,6 +321,7 @@ void CSOnGame::OnExit(void)
 {
 	CSMain* main = (CSMain*)GetSuperState();
 
+	printf("[HCM] %s:OnExit\n", GetClassString());
 	/* Kill timer */
 	KillTimer(main->m_hWnd, 1);
 
