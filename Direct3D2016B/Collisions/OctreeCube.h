@@ -1,7 +1,7 @@
 #pragma once
-#include "Matrix4D.h"
-#include "MeshCollision.h"
-#include "DXBasicPainter.h"
+#include "../Graphics/Matrix4D.h"
+#include "../Collisions/MeshCollision.h"
+#include "../Graphics/DXBasicPainter.h"
 
 #define OCTREECUBE_MAX_OBJECTS_PER_BOX 2
 

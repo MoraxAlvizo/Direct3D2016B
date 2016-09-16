@@ -4,7 +4,7 @@
 #include <map>
 #include "DXBasicPainter.h"
 #include <assimp/scene.h>
-#include "Octree.h"
+#include "../Collisions/Octree.h"
 
 using namespace std;
 

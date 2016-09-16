@@ -42,7 +42,7 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	};
 
 	LIGHT LightDef2 = {
-		{ 0, LIGHT_SPOT,0,0 },  // Flags
+		{ LIGHT_ON, LIGHT_SPOT,0,0 },  // Flags
 		{ 0.1,0.1,0.1,0 },				// Ambient 
 		{ 5,5,5,5 },			// Diffuse
 		{ 5,5,5,0 },					// Specular
@@ -53,7 +53,7 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	};
 
 	LIGHT LightDef3 = {
-		{ 0, LIGHT_POINT,0,0 },	// Flags
+		{ LIGHT_ON, LIGHT_POINT,0,0 },	// Flags
 		{ 0.1,0.1,0.1,0 },				// Ambient 
 		{ 1,1,1,1 },					// Diffuse
 		{ 1,1,0.7,0 },					// Specular

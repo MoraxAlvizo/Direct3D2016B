@@ -1,9 +1,9 @@
 #pragma once
-#include "Matrix4D.h"
+#include "../Graphics/Matrix4D.h"
 #include <set>
 #include <vector>
-#include "DXBasicPainter.h"
-#include "Mesh.h"
+#include "../Graphics/DXBasicPainter.h"
+#include "../Graphics/Mesh.h"
 using namespace std;
 
 // MAX_OCTREE_DEPTH es el numero maximo de niveles en el arbol.Puede perjudicar si

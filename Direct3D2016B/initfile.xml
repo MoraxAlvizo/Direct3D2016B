@@ -1,0 +1,17 @@
+<CollisionEngine>
+	<User> Omar </User>
+	<Scene> ..\Assets\spheres.blend </Scene>
+	<Effect> 0 </Effect>
+	<Effects3d>
+		<Emissive value="on"/>
+		<NormalMap value="on"/>
+	</Effects3d>
+	<MethodCutting> XFEM </MethodCutting>
+	<MethodCollisionScene> OCTREE </MethodCollisionScene>
+	<MethodCollisionPerObject> BVH </MethodCollisionPerObject>
+	<PlaneCut>
+		<Point x=1 y=1 z=1/>
+		<Point x=1 y=1 z=1/>
+		<Point x=1 y=1 z=1/>
+	</PlaneCut>
+</CollisionEngine>

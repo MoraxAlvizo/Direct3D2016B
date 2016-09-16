@@ -1,5 +1,5 @@
 #pragma once
-#include "Mesh.h"
+#include "../Graphics/Mesh.h"
 #include "Octree.h"
 
 struct BoundingBox

@@ -19,7 +19,7 @@ public:
 	//Cada clase derivada deberá forzosamente implementar identificación de clase y nombre de clase
 	//El identificador de clase deberá ser único en el contexto de la aplicación
 	virtual unsigned long GetClassID()=0;
-	virtual const char* GetClassName()=0;
+	virtual const char* GetClassString()=0;
 public:
 	//Control de ciclo de vida y control de referencias.
 	virtual unsigned long AddRef(void);

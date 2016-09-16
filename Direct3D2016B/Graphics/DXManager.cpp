@@ -117,7 +117,8 @@ void CDXManager::Resize(int cx, int cy)
 		SAFE_RELEASE(m_pDepthStencil);
 
 		m_pContext->ClearState();
-		m_pSwapChain->ResizeBuffers(2, cx, cy, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+		HRESULT hr = m_pSwapChain->ResizeBuffers(2, cx, cy, DXGI_FORMAT_R8G8B8A8_UNORM, 0);
+
 		ID3D11Texture2D* pBackBuffer = 0;
 		m_pSwapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 		m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pRTV);

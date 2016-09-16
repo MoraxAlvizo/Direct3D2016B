@@ -73,7 +73,7 @@ protected:
 	{
 	public:
 		unsigned long GetClassID(){ return CLSID_CStateNull;}
-		const char*   GetClassName() { return "CStateMachineManager::CStateNull";}
+		const char*   GetClassString() { return "CStateMachineManager::CStateNull";}
 	protected:
 		virtual void OnEntry();
 		virtual void OnExit();
