@@ -30,6 +30,7 @@ public:
 	vector<unsigned long> m_Indices;
 	MATRIX4D m_World; // 
 	vector<centroid> m_Centroides;
+	char m_cName[128];
 public:
 	CMesh();
 	bool RayCast(VECTOR4D& RayOrigin,

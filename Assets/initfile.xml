@@ -1,7 +1,7 @@
 <CollisionEngine>
 	<User> Omar </User>
 	<GPU> nvidia </GPU>
-	<Scene> ..\Assets\4Cube.blend </Scene>
+	<Scene> ..\Assets\spheres.blend </Scene>
 	<Effect> 0 </Effect>
 	<Effects3d>
 		<EMISSIVE value="off"/>

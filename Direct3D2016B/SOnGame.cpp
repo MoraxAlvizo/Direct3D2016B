@@ -207,7 +207,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 		switch (pWin32->m_msg)
 		{
 		case WM_CHAR:
-			if (pWin32->m_wParam == 'a')
+			if (pWin32->m_wParam == 'z')
 			{
 				m_pSMOwner->Transition(CLSID_CSIntro);
 				CSMain* main = (CSMain*)GetSuperState();
@@ -381,9 +381,6 @@ void CSOnGame::LoadScene(char * filename)
 		m_Scene[i].m_Box.min = { minX, minY, minZ, 1 };
 		m_Scene[i].m_Box.max = { maxX, maxY, maxZ, 1 };
 
-		m_Scene[i].m_octree = new COctree(m_Scene[i].m_Box.min, m_Scene[i].m_Box.max, 0, NULL);
-		m_Scene[i].m_octree->m_Color = { i % 2 ? 1.f : 0.f , 1,i % 3 ? 1.f : 0.f,0 };
-
 		MATRIX4D t;
 		t.m00 = scene->mRootNode->mChildren[i]->mTransformation.a1;
 		t.m01 = scene->mRootNode->mChildren[i]->mTransformation.a2;
@@ -428,6 +425,7 @@ void CSOnGame::LoadScene(char * filename)
 		//g_Scene[i].Optimize();
 		m_Scene[i].BuildTangentSpaceFromTexCoordsIndexed(true);
 		m_Scene[i].GenerarCentroides();
+		strcpy(m_Scene[i].m_cName, scene->mMeshes[i]->mName.C_Str());
 	}
 }
 

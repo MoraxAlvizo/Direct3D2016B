@@ -124,7 +124,7 @@ void COctreeCube::fileObject(CMeshCollision* object, VECTOR4D bmin, VECTOR4D bma
 					}
 				}
 				else if (bmin.v[2] < m_Box.center.v[2] &&
-						 bmax.v[2] < m_Box.center.v[2]) {
+						 bmax.v[2] < m_Box.center.v[2]){
 					continue;
 				}
 
@@ -194,16 +194,24 @@ void COctreeCube::DrawOctree(CDXBasicPainter * painter)
 // Nos ayuda a debuguear la creacion del arbol
 void COctreeCube::printCHildren(int tab)
 {
-	char buf[512];
 	for (int i = 0; i < tab; i++)printf(" ");
 
-
-	sprintf_s(buf, "%i, E1: [%.2f][%.2f][%.2f], E2: [%.2f][%.2f][%.2f]\n", numObjects, m_Box.min.v[0], m_Box.min.v[1], m_Box.min.v[2], m_Box.max.v[0], m_Box.max.v[1], m_Box.max.v[2]);
-	/*for (auto point : raiz->Points)
+	
+	printf( "%i, E1: [%.2f][%.2f][%.2f], E2: [%.2f][%.2f][%.2f]\n", numObjects, m_Box.min.v[0], m_Box.min.v[1], m_Box.min.v[2], m_Box.max.v[0], m_Box.max.v[1], m_Box.max.v[2]);
+	int counter = 0;
+	for (auto cube : this->m_Objects)
 	{
-		for (int i = 0; i < tab; i++)printf(" ");
-		printf("PosBall: [%.2f][%.2f][%.2f]\n", point[0], point[1], point[2]);
-	}*/
+		for (int i = 0; i < tab + 2; i++)printf(" ");
+		printf("Object name %s \n", cube->m_cName);
+		for (int i = 0; i < tab+4; i++)printf(" ");
+		VECTOR4D max = cube->m_Box.max * cube->m_World;
+		VECTOR4D min = cube->m_Box.min * cube->m_World;
+
+		printf("Object[%i] min: [%.2f][%.2f][%.2f]\n", counter, min.x, min.y, min.z);
+		for (int i = 0; i < tab+4; i++)printf(" ");
+		printf("Object[%i] max: [%.2f][%.2f][%.2f]\n", counter, max.x, max.y, max.z);
+		counter++;
+	}
 	if (hasChildren)
 		for (int i = 0; i < 2; i++)
 		{

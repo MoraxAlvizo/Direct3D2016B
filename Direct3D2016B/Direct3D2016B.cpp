@@ -6,6 +6,7 @@
 #include "SMain.h"
 #include "SIntro.h"
 #include "SOnGame.h"
+#include "SPhysics.h"
 #include "HSM\StateMachineManager.h"
 #include "HSM\EventWin32.h"
 
@@ -126,12 +127,15 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    CSMain* pSMain = new CSMain();
    CSIntro* psIntro = new CSIntro();
    CSOnGame* psOnGame = new CSOnGame();
+   CSPhysics* psPhysics = new CSPhysics();
 
    
    g_Game.RegisterState(psIntro, CLSID_CSIntro, 0);
-   g_Game.RegisterState(psOnGame, CLSID_CSOnGame, 0);
+   g_Game.RegisterState(psPhysics, CLSID_CSPhysics, 0);
+   g_Game.RegisterState(psOnGame, CLSID_CSOnGame, CLSID_CSPhysics);
    g_Game.RegisterState(pSMain, CLSID_CSMain, CLSID_CSIntro);
 
+   g_Game.LinkToSuperState(CLSID_CSPhysics, CLSID_CSOnGame);
    g_Game.LinkToSuperState(CLSID_CSIntro, CLSID_CSMain);
    g_Game.LinkToSuperState(CLSID_CSOnGame, CLSID_CSMain);
 

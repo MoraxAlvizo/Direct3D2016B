@@ -4,6 +4,7 @@
 #include "HSM\StateMachineManager.h"
 #include "SOnGame.h"
 #include "SMain.h"
+#include "SPhysics.h"
 #include "Graphics\ImageBMP.h"
 
 CSIntro::CSIntro()
@@ -59,7 +60,7 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 			if (pWin32->m_wParam == 'a')
 			{
 				CSMain* main = (CSMain*)GetSuperState();
-				m_pSMOwner->Transition(CLSID_CSOnGame);
+				m_pSMOwner->Transition(CLSID_CSPhysics);
 				InvalidateRect(main->m_hWnd, NULL, false);
 				return 0;
 			}
