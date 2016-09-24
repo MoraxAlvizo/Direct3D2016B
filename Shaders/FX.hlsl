@@ -33,6 +33,8 @@ cbuffer PARAMS
     float4 DirectionalBlur; // xy direccion, z: fuerza
     float4 Umbral;
     matrix WVP;
+	float4 Brightness; //Pixel Shader Brightness control
+	uint4  flags;
     // Add here more params as requiered
 };
 
@@ -63,6 +65,11 @@ float4 PSEdgeDetect(VERTEX_OUTPUT Input) : SV_Target
 
     //return float4(1, 0, 0, 0);
     //return Frame.Sample(Sampler, Input.TexCoord.xy); //+ float4(.25,0,0,0);
+}
+
+float4 PSNone(VERTEX_OUTPUT Input) : SV_Target
+{
+	return Frame.Sample(Sampler, Input.TexCoord.xy)+ Brightness;
 }
 
 float4 PSRadianBlur(VERTEX_OUTPUT Input) : SV_Target

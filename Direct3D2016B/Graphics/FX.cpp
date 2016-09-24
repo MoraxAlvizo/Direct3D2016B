@@ -118,7 +118,8 @@ bool CFX::Initialize()
 						"PSGaussVerticalBlur",		//4
 						"PSBrightPass",				//5 
 						"PSMerged",					//6
-						"PSSky"						//7
+						"PSSky",					//7
+						"PSNone"
 						};				
 	for (auto FXName : Effects)
 	{
@@ -166,7 +167,7 @@ bool CFX::Initialize()
 	m_pOwner->GetDevice()->CreateDepthStencilState(&ddsd, &m_pDSSDrawOnNoMask);
 	return true;
 }
-void CFX::Process(unsigned long vsEffect, unsigned long psEffect, float w, float h)
+void CFX::Process(unsigned long vsEffect, unsigned long psEffect, float w, float h, unsigned long flags)
 {
 	unsigned long nVertices = psEffect == 7 ? m_vSphere.size() :4;
 	unsigned long nIndices = psEffect == 7 ? m_lIndicesSphere.size() :6;
@@ -186,13 +187,13 @@ void CFX::Process(unsigned long vsEffect, unsigned long psEffect, float w, float
 	*/
 	dbd.Usage = D3D11_USAGE_IMMUTABLE;
 	D3D11_SUBRESOURCE_DATA dsd;
-	dsd.pSysMem = psEffect == 7? &m_vSphere[0] : m_vFrame;
+	dsd.pSysMem = psEffect == 7 ? &m_vSphere[0] : flags & FX_FLAGS_USE_IMG_BUFFR ? m_vImg : m_vFrame;
 	dsd.SysMemPitch = 0;
 	dsd.SysMemSlicePitch = 0;
 	m_pOwner->GetDevice()->CreateBuffer(
 		&dbd, &dsd, &pVB);
 
-	dsd.pSysMem = psEffect == 7 ? &m_lIndicesSphere[0] : m_lIndicesFrame;
+	dsd.pSysMem = psEffect == 7 ? &m_lIndicesSphere[0] : flags & FX_FLAGS_USE_IMG_BUFFR ? m_lIndicesImg : m_lIndicesFrame;
 	dbd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	dbd.ByteWidth = sizeof(unsigned long)*nIndices;
 	m_pOwner->GetDevice()->CreateBuffer(

@@ -2,13 +2,17 @@
 //
 
 #include "stdafx.h"
+#include <io.h>
+#include <fcntl.h>
 #include "Direct3D2016B.h"
 #include "SMain.h"
 #include "SIntro.h"
 #include "SOnGame.h"
 #include "SPhysics.h"
+#include "SMainMenu.h"
 #include "HSM\StateMachineManager.h"
 #include "HSM\EventWin32.h"
+
 
 
 
@@ -40,9 +44,13 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	AllocConsole();
 	AttachConsole(GetCurrentProcessId());
 	HWND g_hWnd = GetConsoleWindow();
-	MoveWindow(g_hWnd, 1024, 1, 500, 1070, 1);
+	MoveWindow(g_hWnd, 1024, 1, 512, 800, 1);
 	freopen("CON", "w", stdout);
 
+	/* Resize buffer stdout */
+	/*static char szBuffer[16];
+	setvbuf(stdout, szBuffer, _IOLBF, 16);*/
+	
 	printf("Collision detection with OCTREE, BVH and XFEM \n");
 
     // Initialize global strings
@@ -128,16 +136,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    CSIntro* psIntro = new CSIntro();
    CSOnGame* psOnGame = new CSOnGame();
    CSPhysics* psPhysics = new CSPhysics();
-
+   CSMainMenu* psMainMenu = new CSMainMenu();
    
    g_Game.RegisterState(psIntro, CLSID_CSIntro, 0);
    g_Game.RegisterState(psPhysics, CLSID_CSPhysics, 0);
+   g_Game.RegisterState(psMainMenu, CLSID_CSMainMenu, 0);
    g_Game.RegisterState(psOnGame, CLSID_CSOnGame, CLSID_CSPhysics);
    g_Game.RegisterState(pSMain, CLSID_CSMain, CLSID_CSIntro);
 
    g_Game.LinkToSuperState(CLSID_CSPhysics, CLSID_CSOnGame);
    g_Game.LinkToSuperState(CLSID_CSIntro, CLSID_CSMain);
    g_Game.LinkToSuperState(CLSID_CSOnGame, CLSID_CSMain);
+   g_Game.LinkToSuperState(CLSID_CSMainMenu, CLSID_CSMain);
 
    g_Game.SetInitialState(CLSID_CSMain);
 
@@ -145,7 +155,8 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
    g_Game.Start();
 
-   MoveWindow(hWnd, 1, 1, 1024, 1024, 1);
+
+   MoveWindow(hWnd, 1, 1, 1024, 800, 1);
    ShowWindow(hWnd, nCmdShow);
    UpdateWindow(hWnd);
 

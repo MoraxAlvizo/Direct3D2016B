@@ -6,6 +6,7 @@
 #include "SMain.h"
 #include "SPhysics.h"
 #include "Graphics\ImageBMP.h"
+#include "SMainMenu.h"
 
 CSIntro::CSIntro()
 {
@@ -24,15 +25,15 @@ void CSIntro::OnEntry(void)
 	m_pDXPainter = main->m_pDXPainter;
 
 	printf("[HCM] %s:OnEntry\n", GetClassString());
-
-	m_FX = new CFX(m_pDXManager);
+	m_FX = main->m_FX;
+	/*m_FX = new CFX(m_pDXManager);
 	if (!m_FX->Initialize())
 	{
 		MessageBox(NULL,
 			L"No se ha podido inicializar FX",
 			L"Error fatal", MB_ICONERROR);
-		return ;
-	}
+		return;
+	}*/
 
 	CImageBMP* pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\intro.bmp", NULL);
 
@@ -60,7 +61,7 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 			if (pWin32->m_wParam == 'a')
 			{
 				CSMain* main = (CSMain*)GetSuperState();
-				m_pSMOwner->Transition(CLSID_CSPhysics);
+				m_pSMOwner->Transition(CLSID_CSMainMenu);
 				InvalidateRect(main->m_hWnd, NULL, false);
 				return 0;
 			}
@@ -89,14 +90,14 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 
 				m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
 				m_FX->SetInput(pSRV);
-				m_FX->Process(0, 0, dtd.Width, dtd.Height);
+				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height);
 
 				m_pDXManager->GetSwapChain()->Present(1, 0);
 
 				SAFE_RELEASE(pSRV);
 				SAFE_RELEASE(pBackBuffer);
 			}
-
+			break;
 		default:
 			break;
 		}
@@ -109,8 +110,6 @@ void CSIntro::OnExit(void)
 {
 	printf("[HCM] %s:OnExit\n", GetClassString());
 	CSMain* main = (CSMain*)GetSuperState();
-	m_FX->Uninitialize();
 	KillTimer(main->m_hWnd, 1);
 	SAFE_RELEASE(m_pImgIntro);
-	SAFE_DELETE(m_FX);
 }

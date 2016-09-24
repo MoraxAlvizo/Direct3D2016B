@@ -20,6 +20,8 @@ void CSMain::OnEntry(void)
 { 
 	m_pDXManager = new CDXManager();
 	m_pDXPainter = new CDXBasicPainter(m_pDXManager);
+	m_FX = new CFX(m_pDXManager);
+	
 
 	/* Load init parameters */
 	ReadInitFile();
@@ -38,6 +40,14 @@ void CSMain::OnEntry(void)
 	{
 		m_bInitCorrect = FALSE;
 		MessageBox(m_hWnd, L"No se pudo inicializar shaders", L"Error", MB_ICONERROR);
+	}
+
+	if (!m_FX->Initialize())
+	{
+		MessageBox(NULL,
+			L"No se ha podido inicializar FX",
+			L"Error fatal", MB_ICONERROR);
+		return;
 	}
 		
 }
@@ -70,8 +80,10 @@ void CSMain::OnExit(void)
 	printf("[HCM] %s:OnExit\n", GetClassString());
 	m_pDXPainter->Uninitialize();
 	m_pDXManager->Uninitialize();
+	m_FX->Uninitialize();
 	SAFE_DELETE(m_pDXPainter);
 	SAFE_DELETE(m_pDXManager);
+	SAFE_DELETE(m_FX);
 }
 
 

@@ -44,6 +44,7 @@ public:
 	HWND m_hWnd;
 	CDXManager* m_pDXManager;
 	CDXBasicPainter* m_pDXPainter;
+	CFX* m_FX;
 	bool m_bInitCorrect;
 	unsigned long GetClassID() { return CLSID_CSMain; }
 	const char* GetClassString() { return "CSMain"; }

@@ -1,3 +1,17 @@
+/*
+
+File name:
+	OctreeCube.cpp
+
+Descrition:
+	This class is responsible for all collisions in the scene.
+
+	DD/MM/AA	Name	- Coment
+	24/09/16    OMAR	- Issue #1: If two objects are near, divide Octree
+	24/09/16	OMAR	- Creation
+
+*/
+
 #include "stdafx.h"
 #include "OctreeCube.h"
 
@@ -53,6 +67,7 @@ void COctreeCube::createChildren()
 				//Crea un nuevo octree y la profundidad se incrementa en 1.
 				m_Children[x][y][z] = new COctreeCube({ minX, minY, minZ ,1 }, { maxX, maxY, maxZ },
 					m_lDepth + 1);
+
 			}
 		}
 	}
@@ -65,6 +80,7 @@ void COctreeCube::createChildren()
 	}
 	// Elimina todas las bolas de ese nodo en particula ya que fueron colocadas en sus hijos.
 	m_Objects.clear();
+	m_Color = { 1,0,0,0 };
 	hasChildren = true;
 }
 
@@ -85,8 +101,10 @@ inline void COctreeCube::addObject(CMeshCollision * object, VECTOR4D bmin, VECTO
 	if (hasChildren)
 		fileObject(object, bmin,bmax,true);
 	else
+	{
 		m_Objects.insert(object);
-
+		m_Color = { 0,0,1,0 };
+	}
 }
 
 void COctreeCube::fileObject(CMeshCollision* object, VECTOR4D bmin, VECTOR4D bmax, bool addBall)
@@ -145,6 +163,14 @@ void COctreeCube::DrawOctree(CDXBasicPainter * painter)
 	VECTOR4D c1 = m_Box.min;
 	VECTOR4D c2 = m_Box.max;
 
+	c1.x += 0.01;
+	c1.y += 0.01;
+	c1.z += 0.01;
+
+	c2.x -= 0.01;
+	c2.y -= 0.01;
+	c2.z -= 0.01;
+
 	CDXBasicPainter::VERTEX cube[8];
 	unsigned long   m_lIndicesFrame[16];
 	cube[0].Position = { c1.x,c1.y,c1.z,1 };
@@ -176,7 +202,8 @@ void COctreeCube::DrawOctree(CDXBasicPainter * painter)
 	m_lIndicesFrame[14] = 6;
 	m_lIndicesFrame[15] = 4;
 
-	painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
+	if(!hasChildren)
+		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 
 	if (hasChildren)
 		for (int i = 0; i < 2; i++)

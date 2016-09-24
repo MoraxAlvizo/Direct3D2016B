@@ -3,7 +3,7 @@
 #include "../Collisions/MeshCollision.h"
 #include "../Graphics/DXBasicPainter.h"
 
-#define OCTREECUBE_MAX_OBJECTS_PER_BOX 2
+#define OCTREECUBE_MAX_OBJECTS_PER_BOX 1
 
 class COctreeCube
 {

@@ -230,8 +230,10 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			}
 		case WM_KEYDOWN:
 		case WM_KEYUP:
+		{
 			ManageKeyboardEvents(pWin32->m_msg, pWin32->m_wParam);
 			return 0;
+		}
 		case WM_PAINT:
 
 			if (m_pDXManager->GetSwapChain())
@@ -262,12 +264,12 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				m_pDXPainter->m_Params.Material.Ambient = Gray;
 
 				/* Clear main render target */
-				m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&NightBlue);
+				/*m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&NightBlue);
 				m_pDXManager->GetContext()->ClearDepthStencilView(
 					m_pDXManager->GetMainDSV(),
 					D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 					1.0f,
-					0);
+					0);*/
 
 				/* Set SRVs */
 				m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVTexture);
@@ -564,6 +566,8 @@ void CSOnGame::UpdateCamera()
 	InvV.m32 = EyePos.z;
 
 	m_View = Orthogonalize(FastInverse(InvV));
+
+	InvalidateRect(m_hWnd, NULL, false);
 }
 
 /* Keyboard keys */
@@ -582,7 +586,6 @@ void CSOnGame::ManageKeyboardEvents(UINT event, WPARAM wParam)
 {
 	switch (event)
 	{
-	
 		case WM_KEYUP:
 		{
 			switch (wParam)

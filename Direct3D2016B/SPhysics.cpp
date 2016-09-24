@@ -81,9 +81,9 @@ unsigned long CSPhysics::OnEvent(CEventBase * pEvent)
 
 			if (m_pDXManager->GetSwapChain())
 			{
-				if (m_lFlags & PHYSICS_DRAW_OCTREE)
+				//if (m_lFlags & PHYSICS_DRAW_OCTREE)
 				{
-					/*m_pDXPainter->m_Params.World = Identity();
+					m_pDXPainter->m_Params.World = Identity();
 					m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
 					VECTOR4D NightBlue = { 0,0,.1, 0 };
 					m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&NightBlue);
@@ -92,18 +92,18 @@ unsigned long CSPhysics::OnEvent(CEventBase * pEvent)
 							D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 							1.0f,
 							0);
-					m_pOctree->DrawOctree(m_pDXPainter);*/
-					printf("\n------------------- Octree scene ----------------------\n\n");
+					m_pOctree->DrawOctree(m_pDXPainter);
+					/*printf("\n------------------- Octree scene ----------------------\n\n");
 					m_pOctree->printCHildren(0);
 					printf("\n-------------------------------------------------------\n\n");
-					m_lFlags ^= PHYSICS_DRAW_OCTREE;
+					m_lFlags ^= PHYSICS_DRAW_OCTREE;*/
 
-					/*for (unsigned long i = 0; i < m_pScene->size(); i++)
+					for (unsigned long i = 0; i < m_pScene->size(); i++)
 					{
 						m_pDXPainter->m_Params.World = (*m_pScene)[i].m_World;
 						(*m_pScene)[i].m_octree->DrawOctree();
 
-					}*/
+					}
 				}
 
 			}
