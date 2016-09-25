@@ -49,7 +49,6 @@ void CSMain::OnEntry(void)
 			L"Error fatal", MB_ICONERROR);
 		return;
 	}
-		
 }
 
 unsigned long CSMain::OnEvent(CEventBase * pEvent)
@@ -265,7 +264,7 @@ void CSMain::printParams()
 	printf("\n---------------------------------------------\n\n");
 }
 
-wchar_t* remobeWhitespace(wchar_t * buf)
+wchar_t* removeWhitespace(wchar_t * buf)
 {
 	wchar_t* end = NULL;
 	while (*buf == L' ')
@@ -396,15 +395,15 @@ void CSMain::ReadInitFile()
 			switch (tag)
 			{
 			case INIT_FILE_TAG_USER:
-				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
+				pwszValue = removeWhitespace((wchar_t*)pwszValue);
 				wcscpy(this->m_Params.user, pwszValue);
 				break;
 			case INIT_FILE_GPU:
-				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
+				pwszValue = removeWhitespace((wchar_t*)pwszValue);
 				wcscpy(this->m_Params.gpu, pwszValue);
 				break;
 			case INIT_FILE_TAG_SCENE:
-				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
+				pwszValue = removeWhitespace((wchar_t*)pwszValue);
 				wcscpy(this->m_Params.scene, pwszValue);
 				break;
 			case INIT_FILE_TAG_FX:
@@ -413,7 +412,7 @@ void CSMain::ReadInitFile()
 			case INIT_FILE_TAG_3D_EFFECTS:
 				break;
 			case INIT_FILE_CUT_METHOD:
-				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
+				pwszValue = removeWhitespace((wchar_t*)pwszValue);
 				if (wcsncmp(pwszValue, L"FEM", sizeof(L"FEM")) == 0)
 					m_Params.MethodCutting = CUTTING_FEM;
 				else if (wcsncmp(pwszValue, L"XFEM", sizeof(L"XFEM")) == 0)
@@ -422,7 +421,7 @@ void CSMain::ReadInitFile()
 					m_Params.MethodCutting = CUTTING_FEM;
 				break;
 			case INIT_FILE_COLLISION_SCENE:
-				pwszValue = remobeWhitespace((wchar_t*)pwszValue);
+				pwszValue = removeWhitespace((wchar_t*)pwszValue);
 				if (wcsncmp(pwszValue, L"OCTREE", sizeof(L"OCTREE")) == 0)
 					m_Params.MethodCollisionScene = COLLISION_OCTREE;
 				else if (wcsncmp(pwszValue, L"BVH", sizeof(L"BVH")) == 0)
@@ -431,7 +430,7 @@ void CSMain::ReadInitFile()
 					m_Params.MethodCollisionScene = COLLISION_OCTREE;
 				break;
 			case INIT_FILE_COLLISION_OBJECT:
-				pwszValue = remobeWhitespace((wchar_t* )pwszValue);
+				pwszValue = removeWhitespace((wchar_t* )pwszValue);
 				if (wcsncmp(pwszValue, L"OCTREE", sizeof(L"OCTREE")) == 0)
 					m_Params.MethodCollisionPerObject = COLLISION_OCTREE;
 				else if (wcsncmp(pwszValue, L"BVH", sizeof(L"BVH")) == 0)

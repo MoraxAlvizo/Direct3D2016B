@@ -189,6 +189,7 @@ unsigned long CSPhysics::OnEvent(CEventBase * pEvent)
 
 void CSPhysics::OnExit(void)
 {
+	SAFE_DELETE(m_pOctree);
 	printf("[HCM] %s:OnExit\n", GetClassString());
 }
 

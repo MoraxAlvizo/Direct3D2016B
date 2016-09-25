@@ -90,6 +90,7 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 
 				m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
 				m_FX->SetInput(pSRV);
+				m_FX->m_Params.Brightness = { 0,0,0,0 };
 				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height);
 
 				m_pDXManager->GetSwapChain()->Present(1, 0);

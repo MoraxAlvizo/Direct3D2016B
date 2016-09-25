@@ -177,7 +177,7 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 					m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
 					m_FX->SetInput(m_vMenu[i].pSRV);
 
-					if (m_lOptionSelected == i)
+					if (m_lOptionSelected != i)
 						m_FX->m_Params.Brightness = { 0.5,0.5,0.5,0 };
 					else
 						m_FX->m_Params.Brightness = { 0,0,0,0 };

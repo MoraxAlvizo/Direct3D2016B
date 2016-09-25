@@ -29,42 +29,51 @@ COctreeCube::COctreeCube(VECTOR4D min, VECTOR4D max, long depth)
 
 void COctreeCube::createChildren()
 {
-	for (int x = 0; x < 2; x++) {
+	for (int x = 0; x < 2; x++) 
+	{
 		float minX;
 		float maxX;
-		if (x == 0) {
+		if (x == 0) 
+		{
 			minX = m_Box.min.v[0];
 			maxX = m_Box.center.v[0];
 		}
-		else {
+		else 
+		{
 			minX = m_Box.center.v[0];
 			maxX = m_Box.max.v[0];
 		}
 
-		for (int y = 0; y < 2; y++) {
+		for (int y = 0; y < 2; y++) 
+		{
 			float minY;
 			float maxY;
-			if (y == 0) {
+			if (y == 0)
+			{
 				minY = m_Box.min.v[1];
 				maxY = m_Box.center.v[1];
 			}
-			else {
+			else
+			{
 				minY = m_Box.center.v[1];
 				maxY = m_Box.max.v[1];
 			}
 
-			for (int z = 0; z < 2; z++) {
+			for (int z = 0; z < 2; z++) 
+			{
 				float minZ;
 				float maxZ;
-				if (z == 0) {
+				if (z == 0)
+				{
 					minZ = m_Box.min.v[2];
 					maxZ = m_Box.center.v[2];
 				}
-				else {
+				else 
+				{
 					minZ = m_Box.center.v[2];
 					maxZ = m_Box.max.v[2];
 				}
-				//Crea un nuevo octree y la profundidad se incrementa en 1.
+
 				m_Children[x][y][z] = new COctreeCube({ minX, minY, minZ ,1 }, { maxX, maxY, maxZ },
 					m_lDepth + 1);
 
@@ -72,13 +81,13 @@ void COctreeCube::createChildren()
 		}
 	}
 
-	// Itera sobre todas las bolas del antiguo nodo y las va colocando en los nuevos hijos con fileBall(). 
+
 	for (set<CMeshCollision*>::iterator it = m_Objects.begin(); it != m_Objects.end();
 		it++) {
 		CMeshCollision* object = *it;
 		fileObject(object, object->m_Box.min * object->m_World, object->m_Box.max* object->m_World, true);
 	}
-	// Elimina todas las bolas de ese nodo en particula ya que fueron colocadas en sus hijos.
+
 	m_Objects.clear();
 	m_Color = { 1,0,0,0 };
 	hasChildren = true;
@@ -94,9 +103,9 @@ inline void COctreeCube::addObject(CMeshCollision * object, VECTOR4D bmin, VECTO
 
 	if (!hasChildren &&
 		numObjects > OCTREECUBE_MAX_OBJECTS_PER_BOX &&
-		m_lDepth < 4) {
+		m_lDepth < 6) 
 		createChildren();
-	}
+	
 
 	if (hasChildren)
 		fileObject(object, bmin,bmax,true);
@@ -108,18 +117,17 @@ inline void COctreeCube::addObject(CMeshCollision * object, VECTOR4D bmin, VECTO
 }
 
 void COctreeCube::collectObjects(set<CMeshCollision*> &objects) {
-	if (hasChildren) {
-		for (int x = 0; x < 2; x++) {
-			for (int y = 0; y < 2; y++) {
-				for (int z = 0; z < 2; z++) {
+	if (hasChildren) 
+		for (int x = 0; x < 2; x++) 
+			for (int y = 0; y < 2; y++) 
+				for (int z = 0; z < 2; z++) 
 					m_Children[x][y][z]->collectObjects(objects);
-				}
-			}
-		}
-	}
-	else {
+				
+	else 
+	{
 		for (set<CMeshCollision*>::iterator it = m_Objects.begin(); it != m_Objects.end();
-			it++) {
+			it++) 
+		{
 			CMeshCollision* point = *it;
 			objects.insert(point);
 		}
@@ -130,14 +138,14 @@ void COctreeCube::destroyChildren() {
 
 	collectObjects(m_Objects);
 	// Una vez que tenemos guardadas las pelotas procedemos a eliminar sus hijos.
-	for (int x = 0; x < 2; x++) {
-		for (int y = 0; y < 2; y++) {
-			for (int z = 0; z < 2; z++) {
+	for (int x = 0; x < 2; x++) 
+		for (int y = 0; y < 2; y++) 
+			for (int z = 0; z < 2; z++)
+			{
 				delete m_Children[x][y][z];
 				m_Children[x][y][z] = NULL;
 			}
-		}
-	}
+				
 	hasChildren = false;
 }
 
@@ -149,11 +157,13 @@ void COctreeCube::removeObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D 
 		destroyChildren();
 	
 
-	if (hasChildren) {
+	if (hasChildren) 
 		fileObject(object, bmin, bmax, false);
-	}
-	else {
+	else 
+	{
 		m_Objects.erase(object);
+		if(numObjects == 0)
+			m_Color = { 1,0,0,0 };
 	}
 }
 
