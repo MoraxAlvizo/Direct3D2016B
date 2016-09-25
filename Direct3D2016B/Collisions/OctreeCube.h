@@ -7,7 +7,7 @@
 
 class COctreeCube
 {
-private:
+public:
 	struct Box
 	{
 		VECTOR4D min;
@@ -15,6 +15,16 @@ private:
 		VECTOR4D center;
 	};
 
+	union MeshPair
+	{
+		unsigned long long m_idColision;
+		struct
+		{
+			unsigned long m_object1ID;
+			unsigned long m_object2ID;
+		};
+	};
+private:
 	// Atributos privados
 	Box m_Box;
 	long m_lDepth;
@@ -35,9 +45,12 @@ public:
 	~COctreeCube();
 
 	void addObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D bmax);
+	void removeObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D bmax);
 	void fileObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D bmax, bool addBall);
 	void DrawOctree(CDXBasicPainter* painter);
-
+	void destroyChildren();
+	void collectObjects(set<CMeshCollision*> &objects);
+	void potentialCollsions(set<unsigned long long> &collisions);
 	void printCHildren(int tab);
 
 };

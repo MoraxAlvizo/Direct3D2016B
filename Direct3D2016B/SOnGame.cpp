@@ -427,6 +427,9 @@ void CSOnGame::LoadScene(char * filename)
 		//g_Scene[i].Optimize();
 		m_Scene[i].BuildTangentSpaceFromTexCoordsIndexed(true);
 		m_Scene[i].GenerarCentroides();
+
+		/* Set id */
+		m_Scene[i].m_lID = i;
 		strcpy(m_Scene[i].m_cName, scene->mMeshes[i]->mName.C_Str());
 	}
 }

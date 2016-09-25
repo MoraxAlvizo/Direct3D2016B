@@ -17,6 +17,8 @@ public:
 
 	BoundingBox m_Box;
 	COctree* m_octree;
+	unsigned long m_lID;
+
 	void createOctree();
 };
 

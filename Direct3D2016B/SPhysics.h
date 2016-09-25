@@ -26,6 +26,9 @@ public:
 	CDXBasicPainter* m_pDXPainter;
 	COctreeCube* m_pOctree;
 	unsigned long m_lFlags;
+
+	bool m_bMoveSphere1;
+	bool m_bMoveSphere2;
 #define PHYSICS_DRAW_OCTREE 0x01
 	/* Scene */
 	vector<CMeshCollision> *m_pScene;
@@ -39,5 +42,6 @@ protected:
 	void OnEntry(void);
 	unsigned long OnEvent(CEventBase* pEvent);
 	void OnExit(void);
+	void ManageKeyboardEvents(UINT event, WPARAM wParam);
 };
 
