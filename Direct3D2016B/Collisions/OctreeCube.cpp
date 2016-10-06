@@ -117,6 +117,7 @@ inline void COctreeCube::addObject(CMeshCollision * object, VECTOR4D bmin, VECTO
 }
 
 void COctreeCube::collectObjects(set<CMeshCollision*> &objects) {
+
 	if (hasChildren) 
 		for (int x = 0; x < 2; x++) 
 			for (int y = 0; y < 2; y++) 
@@ -137,6 +138,7 @@ void COctreeCube::collectObjects(set<CMeshCollision*> &objects) {
 void COctreeCube::destroyChildren() {
 
 	collectObjects(m_Objects);
+
 	// Una vez que tenemos guardadas las pelotas procedemos a eliminar sus hijos.
 	for (int x = 0; x < 2; x++) 
 		for (int y = 0; y < 2; y++) 
@@ -153,16 +155,15 @@ void COctreeCube::removeObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D 
 
 	numObjects--;
 
-	if (hasChildren && numObjects < MIN_BALLS_PER_OCTREE) 
+	if (hasChildren && numObjects < MIN_BALLS_PER_OCTREE)
 		destroyChildren();
 	
-
 	if (hasChildren) 
 		fileObject(object, bmin, bmax, false);
 	else 
 	{
 		m_Objects.erase(object);
-		if(numObjects == 0)
+		if(m_Objects.size() == 0)
 			m_Color = { 1,0,0,0 };
 	}
 }
@@ -248,7 +249,13 @@ void COctreeCube::DrawOctree(CDXBasicPainter * painter)
 	cube[7].Position = { c2.x,c2.y,c2.z,1 };
 
 	for (int i = 0; i < 8; i++)
-		cube[i].Color = m_Color;
+	{
+		if(numObjects != 0 )
+			cube[i].Color = { 0, 0, 1, 0 } ;
+		else
+			cube[i].Color = {1, 0, 0, 0};
+	}
+		
 
 	m_lIndicesFrame[0] = 0;
 	m_lIndicesFrame[1] = 1;
@@ -354,5 +361,4 @@ void COctreeCube::printCHildren(int tab)
 				}
 			}
 		}
-
 }

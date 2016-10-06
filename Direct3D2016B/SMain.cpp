@@ -14,6 +14,9 @@ CSMain::~CSMain()
 	m_pDXManager = NULL;
 	m_pDXPainter = NULL;
 	m_bInitCorrect = TRUE;
+	m_FX = NULL;
+	m_pSndManager = NULL;
+	m_pInputManager = NULL;
 }
 
 void CSMain::OnEntry(void)
@@ -29,6 +32,7 @@ void CSMain::OnEntry(void)
 
 	/* Print where I am */
 	printf("[HCM] %s:OnEntry\n", GetClassString());
+	printf("Init DirectX 11\n");
 
 	if (!m_pDXManager->Initialize(m_hWnd, CDXManager::EnumAndChooseAdapter(NULL,m_Params.gpu)))
 	{
@@ -49,11 +53,56 @@ void CSMain::OnEntry(void)
 			L"Error fatal", MB_ICONERROR);
 		return;
 	}
+
+	printf("Sound init \n");
+	CSndFactory* pFactory = new CSndFactory();
+	m_pSndManager =  (CSndManager*) pFactory->CreateObject(L"CSndManager");
+
+	if (!m_pSndManager->InitSoundEngine(m_hWnd))
+	{
+		MessageBox(NULL,
+			L"No se ha podido inicializar Sound",
+			L"Error fatal", MB_ICONERROR);
+		return;
+	}
+
+	printf("Input Init \n");
+	m_pInputManager = new CInputManager();
+	if (!m_pInputManager->InitializeDirectInputSession(m_hInstance))
+	{
+		MessageBox(NULL,
+			L"No se ha podido inicializar Input Manager",
+			L"Error fatal", MB_ICONERROR);
+		return;
+	}
+	if (!m_pInputManager->ConfigureDevices(m_hWnd))
+	{
+		MessageBox(NULL,
+			L"Unable to aquire input devices",
+			L"Error fatal", MB_ICONERROR);
+		return;
+	}
 }
 
 unsigned long CSMain::OnEvent(CEventBase * pEvent)
 {
-	if (EVENT_WIN32 == pEvent->m_ulEventType)
+	if (APP_LOOP == pEvent->m_ulEventType)
+	{
+		if (m_pSndManager)
+			m_pSndManager->RemoveAllSndFxStopped();
+
+		for (long iSource = 0; iSource < m_pInputManager->GetDeviceCount(); iSource++)
+		{
+			DIJOYSTATE2 js2;
+			if (m_pInputManager->ReadState(js2, iSource))
+			{
+				CInputEvent *pInput = new CInputEvent(iSource, 0, js2);
+				m_pSMOwner->PostEvent(pInput);
+			}
+		}
+
+	}
+	else if (EVENT_WIN32 == pEvent->m_ulEventType)
 	{
 		CEventWin32* pWin32 = (CEventWin32*)pEvent;
 		switch (pWin32->m_msg)
@@ -79,10 +128,18 @@ void CSMain::OnExit(void)
 	printf("[HCM] %s:OnExit\n", GetClassString());
 	m_pDXPainter->Uninitialize();
 	m_pDXManager->Uninitialize();
+	m_pSndManager->UnitializeSoundEngine();
 	m_FX->Uninitialize();
+	m_pInputManager->FinalizeDirectInputSession();
 	SAFE_DELETE(m_pDXPainter);
 	SAFE_DELETE(m_pDXManager);
 	SAFE_DELETE(m_FX);
+	
+	CSndFactory Factory;
+	Factory.DestroyObject(m_pSndManager);
+
+	SAFE_DELETE(m_pInputManager);
+
 }
 
 

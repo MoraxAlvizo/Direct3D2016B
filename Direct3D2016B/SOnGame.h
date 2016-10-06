@@ -19,6 +19,7 @@ Descrition:
 #include "Graphics\DXBasicPainter.h"
 #include "Graphics\MeshMathSurface.h"
 #include "Collisions\MeshCollision.h"
+#include "Collisions\OctreeCube.h"
 
 #define CLSID_CSOnGame 0x14638246
 
@@ -32,6 +33,21 @@ public:
 	CDXBasicPainter* m_pDXPainter;
 	HWND m_hWnd;
 	unsigned long m_lPainterFlags;
+
+	/* Collisions */
+	COctreeCube* m_pOctree;
+	unsigned long m_lFlags;
+
+	unsigned long m_lMoveSphere1;
+	unsigned long m_lMoveSphere2;
+	/* Flags move object */
+#define MOVE_OBJECT 0x01
+#define MOVE_UP     0x02
+#define MOVE_DOWN	0x04
+
+	/* Flags physics state */
+#define PHYSICS_DRAW_OCTREE		0x01
+#define PHYSICS_PRINT_OCTREE	0x02
 
 	ID3D11Texture2D* m_pTexture;   //GPU
 	ID3D11Texture2D* m_pNormalMapTrue;

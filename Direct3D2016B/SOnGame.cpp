@@ -197,10 +197,207 @@ void CSOnGame::OnEntry(void)
 	m_bForward =  m_bBackward = m_bTurnLeft = m_bTurnRight =
 	m_bTurnUp =  m_bTurnDown = m_bTurnS =  m_bTurnS1 =false;
 
+	/* Init collisions structures */
+	for (unsigned long i = 0; i < m_Scene.size(); i++)
+	{
+		m_Scene[i].m_octree = new COctree(m_Scene[i].m_Box.min, m_Scene[i].m_Box.max, 0, m_pDXPainter);
+		m_Scene[i].m_octree->m_Color = { i % 2 ? 1.f : 0.f , 1,i % 3 ? 1.f : 0.f,0 };
+	}
+
+
+	m_pOctree = new COctreeCube({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
+	{ BOX_SIZE / 2, BOX_SIZE / 2, BOX_SIZE / 2 }, 0);
+
+	//Create objects
+	//int i = 1;
+	for (unsigned long i = 0; i < m_Scene.size(); i++)
+	{
+		m_pOctree->addObject(&m_Scene[i],
+			m_Scene[i].m_Box.min * m_Scene[i].m_World,
+			m_Scene[i].m_Box.max * m_Scene[i].m_World);
+
+		//(*m_pScene)[i].createOctree();
+	}
+
+	
+
 }
 
 unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 {
+	if (APP_LOOP == pEvent->m_ulEventType)
+	{
+		if (m_pDXManager->GetSwapChain())
+		{
+			// Clear render targer and deph stencil 
+			ID3D11Texture2D* pBackBuffer = 0;
+			MATRIX4D AC; /* Matriz de correction de aspecto */
+						 // Colors
+			VECTOR4D DarkGray = { 0.25,0.25,0.25,1 };
+			VECTOR4D White = { 1,1,1,1 };
+			VECTOR4D Gray = { .5,.5,.5,0 };
+			VECTOR4D NightBlue = { 0,0,.1, 0 };
+			VECTOR4D Black = { 0, 0, 0, 0 };
+			D3D11_TEXTURE2D_DESC dtd;
+			m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&NightBlue);
+			m_pDXManager->GetContext()->ClearDepthStencilView(
+				m_pDXManager->GetMainDSV(),
+				D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+				1.0f,
+				0);
+
+			/* Check if the objects was moved */
+			if (m_lFlags & PHYSICS_DRAW_OCTREE)
+			{
+				m_pDXPainter->m_Params.World = Identity();
+				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
+				
+				m_pOctree->DrawOctree(m_pDXPainter);
+
+				for (unsigned long i = 0; i < m_Scene.size(); i++)
+				{
+					m_pDXPainter->m_Params.World = m_Scene[i].m_World;
+					m_Scene[i].m_octree->DrawOctree();
+
+				}
+			}
+			if (m_lFlags & PHYSICS_PRINT_OCTREE)
+			{
+				printf("\n------------------- Octree scene ----------------------\n\n");
+				m_pOctree->printCHildren(0);
+				printf("\n-------------------------------------------------------\n\n");
+				m_lFlags ^= PHYSICS_PRINT_OCTREE;
+			}
+
+			if (m_lMoveSphere1 || m_lMoveSphere2)
+			{
+				set<unsigned long long> potencialCollisions;
+				m_pOctree->potentialCollsions(potencialCollisions);
+
+				for (set<unsigned long long>::iterator it2 = potencialCollisions.begin(); it2 != potencialCollisions.end(); it2++)
+				{
+					COctreeCube::MeshPair meshPair;
+					CMeshCollision *object1;
+					CMeshCollision *object2;
+					VECTOR4D min1, max1;
+					VECTOR4D min2, max2;
+
+					meshPair.m_idColision = *it2;
+					object1 = &m_Scene[meshPair.m_object1ID];
+					object2 = &m_Scene[meshPair.m_object2ID];
+
+					/* Max min object 1*/
+					min1 = object1->m_Box.min * object1->m_World;
+					max1 = object1->m_Box.max * object1->m_World;
+
+					/* Max min object 2*/
+					min2 = object2->m_Box.min * object2->m_World;
+					max2 = object2->m_Box.max * object2->m_World;
+
+					/* Check if boxes collision */
+					if (min1.x < max2.x &&
+						max1.x > min2.x &&
+						min1.y < max2.y &&
+						max1.y > min2.y &&
+						min1.z < max2.z &&
+						max1.z > min2.z)
+					{
+						if ((strcmp(object1->m_cName, "Sphere") == 0 || strcmp(object2->m_cName, "Sphere") == 0) && m_lMoveSphere1)
+							m_lMoveSphere1 = false;
+						if ((strcmp(object1->m_cName, "Sphere.001") == 0 || strcmp(object2->m_cName, "Sphere.001") == 0) && m_lMoveSphere2)
+							m_lMoveSphere2 = false;
+
+					}
+				}
+
+				for (unsigned long i = 0; i < m_Scene.size(); i++)
+				{
+					unsigned long flags;
+					if ((strcmp(m_Scene[i].m_cName, "Sphere") == 0 && (flags = m_lMoveSphere1)) ||
+						(strcmp(m_Scene[i].m_cName, "Sphere.001") == 0 && (flags = m_lMoveSphere2)))
+					{
+						float direction = -1;
+
+						if (flags)
+						{
+							if (flags & MOVE_DOWN)
+								direction = -1;
+							else if (flags & MOVE_UP)
+								direction = 1;
+							else
+								direction = 0;
+						}
+
+						m_pOctree->removeObject(&m_Scene[i],
+							m_Scene[i].m_Box.min * m_Scene[i].m_World,
+							m_Scene[i].m_Box.max * m_Scene[i].m_World);
+
+						m_Scene[i].m_World = m_Scene[i].m_World * Translation(0, 0, direction*0.1);
+
+						m_pOctree->addObject(&m_Scene[i],
+							m_Scene[i].m_Box.min * m_Scene[i].m_World,
+							m_Scene[i].m_Box.max * m_Scene[i].m_World);
+					}
+
+				}
+			}
+			
+
+			// Draw 
+			/* Get Backbuffer to get height and width */
+			m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
+			pBackBuffer->GetDesc(&dtd);
+			dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
+			SAFE_RELEASE(pBackBuffer);
+
+			/* Create AC Matrix */
+			AC = Scaling((float)dtd.Height / dtd.Width, 1, 1);
+
+			/* Set Material parameters */
+			m_pDXPainter->SetRenderTarget(m_pDXManager->GetMainRTV());
+			m_pDXPainter->m_Params.Material.Diffuse = Gray;
+			m_pDXPainter->m_Params.Material.Ambient = Gray;
+
+			/* Set SRVs */
+			m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVTexture);
+			m_pDXManager->GetContext()->PSSetShaderResources(1, 1, &m_pSRVNormalMap);
+			m_pDXManager->GetContext()->PSSetShaderResources(2, 1, &m_pSRVEnvMap);
+			m_pDXManager->GetContext()->PSSetShaderResources(3, 1, &m_pSRVNormalMapTrue);
+			m_pDXManager->GetContext()->PSSetShaderResources(4, 1, &m_pSRVEmissiveMap);
+
+			// Actualizar camara si fue movida
+			UpdateCamera();
+
+			/* Set params */
+			m_pDXPainter->m_Params.Brightness = Black;
+			m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
+
+			m_pDXPainter->m_Params.World = m_World;
+			m_pDXPainter->m_Params.View = m_View;
+			m_pDXPainter->m_Params.Projection = m_Projection*AC;
+
+			/* Render with Left Hand*/
+			m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
+
+			/* Draw scene */
+			for (unsigned long i = 0; i < m_Scene.size(); i++)
+			{
+				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
+				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
+			}
+
+			/* Draw surface */
+			/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0],
+			m_Surface.m_Vertices.size(),
+			&m_Surface.m_Indices[0],
+			m_Surface.m_Indices.size(),
+			PAINTER_DRAW);*/
+
+			m_pDXManager->GetSwapChain()->Present(1, 0);
+
+		}
+
+	}
 	if (EVENT_WIN32 == pEvent->m_ulEventType)
 	{
 		CEventWin32* pWin32 = (CEventWin32*)pEvent;
@@ -212,6 +409,16 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				m_pSMOwner->Transition(CLSID_CSIntro);
 				CSMain* main = (CSMain*)GetSuperState();
 				InvalidateRect(main->m_hWnd, NULL, false);
+				return 0;
+			}
+			if (pWin32->m_wParam == 'p')
+			{
+				m_lFlags ^= PHYSICS_PRINT_OCTREE;
+				return 0;
+			}
+			if (pWin32->m_wParam == '0')
+			{
+				m_lFlags ^= PHYSICS_DRAW_OCTREE;
 				return 0;
 			}
 			break;
@@ -236,79 +443,79 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 		}
 		case WM_PAINT:
 
-			if (m_pDXManager->GetSwapChain())
-			{
+			//if (m_pDXManager->GetSwapChain())
+			//{
 
-				ID3D11Texture2D* pBackBuffer = 0;
-				MATRIX4D AC; /* Matriz de correction de aspecto */
-				// Colors
-				VECTOR4D DarkGray = { 0.25,0.25,0.25,1 };
-				VECTOR4D White = { 1,1,1,1 };
-				VECTOR4D Gray = { .5,.5,.5,0 };
-				VECTOR4D NightBlue = { 0,0,.1, 0 };
-				VECTOR4D Black = { 0, 0, 0, 0 };
-				D3D11_TEXTURE2D_DESC dtd;
+			//	ID3D11Texture2D* pBackBuffer = 0;
+			//	MATRIX4D AC; /* Matriz de correction de aspecto */
+			//	// Colors
+			//	VECTOR4D DarkGray = { 0.25,0.25,0.25,1 };
+			//	VECTOR4D White = { 1,1,1,1 };
+			//	VECTOR4D Gray = { .5,.5,.5,0 };
+			//	VECTOR4D NightBlue = { 0,0,.1, 0 };
+			//	VECTOR4D Black = { 0, 0, 0, 0 };
+			//	D3D11_TEXTURE2D_DESC dtd;
 
-				/* Get Backbuffer to get height and width */
-				m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
-				pBackBuffer->GetDesc(&dtd);
-				dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
-				SAFE_RELEASE(pBackBuffer);
+			//	/* Get Backbuffer to get height and width */
+			//	m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
+			//	pBackBuffer->GetDesc(&dtd);
+			//	dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
+			//	SAFE_RELEASE(pBackBuffer);
 
-				/* Create AC Matrix */
-				AC = Scaling((float)dtd.Height / dtd.Width, 1, 1);
+			//	/* Create AC Matrix */
+			//	AC = Scaling((float)dtd.Height / dtd.Width, 1, 1);
 
-				/* Set Material parameters */
-				m_pDXPainter->SetRenderTarget(m_pDXManager->GetMainRTV());
-				m_pDXPainter->m_Params.Material.Diffuse = Gray;
-				m_pDXPainter->m_Params.Material.Ambient = Gray;
+			//	/* Set Material parameters */
+			//	m_pDXPainter->SetRenderTarget(m_pDXManager->GetMainRTV());
+			//	m_pDXPainter->m_Params.Material.Diffuse = Gray;
+			//	m_pDXPainter->m_Params.Material.Ambient = Gray;
 
-				/* Clear main render target */
-				/*m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&NightBlue);
-				m_pDXManager->GetContext()->ClearDepthStencilView(
-					m_pDXManager->GetMainDSV(),
-					D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-					1.0f,
-					0);*/
+			//	/* Clear main render target */
+			//	/*m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&NightBlue);
+			//	m_pDXManager->GetContext()->ClearDepthStencilView(
+			//		m_pDXManager->GetMainDSV(),
+			//		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+			//		1.0f,
+			//		0);*/
 
-				/* Set SRVs */
-				m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVTexture);
-				m_pDXManager->GetContext()->PSSetShaderResources(1, 1, &m_pSRVNormalMap);
-				m_pDXManager->GetContext()->PSSetShaderResources(2, 1, &m_pSRVEnvMap);
-				m_pDXManager->GetContext()->PSSetShaderResources(3, 1, &m_pSRVNormalMapTrue);
-				m_pDXManager->GetContext()->PSSetShaderResources(4, 1, &m_pSRVEmissiveMap);
+			//	/* Set SRVs */
+			//	m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVTexture);
+			//	m_pDXManager->GetContext()->PSSetShaderResources(1, 1, &m_pSRVNormalMap);
+			//	m_pDXManager->GetContext()->PSSetShaderResources(2, 1, &m_pSRVEnvMap);
+			//	m_pDXManager->GetContext()->PSSetShaderResources(3, 1, &m_pSRVNormalMapTrue);
+			//	m_pDXManager->GetContext()->PSSetShaderResources(4, 1, &m_pSRVEmissiveMap);
 
-				// Actualizar camara si fue movida
-				UpdateCamera();
+			//	// Actualizar camara si fue movida
+			//	UpdateCamera();
 
-				/* Set params */
-				m_pDXPainter->m_Params.Brightness = Black;
-				m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
-				
-				m_pDXPainter->m_Params.World = m_World;
-				m_pDXPainter->m_Params.View = m_View;
-				m_pDXPainter->m_Params.Projection = m_Projection*AC;
+			//	/* Set params */
+			//	m_pDXPainter->m_Params.Brightness = Black;
+			//	m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
+			//	
+			//	m_pDXPainter->m_Params.World = m_World;
+			//	m_pDXPainter->m_Params.View = m_View;
+			//	m_pDXPainter->m_Params.Projection = m_Projection*AC;
 
-				/* Render with Left Hand*/
-				m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
+			//	/* Render with Left Hand*/
+			//	m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
 
-				/* Draw scene */
-				for (unsigned long i = 0; i < m_Scene.size(); i++)
-				{
-					m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-					m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
-				}
-				
-				/* Draw surface */
-				/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0], 
-					m_Surface.m_Vertices.size(), 
-					&m_Surface.m_Indices[0], 
-					m_Surface.m_Indices.size(), 
-					PAINTER_DRAW);*/
+			//	/* Draw scene */
+			//	for (unsigned long i = 0; i < m_Scene.size(); i++)
+			//	{
+			//		m_pDXPainter->m_Params.World = m_Scene[i].m_World;
+			//		m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
+			//	}
+			//	
+			//	/* Draw surface */
+			//	/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0], 
+			//		m_Surface.m_Vertices.size(), 
+			//		&m_Surface.m_Indices[0], 
+			//		m_Surface.m_Indices.size(), 
+			//		PAINTER_DRAW);*/
 
-				m_pDXManager->GetSwapChain()->Present(1, 0);
+			//	m_pDXManager->GetSwapChain()->Present(1, 0);
 
-			}
+			//}
 			
 			break;
 		
@@ -584,6 +791,9 @@ void CSOnGame::UpdateCamera()
 #define VK_O 0x4F
 #define VK_1 97
 #define VK_2 98
+#define VK_3 99
+#define VK_4 100
+#define VK_5 101
 
 void CSOnGame::ManageKeyboardEvents(UINT event, WPARAM wParam)
 {
@@ -628,6 +838,14 @@ void CSOnGame::ManageKeyboardEvents(UINT event, WPARAM wParam)
 				break;
 			case VK_O:
 				m_bTurnS1 = false;
+				break;
+			case VK_1:
+			case VK_4:
+				m_lMoveSphere1 = 0;
+				break;
+			case VK_2:
+			case VK_5:
+				m_lMoveSphere2 = 0;
 				break;
 			/*case VK_1:
 				m_bMoveSphere1 = false;
@@ -680,6 +898,18 @@ void CSOnGame::ManageKeyboardEvents(UINT event, WPARAM wParam)
 				break;
 			case VK_O:
 				m_bTurnS1 = true;
+				break;
+			case VK_1:
+				m_lMoveSphere1 = MOVE_OBJECT | MOVE_DOWN;
+				break;
+			case VK_2:
+				m_lMoveSphere2 = MOVE_OBJECT | MOVE_DOWN;
+				break;
+			case VK_4:
+				m_lMoveSphere1 = MOVE_OBJECT | MOVE_UP;
+				break;
+			case VK_5:
+				m_lMoveSphere2 = MOVE_OBJECT | MOVE_UP;
 				break;
 			/*case VK_1:
 				g_bMoveSphere1 = true;

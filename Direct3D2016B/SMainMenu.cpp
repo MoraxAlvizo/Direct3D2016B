@@ -110,7 +110,51 @@ void CSMainMenu::OnEntry(void)
 
 unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 {
-	if (EVENT_WIN32 == pEvent->m_ulEventType)
+	if (INPUT_EVENT == pEvent->m_ulEventType)
+	{
+		CInputEvent* pInput = (CInputEvent*)pEvent;
+		if(pInput->m_js2.rgbButtons[0]!=0)
+		{
+			MAIN->m_pSndManager->PlayFx(0);
+		}
+	}
+	if (APP_LOOP == pEvent->m_ulEventType)
+	{
+		if (m_pDXManager->GetSwapChain())
+		{
+			ID3D11Texture2D* pBackBuffer = 0;
+			D3D11_TEXTURE2D_DESC dtd;
+
+			m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
+			pBackBuffer->GetDesc(&dtd);
+			m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVBackGround);
+
+			m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
+			m_FX->m_Params.Brightness = { 0,0,0,0 };
+			m_FX->SetInput(m_pSRVBackGround);
+			m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height);
+
+			for (unsigned long i = 0; i < MAIN_MENU_SIZE; i++)
+			{
+				m_FX->SetImgVertex(m_vMenu[i].frame, m_vMenu[i].indices);
+
+				m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
+				m_FX->SetInput(m_vMenu[i].pSRV);
+
+				if (m_lOptionSelected != i)
+					m_FX->m_Params.Brightness = { 0.5,0.5,0.5,0 };
+				else
+					m_FX->m_Params.Brightness = { 0,0,0,0 };
+				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height, FX_FLAGS_USE_IMG_BUFFR);
+			}
+
+			m_pDXManager->GetSwapChain()->Present(1, 0);
+
+			SAFE_RELEASE(pBackBuffer);
+
+		}
+	}
+	else if (EVENT_WIN32 == pEvent->m_ulEventType)
 	{
 		CEventWin32* pWin32 = (CEventWin32*)pEvent;
 		switch (pWin32->m_msg)
@@ -156,7 +200,7 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 		break;
 		case WM_PAINT:
 		{
-			if (m_pDXManager->GetSwapChain())
+			/*if (m_pDXManager->GetSwapChain())
 			{
 				ID3D11Texture2D* pBackBuffer = 0;
 				D3D11_TEXTURE2D_DESC dtd;
@@ -187,7 +231,7 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 				m_pDXManager->GetSwapChain()->Present(1, 0);
 
 				SAFE_RELEASE(pBackBuffer);
-			}
+			}*/
 			break;
 		}
 		default:

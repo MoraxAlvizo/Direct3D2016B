@@ -74,7 +74,6 @@ Debug\*
 *.aps
 *.iobj
 *.ipdb
-Release/*
+Release\*
 *.iobj
-Release/Direct3D2016B.ipdb
 *.ipdb

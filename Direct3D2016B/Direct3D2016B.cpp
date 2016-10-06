@@ -8,12 +8,9 @@
 #include "SMain.h"
 #include "SIntro.h"
 #include "SOnGame.h"
-#include "SPhysics.h"
 #include "SMainMenu.h"
 #include "HSM\StateMachineManager.h"
 #include "HSM\EventWin32.h"
-
-
 
 
 #define MAX_LOADSTRING 100
@@ -69,14 +66,27 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
     MSG msg;
 
     // Main message loop:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
-        if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
+	bool bExit = false;
+	CEventBase AppLoop;
+	AppLoop.m_ulEventType = APP_LOOP;
+
+	while (!bExit)
+	{
+		while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+		{
+			if (WM_QUIT == msg.message)
+				bExit = true;
+			if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
+			{
+				TranslateMessage(&msg);
+				DispatchMessage(&msg);
+			}
+		}
+		// Aplication time !!!!
+		g_Game.Dispatch(&AppLoop);
+		g_Game.ProcessEvents();
+	}
+    
 
     return (int) msg.wParam;
 }
@@ -135,16 +145,13 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    CSMain* pSMain = new CSMain();
    CSIntro* psIntro = new CSIntro();
    CSOnGame* psOnGame = new CSOnGame();
-   CSPhysics* psPhysics = new CSPhysics();
    CSMainMenu* psMainMenu = new CSMainMenu();
    
    g_Game.RegisterState(psIntro, CLSID_CSIntro, 0);
-   g_Game.RegisterState(psPhysics, CLSID_CSPhysics, 0);
    g_Game.RegisterState(psMainMenu, CLSID_CSMainMenu, 0);
-   g_Game.RegisterState(psOnGame, CLSID_CSOnGame, CLSID_CSPhysics);
+   g_Game.RegisterState(psOnGame, CLSID_CSOnGame, 0);
    g_Game.RegisterState(pSMain, CLSID_CSMain, CLSID_CSIntro);
 
-   g_Game.LinkToSuperState(CLSID_CSPhysics, CLSID_CSOnGame);
    g_Game.LinkToSuperState(CLSID_CSIntro, CLSID_CSMain);
    g_Game.LinkToSuperState(CLSID_CSOnGame, CLSID_CSMain);
    g_Game.LinkToSuperState(CLSID_CSMainMenu, CLSID_CSMain);
@@ -152,6 +159,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
    g_Game.SetInitialState(CLSID_CSMain);
 
    pSMain->m_hWnd = hWnd;
+   pSMain->m_hInstance = hInstance;
 
    g_Game.Start();
 
@@ -212,7 +220,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 			/* Si havemos el ValidateRect no repinta cuando estamos moviendo la camara
 			   Preguntar en clase 
 			   */
-			//ValidateRect(hWnd, NULL);
+			ValidateRect(hWnd, NULL);
         }
         break;
     case WM_DESTROY:

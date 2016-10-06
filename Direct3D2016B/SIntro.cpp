@@ -4,7 +4,6 @@
 #include "HSM\StateMachineManager.h"
 #include "SOnGame.h"
 #include "SMain.h"
-#include "SPhysics.h"
 #include "Graphics\ImageBMP.h"
 #include "SMainMenu.h"
 
@@ -46,13 +45,50 @@ void CSIntro::OnEntry(void)
 
 	m_pImgIntro = pImage->CreateTexture(m_pDXManager);
 
+	main->m_pSndManager->ClearEngine();
+	auto fx = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Explosion.wav", INTRO_SND_EXPLOSION);
+
+	if (fx)
+		printf("Explosion load success \n");
+	else
+		printf("Explosion load fail\n");
+
+	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\FFX.wav", INTRO_SND_BACKGROUND);
+	if (m_pSndBackground)
+		m_pSndBackground->Play(false);
 	SetTimer(main->m_hWnd, 1, 5000, NULL);
+	SetTimer(main->m_hWnd, 2, 1000, NULL);
 	return;
 }
 
 unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 {
-	if (EVENT_WIN32 == pEvent->m_ulEventType)
+	if (APP_LOOP == pEvent->m_ulEventType)
+	{
+		if (m_pDXManager->GetSwapChain())
+		{
+			ID3D11Texture2D* pBackBuffer = 0;
+			D3D11_TEXTURE2D_DESC dtd;
+			ID3D11ShaderResourceView* pSRV = NULL;
+
+			m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
+			pBackBuffer->GetDesc(&dtd);
+
+			m_pDXManager->GetDevice()->CreateShaderResourceView(m_pImgIntro, NULL, &pSRV);
+			m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &pSRV);
+
+			m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
+			m_FX->SetInput(pSRV);
+			m_FX->m_Params.Brightness = { 0,0,0,0 };
+			m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height);
+
+			m_pDXManager->GetSwapChain()->Present(1, 0);
+
+			SAFE_RELEASE(pSRV);
+			SAFE_RELEASE(pBackBuffer);
+		}
+	}
+	else if (EVENT_WIN32 == pEvent->m_ulEventType)
 	{
 		CEventWin32* pWin32 = (CEventWin32*)pEvent;
 		switch (pWin32->m_msg)
@@ -65,18 +101,40 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 				InvalidateRect(main->m_hWnd, NULL, false);
 				return 0;
 			}
+			{
+				static float speed = 1.0f;
+				if (pWin32->m_wParam == 'm')
+				{
+					speed = min(4.0, speed + 0.10);
+					m_pSndBackground->SetSpeed(speed);
+					return 0;
+				}
+				if (pWin32->m_wParam == 'n')
+				{
+					speed = max(0.1, speed - 0.10);
+					m_pSndBackground->SetSpeed(speed);
+					return 0;
+				}
+			}
+			
 		case WM_TIMER:
 			if (1 == pWin32->m_wParam)
 			{
-				//m_pSMOwner->Transition(CLSID_CSOnGame);
-				//CSMain* main = (CSMain*)GetSuperState();
+				m_pSMOwner->Transition(CLSID_CSMainMenu);
+				CSMain* main = (CSMain*)GetSuperState();
 				//InvalidateRect(main->m_hWnd, NULL, false);
 				return 0;
+			}
+			if (2 == pWin32->m_wParam)
+			{
+				CSMain* main = (CSMain*)GetSuperState();
+				KillTimer(main->m_hWnd, 2);
+				main->m_pSndManager->PlayFx(INTRO_SND_EXPLOSION);
 			}
 			break;
 		case WM_PAINT:
 
-			if (m_pDXManager->GetSwapChain())
+			/*if (m_pDXManager->GetSwapChain())
 			{
 				ID3D11Texture2D* pBackBuffer = 0;
 				D3D11_TEXTURE2D_DESC dtd;
@@ -97,7 +155,7 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 
 				SAFE_RELEASE(pSRV);
 				SAFE_RELEASE(pBackBuffer);
-			}
+			}*/
 			break;
 		default:
 			break;
