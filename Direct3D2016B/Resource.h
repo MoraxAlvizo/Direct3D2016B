@@ -29,5 +29,3 @@
 #define _APS_NEXT_SYMED_VALUE		110
 #endif
 #endif
-
-

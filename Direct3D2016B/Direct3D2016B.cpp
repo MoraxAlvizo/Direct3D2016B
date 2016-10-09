@@ -21,22 +21,22 @@ WCHAR szTitle[MAX_LOADSTRING];                  // The title bar text
 WCHAR szWindowClass[MAX_LOADSTRING];            // the main window class name
 CStateMachineManager g_Game;					// The Game
 
-// Forward declarations of functions included in this code module:
+												// Forward declarations of functions included in this code module:
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPWSTR    lpCmdLine,
+	_In_ int       nCmdShow)
 {
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: Place code here.
-	
+	// TODO: Place code here.
+
 	// Create console 
 	AllocConsole();
 	AttachConsole(GetCurrentProcessId());
@@ -47,25 +47,25 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	/* Resize buffer stdout */
 	/*static char szBuffer[16];
 	setvbuf(stdout, szBuffer, _IOLBF, 16);*/
-	
+
 	printf("Collision detection with OCTREE, BVH and XFEM \n");
 
-    // Initialize global strings
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_DIRECT3D2016B, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+	// Initialize global strings
+	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+	LoadStringW(hInstance, IDC_DIRECT3D2016B, szWindowClass, MAX_LOADSTRING);
+	MyRegisterClass(hInstance);
 
-    // Perform application initialization:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
-    }
+	// Perform application initialization:
+	if (!InitInstance(hInstance, nCmdShow))
+	{
+		return FALSE;
+	}
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_DIRECT3D2016B));
+	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_DIRECT3D2016B));
 
-    MSG msg;
+	MSG msg;
 
-    // Main message loop:
+	// Main message loop:
 	bool bExit = false;
 	CEventBase AppLoop;
 	AppLoop.m_ulEventType = APP_LOOP;
@@ -86,9 +86,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		g_Game.Dispatch(&AppLoop);
 		g_Game.ProcessEvents();
 	}
-    
 
-    return (int) msg.wParam;
+
+	return (int)msg.wParam;
 }
 
 
@@ -100,23 +100,23 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 //
 ATOM MyRegisterClass(HINSTANCE hInstance)
 {
-    WNDCLASSEXW wcex;
+	WNDCLASSEXW wcex;
 
-    wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_DIRECT3D2016B));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = hInstance;
+	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_DIRECT3D2016B));
+	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wcex.hbrBackground = 0;//(HBRUSH)(COLOR_WINDOW + 1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDI_DIRECT3D2016B);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.lpszMenuName = MAKEINTRESOURCEW(IDI_DIRECT3D2016B);
+	wcex.lpszClassName = szWindowClass;
+	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-    return RegisterClassExW(&wcex);
+	return RegisterClassExW(&wcex);
 }
 
 //
@@ -131,44 +131,44 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //
 BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 {
-   hInst = hInstance; // Store instance handle in our global variable
+	hInst = hInstance; // Store instance handle in our global variable
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+	HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
+		CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
+	if (!hWnd)
+	{
+		return FALSE;
+	}
 
-   // Application Map Desing
-   CSMain* pSMain = new CSMain();
-   CSIntro* psIntro = new CSIntro();
-   CSOnGame* psOnGame = new CSOnGame();
-   CSMainMenu* psMainMenu = new CSMainMenu();
-   
-   g_Game.RegisterState(psIntro, CLSID_CSIntro, 0);
-   g_Game.RegisterState(psMainMenu, CLSID_CSMainMenu, 0);
-   g_Game.RegisterState(psOnGame, CLSID_CSOnGame, 0);
-   g_Game.RegisterState(pSMain, CLSID_CSMain, CLSID_CSIntro);
+	// Application Map Desing
+	CSMain* pSMain = new CSMain();
+	CSIntro* psIntro = new CSIntro();
+	CSOnGame* psOnGame = new CSOnGame();
+	CSMainMenu* psMainMenu = new CSMainMenu();
 
-   g_Game.LinkToSuperState(CLSID_CSIntro, CLSID_CSMain);
-   g_Game.LinkToSuperState(CLSID_CSOnGame, CLSID_CSMain);
-   g_Game.LinkToSuperState(CLSID_CSMainMenu, CLSID_CSMain);
+	g_Game.RegisterState(psIntro, CLSID_CSIntro, 0);
+	g_Game.RegisterState(psMainMenu, CLSID_CSMainMenu, 0);
+	g_Game.RegisterState(psOnGame, CLSID_CSOnGame, 0);
+	g_Game.RegisterState(pSMain, CLSID_CSMain, CLSID_CSIntro);
 
-   g_Game.SetInitialState(CLSID_CSMain);
+	g_Game.LinkToSuperState(CLSID_CSIntro, CLSID_CSMain);
+	g_Game.LinkToSuperState(CLSID_CSOnGame, CLSID_CSMain);
+	g_Game.LinkToSuperState(CLSID_CSMainMenu, CLSID_CSMain);
 
-   pSMain->m_hWnd = hWnd;
-   pSMain->m_hInstance = hInstance;
+	g_Game.SetInitialState(CLSID_CSMain);
 
-   g_Game.Start();
+	pSMain->m_hWnd = hWnd;
+	pSMain->m_hInstance = hInstance;
+
+	g_Game.Start();
 
 
-   MoveWindow(hWnd, 1, 1, 1024, 800, 1);
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+	MoveWindow(hWnd, 1, 1, 1024, 800, 1);
+	ShowWindow(hWnd, nCmdShow);
+	UpdateWindow(hWnd);
 
-   return TRUE;
+	return TRUE;
 }
 
 //
@@ -184,70 +184,70 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	auto Event = new CEventWin32(hWnd, message, wParam, lParam);
-	
+
 	g_Game.Dispatch(Event);
-    switch (message)
-    {
+	switch (message)
+	{
 	case WM_CREATE:
 	{
 
 	}
 	break;
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            // Parse the menu selections:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            //HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            //EndPaint(hWnd, &ps);
+	case WM_COMMAND:
+	{
+		int wmId = LOWORD(wParam);
+		// Parse the menu selections:
+		switch (wmId)
+		{
+		case IDM_ABOUT:
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			break;
+		case IDM_EXIT:
+			DestroyWindow(hWnd);
+			break;
+		default:
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+	}
+	break;
+	case WM_PAINT:
+	{
+		PAINTSTRUCT ps;
+		//HDC hdc = BeginPaint(hWnd, &ps);
+		// TODO: Add any drawing code that uses hdc here...
+		//EndPaint(hWnd, &ps);
 
-			/* Si havemos el ValidateRect no repinta cuando estamos moviendo la camara
-			   Preguntar en clase 
-			   */
-			ValidateRect(hWnd, NULL);
-        }
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
+		/* Si havemos el ValidateRect no repinta cuando estamos moviendo la camara
+		Preguntar en clase
+		*/
+		ValidateRect(hWnd, NULL);
+	}
+	break;
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+	return 0;
 }
 
 // Message handler for about box.
 INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message)
+	{
+	case WM_INITDIALOG:
+		return (INT_PTR)TRUE;
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
+		{
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+		break;
+	}
+	return (INT_PTR)FALSE;
 }
