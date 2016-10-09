@@ -17,6 +17,20 @@ struct centroid
 	centroid() {}
 };
 
+struct EdgeCutInfo
+{
+public: // Eigen support
+	unsigned int edgeId;
+	VECTOR4D cutPoint;
+};
+
+struct VolumeCutInfo
+{
+	std::vector<EdgeCutInfo>	cutEdges;
+	std::vector<unsigned int>	cutNodes;
+	unsigned int				type_cut;
+};
+
 class CMesh
 {
 public:

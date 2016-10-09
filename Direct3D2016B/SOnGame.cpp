@@ -341,7 +341,26 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 				}
 			}
-			
+
+			CDXBasicPainter::VERTEX plane[4];
+			unsigned long   m_lIndicesFrame[8];
+
+			plane[0].Position = { 0,0,1,1 };
+			plane[1].Position = { 1,1,1,1 };
+			plane[2].Position = { -1,1,1,1 };
+			plane[3].Position = { -1,-1,1,1 };
+
+			m_lIndicesFrame[0] = 0;
+			m_lIndicesFrame[1] = 1;
+			m_lIndicesFrame[2] = 3;
+			m_lIndicesFrame[3] = 2;
+			m_lIndicesFrame[4] = 0;
+			m_lIndicesFrame[5] = 4;
+			m_lIndicesFrame[6] = 5;
+			m_lIndicesFrame[7] = 1;
+
+
+			m_pDXPainter->DrawIndexed(plane, 4, m_lIndicesFrame, 8, PAINTER_DRAW);
 
 			// Draw 
 			/* Get Backbuffer to get height and width */
