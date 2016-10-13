@@ -70,6 +70,8 @@ public:
 	CMeshMathSurface m_Surface;
 	vector<CMeshCollision> m_Scene;
 
+	bool flag = true;
+
 	/* Constructor and destructor */
 	CSOnGame();
 	virtual ~CSOnGame();

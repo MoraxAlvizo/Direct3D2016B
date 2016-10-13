@@ -19,6 +19,7 @@ Descrition:
 #include "SIntro.h"
 #include "Graphics\ImageBMP.h"
 #include "SMain.h"
+#include <iostream>
 
 /* assimp include files. */
 #include <assimp/cimport.h>
@@ -59,6 +60,8 @@ void CSOnGame::OnEntry(void)
 	char buffer[BUF_SIZE];
 	int ret;
 	ret = wcstombs(buffer, main->m_Params.scene, sizeof(buffer));
+
+
 	LoadScene(buffer);
 
 	/* Load pointers */
@@ -345,7 +348,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			CDXBasicPainter::VERTEX plane[4];
 			unsigned long   m_lIndicesFrame[8];
 
-			plane[0].Position = { 0,0,1,1 };
+			plane[0].Position = { 1,-1,1,1 };
 			plane[1].Position = { 1,1,1,1 };
 			plane[2].Position = { -1,1,1,1 };
 			plane[3].Position = { -1,-1,1,1 };
@@ -361,7 +364,39 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 
 			m_pDXPainter->DrawIndexed(plane, 4, m_lIndicesFrame, 8, PAINTER_DRAW);
+			
+			while (flag)
+			{
+				std::cout << "==================Obtenemos Vertices del Tetrahedro============" << std::endl;
 
+				std::cout << "Vertice: 1" << std::endl;
+				std::cout << m_Scene[0].m_Vertices[0].Position.x << std::endl;
+				std::cout << m_Scene[0].m_Vertices[0].Position.y << std::endl;
+				std::cout << m_Scene[0].m_Vertices[0].Position.z << std::endl;
+				std::cout << m_Scene[0].m_Vertices[0].Position.w << std::endl;
+
+				std::cout << "Vertice: 2" << std::endl;
+				std::cout << m_Scene[0].m_Vertices[1].Position.x << std::endl;
+				std::cout << m_Scene[0].m_Vertices[1].Position.y << std::endl;
+				std::cout << m_Scene[0].m_Vertices[1].Position.z << std::endl;
+				std::cout << m_Scene[0].m_Vertices[1].Position.w << std::endl;
+
+				std::cout << "Vertice: 3" << std::endl;
+				std::cout << m_Scene[0].m_Vertices[2].Position.x << std::endl;
+				std::cout << m_Scene[0].m_Vertices[2].Position.y << std::endl;
+				std::cout << m_Scene[0].m_Vertices[2].Position.z << std::endl;
+				std::cout << m_Scene[0].m_Vertices[2].Position.w << std::endl;
+
+				std::cout << "Vertice: 4" << std::endl;
+				std::cout << m_Scene[0].m_Vertices[3].Position.x << std::endl;
+				std::cout << m_Scene[0].m_Vertices[3].Position.y << std::endl;
+				std::cout << m_Scene[0].m_Vertices[3].Position.z << std::endl;
+				std::cout << m_Scene[0].m_Vertices[3].Position.w << std::endl;
+
+				std::cout << "==================Obtenemos Vertices del Tetrahedro============" << std::endl;
+				flag = false;
+			}
+			
 			// Draw 
 			/* Get Backbuffer to get height and width */
 			m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
