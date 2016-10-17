@@ -72,6 +72,21 @@ public:
 
 	bool flag = true;
 
+	struct Edges
+	{
+		union
+		{
+			long long id;
+			struct
+			{
+				long id1;
+				long id2;
+			};
+
+		};
+	};
+	
+
 	/* Constructor and destructor */
 	CSOnGame();
 	virtual ~CSOnGame();
@@ -95,7 +110,7 @@ protected:
 	void OnEntry(void);
 	unsigned long OnEvent(CEventBase* pEvent);
 	void OnExit(void);
-
+	void Cut();
 	void LoadScene(char * filename);
 	void UpdateCamera();
 	void ManageKeyboardEvents(UINT event, WPARAM wParam);
