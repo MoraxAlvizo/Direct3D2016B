@@ -19,7 +19,11 @@ Descrition:
 #include "SIntro.h"
 #include "Graphics\ImageBMP.h"
 #include "SMain.h"
+<<<<<<< HEAD
 #include "Collisions\BVH.h"
+=======
+#include <iostream>
+>>>>>>> origin/master
 
 /* assimp include files. */
 #include <assimp/cimport.h>
@@ -60,6 +64,8 @@ void CSOnGame::OnEntry(void)
 	char buffer[BUF_SIZE];
 	int ret;
 	ret = wcstombs(buffer, main->m_Params.scene, sizeof(buffer));
+
+
 	LoadScene(buffer);
 
 	/* Load pointers */
@@ -331,8 +337,109 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					}
 				}
 			}
+
+			CDXBasicPainter::VERTEX plane[3];
+			unsigned long   m_lIndicesFrame[6];
+
+			plane[0].Position = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z,1 };
+			plane[1].Position = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z,1 };
+			plane[2].Position = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z,1 };
+
+
+			m_lIndicesFrame[0] = 0;
+			m_lIndicesFrame[1] = 1;
+			m_lIndicesFrame[2] = 2;
+			//m_lIndicesFrame[3] = 2;
+			//m_lIndicesFrame[4] = 0;
+			//m_lIndicesFrame[5] = 4;
+			//m_lIndicesFrame[6] = 5;
+			//m_lIndicesFrame[7] = 1;
+
 			
 
+			m_pDXPainter->DrawIndexed(plane, 3, m_lIndicesFrame, 6, PAINTER_DRAW);
+			
+			while (flag)
+			{
+				std::cout << "==================Obtenemos Vertices del Plano============" << std::endl;
+				std::cout << "Vertice: 1" << std::endl;
+				std::cout << plane[0].Position.x << std::endl;
+				std::cout << plane[0].Position.y << std::endl;
+				std::cout << plane[0].Position.z << std::endl;
+
+
+				std::cout << "Vertice: 2" << std::endl;
+				std::cout << plane[1].Position.x << std::endl;
+				std::cout << plane[1].Position.y << std::endl;
+				std::cout << plane[1].Position.z << std::endl;
+
+
+				std::cout << "Vertice: 3" << std::endl;
+				std::cout << plane[2].Position.x << std::endl;
+				std::cout << plane[2].Position.y << std::endl;
+				std::cout << plane[2].Position.z << std::endl;
+				std::cout << "==================Obtenemos Vertices del Tetrahedro============" << std::endl;
+
+				std::cout << "Vertice: 1" << std::endl;
+				std::cout << m_Scene[0].m_Vertices[0].Position.x << std::endl;
+				std::cout << m_Scene[0].m_Vertices[0].Position.y << std::endl;
+				std::cout << m_Scene[0].m_Vertices[0].Position.z << std::endl;
+				std::cout << m_Scene[0].m_Vertices[0].Position.w << std::endl;
+
+				std::cout << "Vertice: 2" << std::endl;
+				std::cout << m_Scene[0].m_Vertices[1].Position.x << std::endl;
+				std::cout << m_Scene[0].m_Vertices[1].Position.y << std::endl;
+				std::cout << m_Scene[0].m_Vertices[1].Position.z << std::endl;
+				std::cout << m_Scene[0].m_Vertices[1].Position.w << std::endl;
+				
+
+				std::cout << "Vertice: 3" << std::endl;
+				std::cout << m_Scene[0].m_Vertices[2].Position.x << std::endl;
+				std::cout << m_Scene[0].m_Vertices[2].Position.y << std::endl;
+				std::cout << m_Scene[0].m_Vertices[2].Position.z << std::endl;
+				std::cout << m_Scene[0].m_Vertices[2].Position.w << std::endl;
+
+				std::cout << "Vertice: 4" << std::endl;
+				std::cout << m_Scene[0].m_Vertices[3].Position.x << std::endl;
+				std::cout << m_Scene[0].m_Vertices[3].Position.y << std::endl;
+				std::cout << m_Scene[0].m_Vertices[3].Position.z << std::endl;
+				std::cout << m_Scene[0].m_Vertices[3].Position.w << std::endl;
+
+				std::cout << m_Scene[0].m_Indices.size() << std::endl;
+
+				std::cout << "==================Obtenemos Vertices del Tetrahedro============" << std::endl;
+				flag = false;
+
+				std::cout << "Se realizo un corte" << std::endl;
+
+				enum EdgeState { UNTESTED, CUT, UNCUT };
+
+				int cutEdgesCount = 0;
+				int cutNodesCount = 0;
+				int intersectionTestCount = 0;
+
+				// Test each node against the plane to detect if nodes are cut
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < m_Scene[0].m_Vertices.size(); j++)
+					{
+						if (plane[i].Position.x == m_Scene[0].m_Vertices[j].Position.x && 
+							plane[i].Position.y == m_Scene[0].m_Vertices[j].Position.y && 
+							plane[i].Position.z == m_Scene[0].m_Vertices[j].Position.z)
+						{
+							//Aqui se tendria que guardar ese nodo que se corto
+							cutNodesCount++;
+						}
+					}
+					
+				}
+
+				std::cout << "Total Cut Nodes: " << cutNodesCount << std::endl;
+				std::cout << "Debido a que todos los nodos se cortan entonces es un corte tipo: z" << std::endl;
+			}
+
+			
+			
 			// Draw 
 			// Actualizar camara si fue movida
 			UpdateCamera();
@@ -375,7 +482,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			for (unsigned long i = 0; i < m_Scene.size(); i++)
 			{
 				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
+				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_WITH_LINESTRIP);
 			}
 
 			/* Check if the objects was moved */
@@ -476,6 +583,19 @@ void CSOnGame::OnExit(void)
 	SAFE_RELEASE(m_pSRVEnvMap);
 	SAFE_RELEASE(m_pSRVNormalMapTrue);
 	SAFE_RELEASE(m_pSRVEmissiveMap);
+}
+
+void CSOnGame::Cut()
+{
+	std::cout << "Se realizo un corte" << std::endl;
+
+	enum EdgeState { UNTESTED, CUT, UNCUT };
+
+	int cutEdgesCount = 0;
+	int intersectionTestCount = 0;
+
+	// Test each node against the plane to detect if nodes are cut
+
 }
 
 void CSOnGame::LoadScene(char * filename)
