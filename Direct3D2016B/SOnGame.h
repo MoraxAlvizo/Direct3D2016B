@@ -20,6 +20,7 @@ Descrition:
 #include "Graphics\MeshMathSurface.h"
 #include "Collisions\MeshCollision.h"
 #include "Collisions\OctreeCube.h"
+#include "Collisions\BVH.h"
 
 #define CLSID_CSOnGame 0x14638246
 
@@ -69,6 +70,7 @@ public:
 	/* Scene */
 	CMeshMathSurface m_Surface;
 	vector<CMeshCollision> m_Scene;
+	vector<BVH> m_BVHs;
 
 	/* Constructor and destructor */
 	CSOnGame();

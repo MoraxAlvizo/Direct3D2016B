@@ -2,6 +2,9 @@
 #include "HSM\StateBase.h"
 #include "Graphics\FX.h"
 #include <d3d11.h>
+#include <SpriteFont.h>
+
+using namespace DirectX;
 
 #define CLSID_CSMainMenu 0xa2c4a2c4
 
@@ -27,6 +30,8 @@ private:
 	CDXBasicPainter* m_pDXPainter;
 	CFX* m_FX;
 	long m_nOption;
+	float m_fOffsetX;
+	float m_fOffsetY;
 	ID3D11ShaderResourceView* m_pSRVBackGround;
 	ID3D11ShaderResourceView* m_pSRVStartGame;
 	ID3D11ShaderResourceView* m_pSRVExitGame;

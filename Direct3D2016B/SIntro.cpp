@@ -54,8 +54,8 @@ void CSIntro::OnEntry(void)
 		printf("Explosion load fail\n");
 
 	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\FFX.wav", INTRO_SND_BACKGROUND);
-	if (m_pSndBackground)
-		m_pSndBackground->Play(false);
+	/*if (m_pSndBackground)
+		m_pSndBackground->Play(false);*/
 	SetTimer(main->m_hWnd, 1, 5000, NULL);
 	SetTimer(main->m_hWnd, 2, 1000, NULL);
 	return;
@@ -76,6 +76,8 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 
 			m_pDXManager->GetDevice()->CreateShaderResourceView(m_pImgIntro, NULL, &pSRV);
 			m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &pSRV);
+
+			m_FX->m_Params.WVP = Identity();
 
 			m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
 			m_FX->SetInput(pSRV);
@@ -131,31 +133,6 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 				KillTimer(main->m_hWnd, 2);
 				main->m_pSndManager->PlayFx(INTRO_SND_EXPLOSION);
 			}
-			break;
-		case WM_PAINT:
-
-			/*if (m_pDXManager->GetSwapChain())
-			{
-				ID3D11Texture2D* pBackBuffer = 0;
-				D3D11_TEXTURE2D_DESC dtd;
-				ID3D11ShaderResourceView* pSRV = NULL;
-
-				m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
-				pBackBuffer->GetDesc(&dtd);
-
-				m_pDXManager->GetDevice()->CreateShaderResourceView(m_pImgIntro, NULL, &pSRV);
-				m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &pSRV);
-
-				m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
-				m_FX->SetInput(pSRV);
-				m_FX->m_Params.Brightness = { 0,0,0,0 };
-				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height);
-
-				m_pDXManager->GetSwapChain()->Present(1, 0);
-
-				SAFE_RELEASE(pSRV);
-				SAFE_RELEASE(pBackBuffer);
-			}*/
 			break;
 		default:
 			break;

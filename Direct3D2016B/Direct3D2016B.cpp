@@ -212,14 +212,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         break;
     case WM_PAINT:
         {
-            PAINTSTRUCT ps;
-            //HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Add any drawing code that uses hdc here...
-            //EndPaint(hWnd, &ps);
-
-			/* Si havemos el ValidateRect no repinta cuando estamos moviendo la camara
-			   Preguntar en clase 
-			   */
 			ValidateRect(hWnd, NULL);
         }
         break;

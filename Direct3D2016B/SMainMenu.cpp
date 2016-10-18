@@ -3,6 +3,7 @@
 #include "HSM\EventBase.h"
 #include "HSM\StateMachineManager.h"
 #include "HSM\EventWin32.h"
+#include "ActionEvent.h"
 #include "SMain.h"
 #include "Graphics\ImageBMP.h"
 #include "SOnGame.h"
@@ -28,6 +29,7 @@ void CSMainMenu::OnEntry(void)
 	m_FX = main->m_FX;
 	printf("[HCM] %s:OnEntry\n", GetClassString());
 	m_nOption = 0;
+	m_fOffsetX = m_fOffsetY = 0.0f;
 	printf("Cargando recursos de fondo ... \n");
 
 	char* menuOption[MAIN_MENU_SIZE] = {
@@ -106,16 +108,25 @@ void CSMainMenu::OnEntry(void)
 	m_vMenu[MAIN_MENU_EXIT].indices[3] = 2;
 	m_vMenu[MAIN_MENU_EXIT].indices[4] = 1;
 	m_vMenu[MAIN_MENU_EXIT].indices[5] = 3;
+
 }
 
 unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 {
-	if (INPUT_EVENT == pEvent->m_ulEventType)
+	if (ACTION_EVENT == pEvent->m_ulEventType)
 	{
-		CInputEvent* pInput = (CInputEvent*)pEvent;
-		if(pInput->m_js2.rgbButtons[0]!=0)
+		CActionEvent* pAction = (CActionEvent*)pEvent;
+		if (pAction->m_iAction == JOY_BUTTON_A_PRESSED)
 		{
 			MAIN->m_pSndManager->PlayFx(0);
+		}
+		if (JOY_AXIS_LX == pAction->m_iAction)
+		{
+			m_fOffsetX = m_fOffsetX + (pAction->m_fAxis - m_fOffsetX) * 0.1;
+		}
+		if (JOY_AXIS_LY == pAction->m_iAction)
+		{
+			m_fOffsetY = m_fOffsetY+ (pAction->m_fAxis - m_fOffsetY) * 0.1;
 		}
 	}
 	if (APP_LOOP == pEvent->m_ulEventType)
@@ -129,11 +140,14 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			pBackBuffer->GetDesc(&dtd);
 			m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVBackGround);
 
+			m_FX->m_Params.WVP = Translation(m_fOffsetX, m_fOffsetY, 0);
 			m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
 			m_FX->m_Params.Brightness = { 0,0,0,0 };
 			m_FX->SetInput(m_pSRVBackGround);
 			m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height);
 
+			m_FX->m_Params.WVP =Identity();
+			
 			for (unsigned long i = 0; i < MAIN_MENU_SIZE; i++)
 			{
 				m_FX->SetImgVertex(m_vMenu[i].frame, m_vMenu[i].indices);
@@ -147,6 +161,13 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 					m_FX->m_Params.Brightness = { 0,0,0,0 };
 				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height, FX_FLAGS_USE_IMG_BUFFR);
 			}
+/*
+			std::unique_ptr<SpriteBatch> spriteBatch(new SpriteBatch(m_pDXManager->GetContext()));
+			std::unique_ptr<SpriteFont> spriteFont(new SpriteFont(m_pDXManager->GetDevice(), L"myfileb.spritefont"));
+
+			spriteBatch->Begin();
+			spriteFont->DrawString(spriteBatch.get(), L"Hello, world!", XMFLOAT2(0, 0));
+			spriteBatch->End();*/
 
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 
@@ -198,42 +219,7 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			}
 		}
 		break;
-		case WM_PAINT:
-		{
-			/*if (m_pDXManager->GetSwapChain())
-			{
-				ID3D11Texture2D* pBackBuffer = 0;
-				D3D11_TEXTURE2D_DESC dtd;
-
-				m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
-				pBackBuffer->GetDesc(&dtd);
-				m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVBackGround);
-
-				m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
-				m_FX->m_Params.Brightness = { 0,0,0,0 };
-				m_FX->SetInput(m_pSRVBackGround);
-				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height);
-
-				for (unsigned long i = 0; i < MAIN_MENU_SIZE; i++)
-				{
-					m_FX->SetImgVertex(m_vMenu[i].frame, m_vMenu[i].indices);
-
-					m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
-					m_FX->SetInput(m_vMenu[i].pSRV);
-
-					if (m_lOptionSelected != i)
-						m_FX->m_Params.Brightness = { 0.5,0.5,0.5,0 };
-					else
-						m_FX->m_Params.Brightness = { 0,0,0,0 };
-					m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height, FX_FLAGS_USE_IMG_BUFFR);
-				}
-				
-				m_pDXManager->GetSwapChain()->Present(1, 0);
-
-				SAFE_RELEASE(pBackBuffer);
-			}*/
-			break;
-		}
+		
 		default:
 			break;
 		}

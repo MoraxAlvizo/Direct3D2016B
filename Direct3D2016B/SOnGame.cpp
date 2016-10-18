@@ -19,6 +19,7 @@ Descrition:
 #include "SIntro.h"
 #include "Graphics\ImageBMP.h"
 #include "SMain.h"
+#include "Collisions\BVH.h"
 
 /* assimp include files. */
 #include <assimp/cimport.h>
@@ -215,11 +216,16 @@ void CSOnGame::OnEntry(void)
 		m_pOctree->addObject(&m_Scene[i],
 			m_Scene[i].m_Box.min * m_Scene[i].m_World,
 			m_Scene[i].m_Box.max * m_Scene[i].m_World);
+		
+		vector<unsigned long> primitives;
 
-		//(*m_pScene)[i].createOctree();
+		primitives.resize(m_Scene[i].m_Centroides.size());
+		for (unsigned long j = 0; j < m_Scene[i].m_Centroides.size(); j++)
+			primitives[j] = j;
+
+		m_BVHs[i].Build(m_Scene[i], primitives);
+
 	}
-
-	
 
 }
 
@@ -246,21 +252,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				1.0f,
 				0);
 
-			/* Check if the objects was moved */
-			if (m_lFlags & PHYSICS_DRAW_OCTREE)
-			{
-				m_pDXPainter->m_Params.World = Identity();
-				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
-				
-				m_pOctree->DrawOctree(m_pDXPainter);
-
-				for (unsigned long i = 0; i < m_Scene.size(); i++)
-				{
-					m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-					m_Scene[i].m_octree->DrawOctree();
-
-				}
-			}
 			if (m_lFlags & PHYSICS_PRINT_OCTREE)
 			{
 				printf("\n------------------- Octree scene ----------------------\n\n");
@@ -338,12 +329,14 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 							m_Scene[i].m_Box.min * m_Scene[i].m_World,
 							m_Scene[i].m_Box.max * m_Scene[i].m_World);
 					}
-
 				}
 			}
 			
 
 			// Draw 
+			// Actualizar camara si fue movida
+			UpdateCamera();
+			
 			/* Get Backbuffer to get height and width */
 			m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 			pBackBuffer->GetDesc(&dtd);
@@ -365,8 +358,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			m_pDXManager->GetContext()->PSSetShaderResources(3, 1, &m_pSRVNormalMapTrue);
 			m_pDXManager->GetContext()->PSSetShaderResources(4, 1, &m_pSRVEmissiveMap);
 
-			// Actualizar camara si fue movida
-			UpdateCamera();
+		
 
 			/* Set params */
 			m_pDXPainter->m_Params.Brightness = Black;
@@ -386,6 +378,20 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
 			}
 
+			/* Check if the objects was moved */
+			if (m_lFlags & PHYSICS_DRAW_OCTREE)
+			{
+				m_pDXPainter->m_Params.World = Identity();
+				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
+
+				m_pOctree->DrawOctree(m_pDXPainter);
+
+				for (unsigned long i = 0; i < m_BVHs.size(); i++)
+				{
+					m_pDXPainter->m_Params.World = Identity();
+					m_BVHs[i].Draw(m_pDXPainter, 0);
+				}
+			}
 			/* Draw surface */
 			/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0],
 			m_Surface.m_Vertices.size(),
@@ -441,84 +447,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			ManageKeyboardEvents(pWin32->m_msg, pWin32->m_wParam);
 			return 0;
 		}
-		case WM_PAINT:
-
-			//if (m_pDXManager->GetSwapChain())
-			//{
-
-			//	ID3D11Texture2D* pBackBuffer = 0;
-			//	MATRIX4D AC; /* Matriz de correction de aspecto */
-			//	// Colors
-			//	VECTOR4D DarkGray = { 0.25,0.25,0.25,1 };
-			//	VECTOR4D White = { 1,1,1,1 };
-			//	VECTOR4D Gray = { .5,.5,.5,0 };
-			//	VECTOR4D NightBlue = { 0,0,.1, 0 };
-			//	VECTOR4D Black = { 0, 0, 0, 0 };
-			//	D3D11_TEXTURE2D_DESC dtd;
-
-			//	/* Get Backbuffer to get height and width */
-			//	m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
-			//	pBackBuffer->GetDesc(&dtd);
-			//	dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
-			//	SAFE_RELEASE(pBackBuffer);
-
-			//	/* Create AC Matrix */
-			//	AC = Scaling((float)dtd.Height / dtd.Width, 1, 1);
-
-			//	/* Set Material parameters */
-			//	m_pDXPainter->SetRenderTarget(m_pDXManager->GetMainRTV());
-			//	m_pDXPainter->m_Params.Material.Diffuse = Gray;
-			//	m_pDXPainter->m_Params.Material.Ambient = Gray;
-
-			//	/* Clear main render target */
-			//	/*m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&NightBlue);
-			//	m_pDXManager->GetContext()->ClearDepthStencilView(
-			//		m_pDXManager->GetMainDSV(),
-			//		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-			//		1.0f,
-			//		0);*/
-
-			//	/* Set SRVs */
-			//	m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVTexture);
-			//	m_pDXManager->GetContext()->PSSetShaderResources(1, 1, &m_pSRVNormalMap);
-			//	m_pDXManager->GetContext()->PSSetShaderResources(2, 1, &m_pSRVEnvMap);
-			//	m_pDXManager->GetContext()->PSSetShaderResources(3, 1, &m_pSRVNormalMapTrue);
-			//	m_pDXManager->GetContext()->PSSetShaderResources(4, 1, &m_pSRVEmissiveMap);
-
-			//	// Actualizar camara si fue movida
-			//	UpdateCamera();
-
-			//	/* Set params */
-			//	m_pDXPainter->m_Params.Brightness = Black;
-			//	m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
-			//	
-			//	m_pDXPainter->m_Params.World = m_World;
-			//	m_pDXPainter->m_Params.View = m_View;
-			//	m_pDXPainter->m_Params.Projection = m_Projection*AC;
-
-			//	/* Render with Left Hand*/
-			//	m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
-
-			//	/* Draw scene */
-			//	for (unsigned long i = 0; i < m_Scene.size(); i++)
-			//	{
-			//		m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-			//		m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
-			//	}
-			//	
-			//	/* Draw surface */
-			//	/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0], 
-			//		m_Surface.m_Vertices.size(), 
-			//		&m_Surface.m_Indices[0], 
-			//		m_Surface.m_Indices.size(), 
-			//		PAINTER_DRAW);*/
-
-			//	m_pDXManager->GetSwapChain()->Present(1, 0);
-
-			//}
-			
-			break;
-		
 		default:
 			break;
 		}
@@ -556,6 +484,7 @@ void CSOnGame::LoadScene(char * filename)
 	const struct aiScene* scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_MaxQuality);
 
 	m_Scene.resize(scene->mNumMeshes);
+	m_BVHs.resize(scene->mNumMeshes);
 	for (unsigned long i = 0; i < scene->mNumMeshes; i++)
 	{
 		float maxX, maxY, maxZ;
@@ -617,8 +546,8 @@ void CSOnGame::LoadScene(char * filename)
 			{
 				m_Scene[i].m_Indices[j*scene->mMeshes[i]->mFaces[j].mNumIndices + k] = scene->mMeshes[i]->mFaces[j].mIndices[k];
 			}
-
 		}
+
 		for (unsigned long j = 0; j < m_Scene[i].m_Vertices.size(); j++)
 		{
 			VECTOR4D TexCoord = { 0,0,0,0 };
