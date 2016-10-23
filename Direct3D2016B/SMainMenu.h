@@ -15,6 +15,14 @@ enum
 	MAIN_MENU_SIZE
 };
 
+enum
+{
+	BUTTON_OVER,
+	BUTTON_DOWN,
+	BUTTON_UP,
+	BUTTON_STATE_SIZE
+};
+
 class CSMainMenu :
 	public CStateBase
 {
@@ -38,9 +46,10 @@ private:
 
 	struct MenuOption
 	{
-		ID3D11ShaderResourceView* pSRV;
+		ID3D11ShaderResourceView* pSRV[BUTTON_STATE_SIZE];
 		CFX::VERTEX frame[4];
 		unsigned long indices[6];
+		int stateButton;
 	};
 
 	/* Vector menu */

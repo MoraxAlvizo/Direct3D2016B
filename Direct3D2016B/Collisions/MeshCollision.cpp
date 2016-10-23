@@ -5,11 +5,19 @@
 CMeshCollision::CMeshCollision()
 {
 	m_octree = NULL;
+	m_BVH = NULL;
+	m_TranslationBVH = Identity();
 }
 
 
 CMeshCollision::~CMeshCollision()
 {
+}
+
+void CMeshCollision::ResetColors()
+{
+	for (unsigned long i = 0; i < m_Vertices.size(); i++)
+		m_Vertices[i].Color = { 0,0,0,0 };
 }
 
 void CMeshCollision::createOctree()

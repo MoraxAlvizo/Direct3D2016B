@@ -1,10 +1,20 @@
 #include "stdafx.h"
 #include "BVH.h"
 
+#define BVH_BOXES_COLLISION(box1, box2) \
+	((box1.min.x < box2.max.x && \
+	  box1.max.x > box2.min.x && \
+	  box1.min.y < box2.max.y && \
+	  box1.max.y > box2.min.y && \
+	  box1.min.z < box2.max.z && \
+	  box1.max.z > box2.min.z))
+
+#define BVH_IS_LEFT(pBVH) (!(pBVH)->m_pLeft && !(pBVH)->m_pRight)
 
 BVH::BVH()
 {
 	m_pLeft = m_pRight = NULL;
+	m_Color = { 0, 1, 1, 0 };
 }
 
 
@@ -15,12 +25,12 @@ BVH::~BVH()
 void BVH::Build(CMesh & object, vector<unsigned long> Primitives)
 {
 
-	/* Case base */
+	/* Case base */		
 	if (Primitives.size() == 1)
 	{
-		m_Box.max = object.m_Centroides[Primitives[0]].max ;
+		m_Box.max = object.m_Centroides[Primitives[0]].max ;	
 		m_Box.min = object.m_Centroides[Primitives[0]].min ;
-
+		m_Box.idPrimitive = Primitives[0];
 		return;
 	}
 
@@ -95,10 +105,10 @@ void BVH::Build(CMesh & object, vector<unsigned long> Primitives)
 
 }
 
-void BVH::Draw(CDXBasicPainter * painter, int depth)
+void BVH::Draw(CDXBasicPainter * painter, int depth, MATRIX4D translation)
 {
-	VECTOR4D c1 = m_Box.min;
-	VECTOR4D c2 = m_Box.max;
+	VECTOR4D c1 = m_Box.min * translation ;
+	VECTOR4D c2 = m_Box.max * translation ;
 
 	/*c1.x += 0.01;
 	c1.y += 0.01;
@@ -122,11 +132,10 @@ void BVH::Draw(CDXBasicPainter * painter, int depth)
 	for (int i = 0; i < 8; i++)
 	{
 		if (!m_pLeft && !m_pRight)
-			cube[i].Color = { 0, 1, 1, 0 };
+			cube[i].Color = m_Color;
 		else
 			cube[i].Color = { 1, 1, 0, 0 };
 	}
-
 
 	m_lIndicesFrame[0] = 0;
 	m_lIndicesFrame[1] = 1;
@@ -145,15 +154,165 @@ void BVH::Draw(CDXBasicPainter * painter, int depth)
 	m_lIndicesFrame[14] = 6;
 	m_lIndicesFrame[15] = 4;
 
-	painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
+	if(!m_pLeft && !m_pRight)
+		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 	
 	if (m_pLeft /*&& depth != 1*/)
 	{
-		m_pLeft->Draw(painter, depth+1);
+		m_pLeft->Draw(painter, depth+1, translation);
 	}
 	if (m_pRight)
 	{
-		m_pRight->Draw(painter, depth + 1);
+		m_pRight->Draw(painter, depth + 1, translation);
 	}
+}
 
+
+#define BVH_SET_COLOR(object, indice, color) \
+{ \
+	(object).m_Vertices[(object).m_Indices[indice]].Color = color; \
+	(object).m_Vertices[(object).m_Indices[indice + 1]].Color = color; \
+	(object).m_Vertices[(object).m_Indices[indice + 2]].Color = color; \
+}
+
+void BVH::Traversal(BVH * pTree, MATRIX4D& thisTranslation,MATRIX4D& translationTree, CMesh& object1, CMesh& object2)
+{
+	Box thisBox;
+	Box treeBox;
+
+	thisBox.max = this->m_Box.max * thisTranslation;
+	thisBox.min = this->m_Box.min * thisTranslation;
+
+	treeBox.max = pTree->m_Box.max * translationTree;
+	treeBox.min = pTree->m_Box.min * translationTree;
+
+	if (pTree == NULL)
+		return;
+
+	if (BVH_BOXES_COLLISION(thisBox, treeBox))
+	{
+		if (BVH_IS_LEFT(this))
+		{
+			/* Si ambos arboles son nodos hojas, entonces revisar los triangulos */
+			if (BVH_IS_LEFT(pTree))
+			{
+				// Crear funcion de revisar triangulos
+
+				unsigned long indicesThis = m_Box.idPrimitive * 3;
+
+				VECTOR4D object1_V0 = object1.m_Vertices[object1.m_Indices[indicesThis]].Position * object1.m_World;
+				VECTOR4D object1_V1 = object1.m_Vertices[object1.m_Indices[indicesThis +1]].Position* object1.m_World;
+				VECTOR4D object1_V2 = object1.m_Vertices[object1.m_Indices[indicesThis +2]].Position* object1.m_World;
+
+				unsigned long indicesPTree = pTree->m_Box.idPrimitive * 3;
+
+				VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position* object2.m_World;
+				VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position* object2.m_World;
+				VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position* object2.m_World;
+				
+				VECTOR4D Intersection;
+				VECTOR4D RayOrigin;
+				VECTOR4D RayDir;
+
+				/* Revisar triangulo objeto1 contra el objeto2 */
+
+				RayOrigin = object2_V0;
+				RayDir = Normalize( object2_V1 - RayOrigin);
+
+				if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
+				{
+					this->m_Color = { 1, 1, 0, 0 };
+					pTree->m_Color = { 1, 1, 0, 0 };
+					BVH_SET_COLOR(object1, indicesThis, m_Color);
+					BVH_SET_COLOR(object2, indicesPTree, m_Color);
+					
+				}
+				RayOrigin = object2_V1;
+				RayDir = Normalize(object2_V2 - RayOrigin);
+
+				if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
+				{
+					this->m_Color = { 1, 1, 0, 0 };
+					pTree->m_Color = { 1, 1, 0, 0 };
+					BVH_SET_COLOR(object1, indicesThis, m_Color);
+					BVH_SET_COLOR(object2, indicesPTree, m_Color);
+				}
+
+				RayOrigin = object2_V2;
+				RayDir = Normalize(object2_V0 - RayOrigin);
+
+				if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
+				{
+					this->m_Color = { 1, 1, 0, 0 };
+					pTree->m_Color = { 1, 1, 0, 0 };
+					BVH_SET_COLOR(object1, indicesThis, m_Color);
+					BVH_SET_COLOR(object2, indicesPTree, m_Color);
+				}
+
+				/* Revisar triangulo objeto2 contra el objeto1 */
+				RayOrigin = object1_V0;
+				RayDir = Normalize(object1_V1 - RayOrigin);
+
+				if (RayCastOnTriangle(object2_V0, object2_V1, object2_V2, RayOrigin, RayDir, Intersection))
+				{
+					this->m_Color = { 1, 1, 0, 0 };
+					pTree->m_Color = { 1, 1, 0, 0 };
+					BVH_SET_COLOR(object1, indicesThis, m_Color);
+					BVH_SET_COLOR(object2, indicesPTree, m_Color);
+				}
+				RayOrigin = object1_V1;
+				RayDir = Normalize(object1_V2 - RayOrigin);
+
+				if (RayCastOnTriangle(object2_V0, object2_V1, object2_V2, RayOrigin, RayDir, Intersection))
+				{
+					this->m_Color = { 1, 1, 0, 0 };
+					pTree->m_Color = { 1, 1, 0, 0 };
+					BVH_SET_COLOR(object1, indicesThis, m_Color);
+					BVH_SET_COLOR(object2, indicesPTree, m_Color);
+				}
+
+				RayOrigin = object1_V2;
+				RayDir = Normalize(object1_V0 - RayOrigin);
+
+				if (RayCastOnTriangle(object2_V0, object2_V1, object2_V2, RayOrigin, RayDir, Intersection))
+				{
+					this->m_Color = { 1, 1, 0, 0 };
+					pTree->m_Color = { 1, 1, 0, 0 };
+					BVH_SET_COLOR(object1, indicesThis, m_Color);
+					BVH_SET_COLOR(object2, indicesPTree, m_Color);
+				}
+			}
+			else
+			{
+				/* Sino es nodo hoja el pTree entonces revisar si sus hijos collision con este nodo hoja */
+				if(pTree->m_pLeft)
+					Traversal(pTree->m_pLeft, thisTranslation, translationTree, object1, object2);
+				if(pTree->m_pRight)
+					Traversal(pTree->m_pRight, thisTranslation, translationTree, object1, object2);
+			}
+		}
+		/* 
+		
+		Son 4 casos para saber por donde recorrer el arbol:
+			1. this->left vs pTree->left.
+			2. this->left vs pTree->right.
+			3. this->right vs pTree->left.
+			4. this->right vs pTree->right 
+		*/
+
+		if (m_pLeft != NULL)
+		{
+			if(pTree->m_pLeft != NULL)
+				this->m_pLeft->Traversal(pTree->m_pLeft, thisTranslation, translationTree, object1, object2);
+			if(pTree->m_pRight != NULL)
+				this->m_pLeft->Traversal(pTree->m_pRight, thisTranslation, translationTree, object1, object2);
+		}
+		if (m_pRight != NULL)
+		{
+			if (pTree->m_pLeft != NULL)
+				this->m_pRight->Traversal(pTree->m_pLeft, thisTranslation, translationTree, object1, object2);
+			if(pTree -> m_pRight != NULL)
+				this->m_pRight->Traversal(pTree->m_pRight, thisTranslation, translationTree, object1, object2);
+		}
+	}
 }

@@ -16,7 +16,6 @@ struct centroid
 	VECTOR4D normal;
 	VECTOR4D max;
 	VECTOR4D min;
-	centroid() {}
 };
 
 struct EdgeCutInfo

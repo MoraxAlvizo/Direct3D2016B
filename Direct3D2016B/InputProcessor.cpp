@@ -64,6 +64,14 @@ unsigned long CInputProcessor::OnEvent(CEventBase * pEvent)
 				Action = new CActionEvent(GamePad->first, pInput->m_ulTime, JOY_AXIS_LY);
 				Action->m_fAxis = -(Curr.lY - 0x7FFF) / 32768.0f;
 				m_pHSMOwner->PostEvent(Action);
+
+				Action = new CActionEvent(GamePad->first, pInput->m_ulTime, JOY_AXIS_RX);
+				Action->m_fAxis = (Curr.lRx - 0x7FFF) / 32768.0f;
+				m_pHSMOwner->PostEvent(Action);
+
+				Action = new CActionEvent(GamePad->first, pInput->m_ulTime, JOY_AXIS_RY);
+				Action->m_fAxis = -(Curr.lRy - 0x7FFF) / 32768.0f;
+				m_pHSMOwner->PostEvent(Action);
 			}
 
 		}

@@ -114,7 +114,8 @@ unsigned long CSMain::OnEvent(CEventBase * pEvent)
 		{
 		case WM_SIZE: 
 		{
-			m_pDXManager->Resize(LOWORD(pWin32->m_lParam), HIWORD(pWin32->m_lParam));
+			if(m_pDXManager->GetSwapChain())
+				m_pDXManager->Resize(LOWORD(pWin32->m_lParam), HIWORD(pWin32->m_lParam));
 		}
 		break;
 		case WM_CLOSE: 

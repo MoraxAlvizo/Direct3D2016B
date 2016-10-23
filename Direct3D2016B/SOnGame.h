@@ -70,7 +70,7 @@ public:
 	/* Scene */
 	CMeshMathSurface m_Surface;
 	vector<CMeshCollision> m_Scene;
-	vector<BVH> m_BVHs;
+	//vector<BVH> m_BVHs;
 
 	bool flag = true;
 

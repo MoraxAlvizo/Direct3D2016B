@@ -150,7 +150,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	g_Game.RegisterState(psIntro, CLSID_CSIntro, 0);
 	g_Game.RegisterState(psMainMenu, CLSID_CSMainMenu, 0);
 	g_Game.RegisterState(psOnGame, CLSID_CSOnGame, 0);
-	g_Game.RegisterState(pSMain, CLSID_CSMain, CLSID_CSOnGame); // CLSID_CSIntro
+	g_Game.RegisterState(pSMain, CLSID_CSMain, CLSID_CSIntro); // CLSID_CSIntro
 
 	g_Game.LinkToSuperState(CLSID_CSIntro, CLSID_CSMain);
 	g_Game.LinkToSuperState(CLSID_CSOnGame, CLSID_CSMain);
@@ -193,7 +193,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 	}
 	break;
-<<<<<<< HEAD
     case WM_COMMAND:
         {
             int wmId = LOWORD(wParam);
@@ -223,45 +222,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         return DefWindowProc(hWnd, message, wParam, lParam);
     }
     return 0;
-=======
-	case WM_COMMAND:
-	{
-		int wmId = LOWORD(wParam);
-		// Parse the menu selections:
-		switch (wmId)
-		{
-		case IDM_ABOUT:
-			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-			break;
-		case IDM_EXIT:
-			DestroyWindow(hWnd);
-			break;
-		default:
-			return DefWindowProc(hWnd, message, wParam, lParam);
-		}
-	}
-	break;
-	case WM_PAINT:
-	{
-		PAINTSTRUCT ps;
-		//HDC hdc = BeginPaint(hWnd, &ps);
-		// TODO: Add any drawing code that uses hdc here...
-		//EndPaint(hWnd, &ps);
 
-		/* Si havemos el ValidateRect no repinta cuando estamos moviendo la camara
-		Preguntar en clase
-		*/
-		ValidateRect(hWnd, NULL);
-	}
-	break;
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-	}
-	return 0;
->>>>>>> origin/master
 }
 
 // Message handler for about box.

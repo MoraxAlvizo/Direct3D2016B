@@ -299,7 +299,8 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
            ColorDiffuse  * Material.Diffuse  + 
            ColorSpecular * Material.Specular +
            ColorEnviomental * Material.Ambient+
-           ColorEmissive +
+           ColorEmissive + 
+		   Input.Color +
            Brightness;
 
     if (Flags.x & FOG_ENABLE)
