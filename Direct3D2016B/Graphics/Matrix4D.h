@@ -16,8 +16,8 @@
 	(A).w < (B).w ? (A).w : (B).w\
 }
 
-#define SET_MAX_VEC4D {INT_MAX,INT_MAX,INT_MAX,INT_MAX}
-#define SET_MIN_VEC4D {INT_MIN,INT_MIN,INT_MIN,INT_MIN}
+#define SET_MAX_VEC4D {(float)INT_MAX,(float)INT_MAX,(float)INT_MAX,(float)INT_MAX}
+#define SET_MIN_VEC4D {(float)INT_MIN,(float)INT_MIN,(float)INT_MIN,(float)INT_MIN}
 
 
 struct VECTOR4D

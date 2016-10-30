@@ -24,5 +24,6 @@ public:
 
 	void ResetColors();
 	void createOctree();
+	void MoveVertex(MATRIX4D Translation);
 };
 

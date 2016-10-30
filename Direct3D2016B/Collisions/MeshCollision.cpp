@@ -12,6 +12,7 @@ CMeshCollision::CMeshCollision()
 
 CMeshCollision::~CMeshCollision()
 {
+
 }
 
 void CMeshCollision::ResetColors()
@@ -24,4 +25,11 @@ void CMeshCollision::createOctree()
 {
 	for (int z = 0; z < m_Centroides.size(); z++)
 		m_octree->add((Point*)&(m_Centroides[z].position));
+}
+
+void CMeshCollision::MoveVertex(MATRIX4D Translation)
+{
+	for (unsigned long i = 0; i < m_Vertices.size(); i++)
+		if(i != 0)
+			m_Vertices[i].Position = m_Vertices[i].Position * Translation;
 }

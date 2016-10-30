@@ -228,7 +228,10 @@ void CSOnGame::OnEntry(void)
 			primitives[j] = j;
 
 		m_Scene[i].m_BVH = new BVH();
-		m_Scene[i].m_BVH->Build(m_Scene[i], primitives);
+		m_Scene[i].m_BVH->Preconstruction(m_Scene[i]);
+		m_Scene[i].m_BVH->Construction(m_Scene[i], 1, primitives);
+		m_Scene[i].m_BVH->Postconstruction(m_Scene[i]);
+		//m_Scene[i].m_BVH->Build(m_Scene[i], primitives);
 	}
 
 }
@@ -335,6 +338,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 							m_Scene[i].m_Box.min * m_Scene[i].m_World,
 							m_Scene[i].m_Box.max * m_Scene[i].m_World);
 
+						//m_Scene[i].MoveVertex(Translation(0, 0, direction*0.1));
 						m_Scene[i].m_World = m_Scene[i].m_World * Translation(0, 0, direction*0.1);
 						m_Scene[i].m_TranslationBVH = m_Scene[i].m_TranslationBVH * Translation(0, 0, direction*0.1);
 
@@ -375,12 +379,8 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 						min1.z < max2.z &&
 						max1.z > min2.z)
 					{
-						object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-						/*
-						if ((strcmp(object1->m_cName, "Sphere") == 0 || strcmp(object2->m_cName, "Sphere") == 0) && m_lMoveSphere1)
-							m_lMoveSphere1 = false;
-						if ((strcmp(object1->m_cName, "Sphere.001") == 0 || strcmp(object2->m_cName, "Sphere.001") == 0) && m_lMoveSphere2)
-							m_lMoveSphere2 = false;*/
+						//object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
+						object1->m_BVH->TraversalLBVH(object2->m_BVH,1,1, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
 
 					}
 				}
@@ -545,7 +545,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				for (unsigned long i = 0; i < m_Scene.size(); i++)
 				{
 					m_pDXPainter->m_Params.World = Identity();
-					m_Scene[i].m_BVH->Draw(m_pDXPainter, 0, m_Scene[i].m_TranslationBVH);
+					m_Scene[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_Scene[i].m_TranslationBVH);
 				}
 			}
 			/* Draw surface */
