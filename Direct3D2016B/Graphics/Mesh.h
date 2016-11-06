@@ -4,6 +4,7 @@
 #include <map>
 #include "DXBasicPainter.h"
 #include <assimp/scene.h>
+#include "../VolumeMeshGenericID.h"
 #include "../Collisions/Octree.h"
 
 using namespace std;
@@ -17,19 +18,7 @@ struct centroid
 	centroid() {}
 };
 
-struct EdgeCutInfo
-{
-public: // Eigen support
-	unsigned int edgeId;
-	VECTOR4D cutPoint;
-};
 
-struct VolumeCutInfo
-{
-	std::vector<EdgeCutInfo>	cutEdges;
-	std::vector<unsigned int>	cutNodes;
-	unsigned int				type_cut;
-};
 
 class CMesh
 {
@@ -44,6 +33,7 @@ public:
 	vector<unsigned long> m_Indices;
 	MATRIX4D m_World; // 
 	vector<centroid> m_Centroides;
+	
 	char m_cName[128];
 public:
 	CMesh();
@@ -61,6 +51,8 @@ public:
 	void Optimize();
 	void GenerarCentroides();
 	vector<centroid>& getCentroides() { return m_Centroides; }
+	
+	
 	~CMesh();
 };
 

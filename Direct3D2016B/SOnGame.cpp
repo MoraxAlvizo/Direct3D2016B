@@ -19,8 +19,9 @@ Descrition:
 #include "SIntro.h"
 #include "Graphics\ImageBMP.h"
 #include "SMain.h"
+#include "Plane.h"
 #include <iostream>
-
+#include "VMesh.h"
 /* assimp include files. */
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -222,7 +223,8 @@ void CSOnGame::OnEntry(void)
 		//(*m_pScene)[i].createOctree();
 	}
 
-	
+	m_nFlagsPainter = 0;
+	MiVariable.LoadMSHFile("torus.msh");
 
 }
 
@@ -344,15 +346,28 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 				}
 			}
+			
+	
+
 
 			CDXBasicPainter::VERTEX plane[3];
 			unsigned long   m_lIndicesFrame[6];
 
+			
+			plane[0].Position = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z + 1.1f,1 };
+			plane[1].Position = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z + 1.1f,1 };
+			plane[2].Position = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z + 1.1f,1 };
+			
+			VECTOR4D pX = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z + 1.1f,1 };
+			VECTOR4D pY = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z + 1.1f,1 };
+			VECTOR4D pZ = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z + 1.1f,1 };
+
+			CPlane meshPlane(pX, pY, pZ);
+			/*
 			plane[0].Position = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z,1 };
 			plane[1].Position = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z,1 };
 			plane[2].Position = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z,1 };
-
-
+			*/
 			m_lIndicesFrame[0] = 0;
 			m_lIndicesFrame[1] = 1;
 			m_lIndicesFrame[2] = 2;
@@ -364,7 +379,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 			
 
-			m_pDXPainter->DrawIndexed(plane, 3, m_lIndicesFrame, 6, PAINTER_DRAW);
+			//m_pDXPainter->DrawIndexed(plane, 3, m_lIndicesFrame, 6, PAINTER_DRAW);
 			
 			while (flag)
 			{
@@ -426,7 +441,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				int intersectionTestCount = 0;
 
 				// Test each node against the plane to detect if nodes are cut
-				for (int i = 0; i < 4; i++)
+				for (int i = 0; i < 4; i++) 
 				{
 					for (int j = 0; j < m_Scene[0].m_Vertices.size(); j++)
 					{
@@ -437,12 +452,111 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 							//Aqui se tendria que guardar ese nodo que se corto
 							cutNodesCount++;
 						}
+
+						VECTOR4D dp1 = m_Scene[0].m_Vertices[i].Position; //p[id1];
+						VECTOR4D dp2 = m_Scene[0].m_Vertices[j].Position; //p[id2];
+						VECTOR4D intersectionPoint;
+						if (plane[i].Intersection(dp1, dp2, intersectionPoint, plane[0].Position, plane[1].Position, plane[2].Position))
+						{
+							cutEdgesCount++;
+						}
 					}
 					
 				}
+				cout << "Number of edges: " << cutEdgesCount << endl;
+				cutEdgesCount > 3 ? cutEdgesCount = cutEdgesCount / 2 : cutEdgesCount = cutEdgesCount;
+				string type;
+				switch (cutEdgesCount)
+				{
+				case 0:
+				{
+					switch (cutNodesCount)
+					{
+					case 0:
+						type = "No cuts";
+						break;
+					case 1:
+						type = "Cut Node";
+						break;
+					case 2:
+						type = "Cut Node";
+						break;
+					case 3:
+						type = "Cut Z";
+						break;
+					default:
+						type = "Unkown";
+					}
+				}
+				break;
+				case 1:
+				{
+					switch (cutNodesCount)
+					{
+					case 0:
+						type = "Cut C";
+						break;
+					case 1:
+						type = "Cut X";
+						break;
+					case 2:
+						type = "Cut Y";
+						break;
+					default:
+						type = "Unkown";
+					}
+
+				}
+				break;
+				case 2:
+				{
+					switch (cutNodesCount)
+					{
+					case 0: 
+						type = "Cut D";
+						break;
+					case 1:
+						type = "Cut X";
+						break;
+					default:
+						type = "Cut Z";
+					}
+
+				}
+				break;
+				case 3:
+				{
+					switch (cutNodesCount)
+					{
+					case 0:
+						type = "Cut A";
+						break;
+					case 1:
+						type = "Cut E";
+						break;
+					default:
+						type = "Unkown";
+					}
+				}
+				break;
+				case 4:
+				{
+					switch (cutNodesCount)
+					{
+					case 0:
+						type = "Cut B";
+						break;
+					default:
+						type = "Unkown";
+					}
+
+				}
+				break;
+				}
 
 				std::cout << "Total Cut Nodes: " << cutNodesCount << std::endl;
-				std::cout << "Debido a que todos los nodos se cortan entonces es un corte tipo: z" << std::endl;
+				std::cout << "Total Cut Edges: " << cutEdgesCount << std::endl;
+				std::cout << "Tipo de Corte: " << type << std::endl;
 			}
 
 			
@@ -484,12 +598,14 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
 
 			/* Draw scene */
-			for (unsigned long i = 0; i < m_Scene.size(); i++)
+			/*for (unsigned long i = 0; i < m_Scene.size(); i++)
 			{
 				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_WITH_LINESTRIP);
-			}
+				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
+			}*/
 
+			m_pDXPainter->m_Params.World = Identity();
+			m_pDXPainter->DrawIndexed(&MiVariable.m_Vertices[0], MiVariable.m_Vertices.size(), &MiVariable.m_Indices[0], MiVariable.m_Indices.size(), m_nFlagsPainter);
 			/* Draw surface */
 			/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0],
 			m_Surface.m_Vertices.size(),
@@ -518,6 +634,11 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			if (pWin32->m_wParam == 'p')
 			{
 				m_lFlags ^= PHYSICS_PRINT_OCTREE;
+				return 0;
+			}
+			if (pWin32->m_wParam == '9')
+			{
+				m_nFlagsPainter ^= PAINTER_DRAW_WIREFRAME;
 				return 0;
 			}
 			if (pWin32->m_wParam == '0')

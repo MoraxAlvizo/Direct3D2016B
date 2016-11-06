@@ -20,6 +20,7 @@ Descrition:
 #include "Graphics\MeshMathSurface.h"
 #include "Collisions\MeshCollision.h"
 #include "Collisions\OctreeCube.h"
+#include "VMesh.h"
 
 #define CLSID_CSOnGame 0x14638246
 
@@ -69,6 +70,7 @@ public:
 	/* Scene */
 	CMeshMathSurface m_Surface;
 	vector<CMeshCollision> m_Scene;
+	CVMesh MiVariable;
 
 	bool flag = true;
 
@@ -103,6 +105,9 @@ private:
 	bool m_bTurnLeft , m_bTurnRight ;
 	bool m_bTurnUp , m_bTurnDown ;
 	bool m_bTurnS , m_bTurnS1 ;
+
+	/* Draw options */
+	unsigned long m_nFlagsPainter;
 
 protected:
 

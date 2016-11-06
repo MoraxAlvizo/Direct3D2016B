@@ -168,12 +168,15 @@ bool CDXBasicPainter::Initialize()
 	drd.FrontCounterClockwise = false;
 	drd.MultisampleEnable = false;
 	drd.ScissorEnable = false;
-	drd.SlopeScaledDepthBias = 0.0f;
+	drd.SlopeScaledDepthBias = 0.0f; 
 
 	m_pManager->GetDevice()->CreateRasterizerState(&drd, &m_pDrawLH);
-
+	drd.FillMode = D3D11_FILL_WIREFRAME;
+	m_pManager->GetDevice()->CreateRasterizerState(&drd, &m_pDrawWireFrame);
+	drd.FillMode = D3D11_FILL_SOLID;
 	drd.CullMode = D3D11_CULL_FRONT;
 	m_pManager->GetDevice()->CreateRasterizerState(&drd, &m_pDrawRH);
+	
 
 	// Creacion de estados de profuncidad/stencil Dibujar / Marcar / Dibujar en Marcado
 	/* 1. Marcar la zona del espejo, con geometria coplanar al plano de reflexion
@@ -286,6 +289,11 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	dbd.ByteWidth = sizeof(unsigned long)*nIndices;
 	m_pManager->GetDevice()->CreateBuffer(
 		&dbd, &dsd, &pIB);
+
+	if(flags & PAINTER_DRAW_WIREFRAME)
+		m_pManager->GetContext()->RSSetState(m_pDrawWireFrame);
+	else
+		m_pManager->GetContext()->RSSetState(m_pDrawLH);
 	//2.- Instalar el VS , PS , IL
 	m_pManager->GetContext()->IASetInputLayout(m_pIL);
 
@@ -321,6 +329,7 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	else
 		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDraw, 0x01);
 
+	
 	m_pManager->GetContext()->OMSetRenderTargets(1, 
 		bShadow ? &m_pRTVShadowMap : &m_pRTV, 
 		bShadow ? m_pDSVShadowMap: m_pManager->GetMainDSV());

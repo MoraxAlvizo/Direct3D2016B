@@ -1,7 +1,7 @@
 #pragma once
 #include "DXManager.h"
 #include "Matrix4D.h"
-
+#include <math.h>
 class CDXBasicPainter
 {
 protected:
@@ -12,6 +12,7 @@ protected:
 	ID3D11Buffer*      m_pCB;
 	ID3D11RenderTargetView* m_pRTV;
 	ID3D11RasterizerState* m_pDrawLH;
+	ID3D11RasterizerState* m_pDrawWireFrame;
 	ID3D11RasterizerState* m_pDrawRH;
 	ID3D11DepthStencilState* m_pDSSMask;
 	ID3D11DepthStencilState* m_pDSSDrawOnMask;
@@ -30,12 +31,16 @@ protected:
 #define PAINTER_DRAW_ON_NOT_MARK	0x04
 #define PAINTER_DRAW				0x08
 #define PAINTER_WITH_LINESTRIP      0x10
+#define PAINTER_DRAW_WIREFRAME		0x20
 
 public:
 	void ClearShadow();
 	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTV = pRTV; }
 	ID3D11RasterizerState* GetDrawRHRState() { return m_pDrawRH; }
 	ID3D11RasterizerState* GetDrawLHRState() { return m_pDrawLH; }
+	
+	
+	
 	struct MATERIAL
 	{
 		VECTOR4D Ambient;
@@ -111,6 +116,41 @@ public:
 		VECTOR4D Color;
 		VECTOR4D TexCoord;
 		static D3D11_INPUT_ELEMENT_DESC InputLayout[];
+
+		bool Intersection(VECTOR4D &s1, VECTOR4D &s2, VECTOR4D &point, VECTOR4D p1, VECTOR4D p2, VECTOR4D p3)
+		{
+			VECTOR4D d1, d2, d3;
+			VECTOR4D u = s2 - s1;
+			VECTOR4D w = s1 - p1;
+
+			d1 = p2 - p1; // Points 1 and 2 define the first base vector for the plane
+
+			Normalize(d1);
+			d2 = (p3 - p1) - Dot(p3 - p1, d1)*d1; // The second is computed projecting point 3
+			Normalize(d2);
+			d3 = Cross3(d1, d2); // We also need a vector normal to the plane
+			Normalize(d3);
+
+
+			float d = Dot(d3, u);
+			float n = -Dot(d3, w);
+
+			if (fabs(d)<1e-4) // segment and plane are parallel
+				return false;
+
+			float t = n / d;
+
+			if (t < 0.0f || t > 1.0f) // plane doesn't cut segment
+				return false;
+
+			point = s1 + t*u; // plane segment intersection point
+
+			float z = Dot(point - p1, d2);
+			if (z >= 0.0f)
+				return true;  // the point is in the valid half-plane
+			else
+				return true; //WARNING: I have changed this to true
+		}
 	};
 	CDXBasicPainter(CDXManager* pOwner);
 	bool Initialize();
