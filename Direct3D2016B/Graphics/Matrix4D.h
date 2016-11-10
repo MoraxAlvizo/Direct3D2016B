@@ -1,5 +1,25 @@
 #pragma once
 
+#define MAX_VECTOR4D(A,B) \
+{\
+	(A).x > (B).x ? (A).x : (B).x,\
+	(A).y > (B).y ? (A).y : (B).y,\
+	(A).z > (B).z ? (A).z : (B).z,\
+	(A).w > (B).w ? (A).w : (B).w\
+}
+
+#define MIN_VECTOR4D(A,B) \
+{\
+	(A).x < (B).x ? (A).x : (B).x,\
+	(A).y < (B).y ? (A).y : (B).y,\
+	(A).z < (B).z ? (A).z : (B).z,\
+	(A).w < (B).w ? (A).w : (B).w\
+}
+
+#define SET_MAX_VEC4D {(float)INT_MAX,(float)INT_MAX,(float)INT_MAX,(float)INT_MAX}
+#define SET_MIN_VEC4D {(float)INT_MIN,(float)INT_MIN,(float)INT_MIN,(float)INT_MIN}
+
+
 struct VECTOR4D
 {
 	union

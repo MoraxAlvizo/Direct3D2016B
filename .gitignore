@@ -77,3 +77,7 @@ Debug\*
 Release\*
 *.iobj
 *.ipdb
+Direct3D2016B/Direct3D2016B.vcxproj.user
+*.iobj
+Release/Direct3D2016B.ipdb
+Release/Direct3D2016B.iobj

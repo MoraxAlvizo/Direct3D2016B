@@ -12,10 +12,11 @@ using namespace std;
 struct centroid
 {
 	int id;
+	int code;
 	VECTOR4D position;
 	VECTOR4D normal;
-
-	centroid() {}
+	VECTOR4D max;
+	VECTOR4D min;
 };
 
 

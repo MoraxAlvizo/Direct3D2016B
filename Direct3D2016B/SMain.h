@@ -20,6 +20,8 @@
 #define BUF_SIZE 128
 
 #define INPUT_EVENT 0x11221122
+
+class CInputProcessor;
 class CInputEvent :
 	public CEventBase
 {
@@ -64,10 +66,14 @@ public:
 
 	HINSTANCE m_hInstance;
 	HWND m_hWnd;
+
+	/* Engines */
 	CDXManager* m_pDXManager;
 	CDXBasicPainter* m_pDXPainter;
 	CSndManager* m_pSndManager;
 	CInputManager* m_pInputManager;
+	CInputProcessor* m_pInputProcessor;
+
 	CFX* m_FX;
 	bool m_bInitCorrect;
 	unsigned long GetClassID() { return CLSID_CSMain; }

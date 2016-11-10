@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "SMain.h"
+#include "InputProcessor.h"
 #include "HSM\EventWin32.h"
 #include "HSM\StateMachineManager.h"
 
@@ -17,6 +18,7 @@ CSMain::~CSMain()
 	m_FX = NULL;
 	m_pSndManager = NULL;
 	m_pInputManager = NULL;
+	m_pInputProcessor = NULL;
 }
 
 void CSMain::OnEntry(void)
@@ -82,6 +84,8 @@ void CSMain::OnEntry(void)
 			L"Error fatal", MB_ICONERROR);
 		return;
 	}
+
+	m_pInputProcessor = new CInputProcessor(this->m_pSMOwner);
 }
 
 unsigned long CSMain::OnEvent(CEventBase * pEvent)
@@ -98,6 +102,7 @@ unsigned long CSMain::OnEvent(CEventBase * pEvent)
 			{
 				CInputEvent *pInput = new CInputEvent(iSource, 0, js2);
 				m_pSMOwner->PostEvent(pInput);
+				m_pInputProcessor->OnEvent(pInput);
 			}
 		}
 
@@ -109,7 +114,8 @@ unsigned long CSMain::OnEvent(CEventBase * pEvent)
 		{
 		case WM_SIZE: 
 		{
-			m_pDXManager->Resize(LOWORD(pWin32->m_lParam), HIWORD(pWin32->m_lParam));
+			if(m_pDXManager->GetSwapChain())
+				m_pDXManager->Resize(LOWORD(pWin32->m_lParam), HIWORD(pWin32->m_lParam));
 		}
 		break;
 		case WM_CLOSE: 
@@ -139,6 +145,8 @@ void CSMain::OnExit(void)
 	Factory.DestroyObject(m_pSndManager);
 
 	SAFE_DELETE(m_pInputManager);
+
+	delete m_pInputProcessor;
 
 }
 

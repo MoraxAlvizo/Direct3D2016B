@@ -3,6 +3,7 @@
 #include "HSM\EventBase.h"
 #include "HSM\StateMachineManager.h"
 #include "HSM\EventWin32.h"
+#include "ActionEvent.h"
 #include "SMain.h"
 #include "Graphics\ImageBMP.h"
 #include "SOnGame.h"
@@ -28,11 +29,16 @@ void CSMainMenu::OnEntry(void)
 	m_FX = main->m_FX;
 	printf("[HCM] %s:OnEntry\n", GetClassString());
 	m_nOption = 0;
+	m_fOffsetX = m_fOffsetY = 0.0f;
 	printf("Cargando recursos de fondo ... \n");
 
-	char* menuOption[MAIN_MENU_SIZE] = {
-		"..\\Assets\\MMStartGameOption.bmp" ,			//0
-		"..\\Assets\\MMExitGame.bmp",					//1
+	char* menuOption[MAIN_MENU_SIZE*BUTTON_STATE_SIZE] = {
+		"..\\Assets\\MMStartGameOptionUp.bmp" ,			//0
+		"..\\Assets\\MMStartGameOptionDown.bmp" ,		//0
+		"..\\Assets\\MMStartGameOptionOver.bmp" ,		//0
+		"..\\Assets\\MMExitGameUp.bmp",					//1
+		"..\\Assets\\MMExitGameDown.bmp",				//1
+		"..\\Assets\\MMExitGameOver.bmp",				//1
 	};
 
 	
@@ -53,19 +59,23 @@ void CSMainMenu::OnEntry(void)
 	m_vMenu.resize(MAIN_MENU_SIZE);
 	for(unsigned long i = 0; i <MAIN_MENU_SIZE;i++)
 	{
-		CImageBMP* img = CImageBMP::CreateBitmapFromFile(menuOption[i], NULL);
+		for (unsigned long j = 0; j < BUTTON_STATE_SIZE; j++)
+		{
+			CImageBMP* img = CImageBMP::CreateBitmapFromFile(menuOption[i * 3 + j], NULL);
 
-		if (!img)
-		{
-			printf("Recurso %s no encontrado", menuOption[i]);
+			if (!img)
+			{
+				printf("Recurso %s no encontrado", menuOption[i]);
+			}
+			else
+			{
+				auto tex = img->CreateTexture(main->m_pDXManager);
+				ID3D11ShaderResourceView* m_pSRV = NULL;
+				main->m_pDXManager->GetDevice()->CreateShaderResourceView(tex, NULL, &m_pSRV);
+				m_vMenu[i].pSRV[j] = m_pSRV;
+			}
 		}
-		else
-		{
-			auto tex = img->CreateTexture(main->m_pDXManager);
-			ID3D11ShaderResourceView* m_pSRV = NULL;
-			main->m_pDXManager->GetDevice()->CreateShaderResourceView(tex, NULL, &m_pSRV);
-			m_vMenu[i].pSRV = m_pSRV;
-		}
+		
 	}
 	
 	/* Set position and texcoord in start option */
@@ -85,6 +95,8 @@ void CSMainMenu::OnEntry(void)
 	m_vMenu[MAIN_MENU_START].indices[3] = 2;
 	m_vMenu[MAIN_MENU_START].indices[4] = 1;
 	m_vMenu[MAIN_MENU_START].indices[5] = 3;
+
+	m_vMenu[MAIN_MENU_START].stateButton = BUTTON_OVER;
 
 	m_lOptionSelected = MAIN_MENU_START;
 
@@ -106,16 +118,47 @@ void CSMainMenu::OnEntry(void)
 	m_vMenu[MAIN_MENU_EXIT].indices[3] = 2;
 	m_vMenu[MAIN_MENU_EXIT].indices[4] = 1;
 	m_vMenu[MAIN_MENU_EXIT].indices[5] = 3;
+
+	m_vMenu[MAIN_MENU_EXIT].stateButton = BUTTON_UP;
+
 }
 
 unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 {
-	if (INPUT_EVENT == pEvent->m_ulEventType)
+	if (ACTION_EVENT == pEvent->m_ulEventType)
 	{
-		CInputEvent* pInput = (CInputEvent*)pEvent;
-		if(pInput->m_js2.rgbButtons[0]!=0)
+		CActionEvent* pAction = (CActionEvent*)pEvent;
+		if (pAction->m_iAction == JOY_BUTTON_A_PRESSED)
 		{
-			MAIN->m_pSndManager->PlayFx(0);
+			//m_pSMOwner->Transition(CLSID_CSOnGame);
+			switch (m_lOptionSelected)
+			{
+			case MAIN_MENU_START:
+			{
+				m_pSMOwner->Transition(CLSID_CSOnGame);
+				CSMain* main = (CSMain*)GetSuperState();
+				InvalidateRect(main->m_hWnd, NULL, false);
+				return 0;
+			}
+			case MAIN_MENU_EXIT:
+			{
+				m_pSMOwner->Transition(CLSID_CStateNull);
+				PostQuitMessage(0);
+				return 0;
+			}
+			default:
+				break;
+			}
+			return 0;
+			//MAIN->m_pSndManager->PlayFx(0);
+		}
+		if (JOY_AXIS_LX == pAction->m_iAction)
+		{
+			m_fOffsetX = m_fOffsetX + (pAction->m_fAxis - m_fOffsetX) * 0.1;
+		}
+		if (JOY_AXIS_LY == pAction->m_iAction)
+		{
+			m_fOffsetY = m_fOffsetY+ (pAction->m_fAxis - m_fOffsetY) * 0.1;
 		}
 	}
 	if (APP_LOOP == pEvent->m_ulEventType)
@@ -129,24 +172,29 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			pBackBuffer->GetDesc(&dtd);
 			m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVBackGround);
 
+			m_FX->m_Params.WVP = Translation(m_fOffsetX, m_fOffsetY, 0);
 			m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
 			m_FX->m_Params.Brightness = { 0,0,0,0 };
 			m_FX->SetInput(m_pSRVBackGround);
 			m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height);
 
+			m_FX->m_Params.WVP =Identity();
+			
 			for (unsigned long i = 0; i < MAIN_MENU_SIZE; i++)
 			{
 				m_FX->SetImgVertex(m_vMenu[i].frame, m_vMenu[i].indices);
 
 				m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
-				m_FX->SetInput(m_vMenu[i].pSRV);
-
-				if (m_lOptionSelected != i)
-					m_FX->m_Params.Brightness = { 0.5,0.5,0.5,0 };
-				else
-					m_FX->m_Params.Brightness = { 0,0,0,0 };
+				m_FX->SetInput(m_vMenu[i].pSRV[m_vMenu[i].stateButton]);
 				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height, FX_FLAGS_USE_IMG_BUFFR);
 			}
+/*
+			std::unique_ptr<SpriteBatch> spriteBatch(new SpriteBatch(m_pDXManager->GetContext()));
+			std::unique_ptr<SpriteFont> spriteFont(new SpriteFont(m_pDXManager->GetDevice(), L"myfileb.spritefont"));
+
+			spriteBatch->Begin();
+			spriteFont->DrawString(spriteBatch.get(), L"Hello, world!", XMFLOAT2(0, 0));
+			spriteBatch->End();*/
 
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 
@@ -161,19 +209,35 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 		{
 		case WM_CHAR:
 			break;
+		case WM_KEYDOWN:
+			switch (pWin32->m_wParam)
+			{
+			case VK_RETURN:
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_DOWN;
+				break;
+			}
+			break;
 		case WM_KEYUP:
 		{
 			switch (pWin32->m_wParam)
 			{
 			case VK_UP:
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
 				m_lOptionSelected++;
 				if (m_lOptionSelected >= MAIN_MENU_SIZE)
 					m_lOptionSelected = 0;
+
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
 				break;
 			case VK_DOWN:
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
 				m_lOptionSelected--;
 				if (m_lOptionSelected < 0)
 					m_lOptionSelected = MAIN_MENU_SIZE -1;
+
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
 				break;
 			case VK_RETURN:
 				switch (m_lOptionSelected)
@@ -198,42 +262,7 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			}
 		}
 		break;
-		case WM_PAINT:
-		{
-			/*if (m_pDXManager->GetSwapChain())
-			{
-				ID3D11Texture2D* pBackBuffer = 0;
-				D3D11_TEXTURE2D_DESC dtd;
-
-				m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
-				pBackBuffer->GetDesc(&dtd);
-				m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVBackGround);
-
-				m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
-				m_FX->m_Params.Brightness = { 0,0,0,0 };
-				m_FX->SetInput(m_pSRVBackGround);
-				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height);
-
-				for (unsigned long i = 0; i < MAIN_MENU_SIZE; i++)
-				{
-					m_FX->SetImgVertex(m_vMenu[i].frame, m_vMenu[i].indices);
-
-					m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
-					m_FX->SetInput(m_vMenu[i].pSRV);
-
-					if (m_lOptionSelected != i)
-						m_FX->m_Params.Brightness = { 0.5,0.5,0.5,0 };
-					else
-						m_FX->m_Params.Brightness = { 0,0,0,0 };
-					m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height, FX_FLAGS_USE_IMG_BUFFR);
-				}
-				
-				m_pDXManager->GetSwapChain()->Present(1, 0);
-
-				SAFE_RELEASE(pBackBuffer);
-			}*/
-			break;
-		}
+		
 		default:
 			break;
 		}

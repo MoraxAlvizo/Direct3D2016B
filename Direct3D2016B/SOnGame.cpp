@@ -19,7 +19,12 @@ Descrition:
 #include "SIntro.h"
 #include "Graphics\ImageBMP.h"
 #include "SMain.h"
+<<<<<<< HEAD
 #include "Plane.h"
+=======
+#include "Collisions\BVH.h"
+#include "ActionEvent.h"
+>>>>>>> origin/master
 #include <iostream>
 #include "VMesh.h"
 /* assimp include files. */
@@ -219,17 +224,74 @@ void CSOnGame::OnEntry(void)
 		m_pOctree->addObject(&m_Scene[i],
 			m_Scene[i].m_Box.min * m_Scene[i].m_World,
 			m_Scene[i].m_Box.max * m_Scene[i].m_World);
+		
+		vector<unsigned long> primitives;
 
-		//(*m_pScene)[i].createOctree();
-	}
+		primitives.resize(m_Scene[i].m_Centroides.size());
+		for (unsigned long j = 0; j < m_Scene[i].m_Centroides.size(); j++)
+			primitives[j] = j;
 
+<<<<<<< HEAD
 	m_nFlagsPainter = 0;
 	MiVariable.LoadMSHFile("torus.msh");
+=======
+		m_Scene[i].m_BVH = new BVH();
+		m_Scene[i].m_BVH->Preconstruction(m_Scene[i]);
+		m_Scene[i].m_BVH->Construction(m_Scene[i], 1, primitives);
+		m_Scene[i].m_BVH->Postconstruction(m_Scene[i]);
+		//m_Scene[i].m_BVH->Build(m_Scene[i], primitives);
+	}
+>>>>>>> origin/master
 
 }
 
 unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 {
+	if (ACTION_EVENT == pEvent->m_ulEventType)
+	{
+		CActionEvent *Action = (CActionEvent*)pEvent;
+		MATRIX4D Camera = FastInverse(m_View);
+		MATRIX4D Orientation = Camera;
+		VECTOR4D Pos = Camera.vec[3];
+		
+		Orientation.vec[3] = { 0,0,0,1 };
+
+		if (JOY_AXIS_LY == Action->m_iAction)
+		{
+			// Dead Zone
+			VECTOR4D Dir = Camera.vec[2];
+			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+			Pos = Pos + Dir*Stimulus*0.1;
+		}
+		if (JOY_AXIS_LX == Action->m_iAction)
+		{
+			// Dead Zone
+			VECTOR4D Dir = Camera.vec[0];
+			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+			Pos = Pos + Dir*Stimulus*0.1;
+		}
+		if (JOY_AXIS_RX == Action->m_iAction)
+		{
+			// Dead Zone
+			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+			Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[1]);
+		}
+		if (JOY_AXIS_RY == Action->m_iAction)
+		{
+			// Dead Zone
+			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+			Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[0]);
+		}
+
+		
+		Camera.vec[0] = Orientation.vec[0];
+		Camera.vec[1] = Orientation.vec[1];
+		Camera.vec[2] = Orientation.vec[2];
+		Camera.vec[3] = Pos;
+
+		m_View = Orthogonalize(FastInverse(Camera));
+		
+	}
 	if (APP_LOOP == pEvent->m_ulEventType)
 	{
 		if (m_pDXManager->GetSwapChain())
@@ -251,21 +313,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				1.0f,
 				0);
 
-			/* Check if the objects was moved */
-			if (m_lFlags & PHYSICS_DRAW_OCTREE)
-			{
-				m_pDXPainter->m_Params.World = Identity();
-				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
-				
-				m_pOctree->DrawOctree(m_pDXPainter);
-
-				for (unsigned long i = 0; i < m_Scene.size(); i++)
-				{
-					m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-					m_Scene[i].m_octree->DrawOctree();
-
-				}
-			}
 			if (m_lFlags & PHYSICS_PRINT_OCTREE)
 			{
 				printf("\n------------------- Octree scene ----------------------\n\n");
@@ -276,6 +323,40 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 			if (m_lMoveSphere1 || m_lMoveSphere2)
 			{
+
+				for (unsigned long i = 0; i < m_Scene.size(); i++)
+				{
+					m_Scene[i].ResetColors();
+					unsigned long flags;
+					if ((strcmp(m_Scene[i].m_cName, "Sphere") == 0 && (flags = m_lMoveSphere1)) ||
+						(strcmp(m_Scene[i].m_cName, "Sphere.001") == 0 && (flags = m_lMoveSphere2)))
+					{
+						float direction = -1;
+
+						if (flags)
+						{
+							if (flags & MOVE_DOWN)
+								direction = -1;
+							else if (flags & MOVE_UP)
+								direction = 1;
+							else
+								direction = 0;
+						}
+
+						m_pOctree->removeObject(&m_Scene[i],
+							m_Scene[i].m_Box.min * m_Scene[i].m_World,
+							m_Scene[i].m_Box.max * m_Scene[i].m_World);
+
+						//m_Scene[i].MoveVertex(Translation(0, 0, direction*0.1));
+						m_Scene[i].m_World = m_Scene[i].m_World * Translation(0, 0, direction*0.1);
+						m_Scene[i].m_TranslationBVH = m_Scene[i].m_TranslationBVH * Translation(0, 0, direction*0.1);
+
+						m_pOctree->addObject(&m_Scene[i],
+							m_Scene[i].m_Box.min * m_Scene[i].m_World,
+							m_Scene[i].m_Box.max * m_Scene[i].m_World);
+					}
+				}
+
 				set<unsigned long long> potencialCollisions;
 				m_pOctree->potentialCollsions(potencialCollisions);
 
@@ -307,44 +388,13 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 						min1.z < max2.z &&
 						max1.z > min2.z)
 					{
-						if ((strcmp(object1->m_cName, "Sphere") == 0 || strcmp(object2->m_cName, "Sphere") == 0) && m_lMoveSphere1)
-							m_lMoveSphere1 = false;
-						if ((strcmp(object1->m_cName, "Sphere.001") == 0 || strcmp(object2->m_cName, "Sphere.001") == 0) && m_lMoveSphere2)
-							m_lMoveSphere2 = false;
+						//object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
+						object1->m_BVH->TraversalLBVH(object2->m_BVH,1,1, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
 
 					}
 				}
 
-				for (unsigned long i = 0; i < m_Scene.size(); i++)
-				{
-					unsigned long flags;
-					if ((strcmp(m_Scene[i].m_cName, "Sphere") == 0 && (flags = m_lMoveSphere1)) ||
-						(strcmp(m_Scene[i].m_cName, "Sphere.001") == 0 && (flags = m_lMoveSphere2)))
-					{
-						float direction = -1;
-
-						if (flags)
-						{
-							if (flags & MOVE_DOWN)
-								direction = -1;
-							else if (flags & MOVE_UP)
-								direction = 1;
-							else
-								direction = 0;
-						}
-
-						m_pOctree->removeObject(&m_Scene[i],
-							m_Scene[i].m_Box.min * m_Scene[i].m_World,
-							m_Scene[i].m_Box.max * m_Scene[i].m_World);
-
-						m_Scene[i].m_World = m_Scene[i].m_World * Translation(0, 0, direction*0.1);
-
-						m_pOctree->addObject(&m_Scene[i],
-							m_Scene[i].m_Box.min * m_Scene[i].m_World,
-							m_Scene[i].m_Box.max * m_Scene[i].m_World);
-					}
-
-				}
+				
 			}
 			
 	
@@ -562,6 +612,9 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			
 			
 			// Draw 
+			// Actualizar camara si fue movida
+			UpdateCamera();
+			
 			/* Get Backbuffer to get height and width */
 			m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 			pBackBuffer->GetDesc(&dtd);
@@ -583,9 +636,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			m_pDXManager->GetContext()->PSSetShaderResources(3, 1, &m_pSRVNormalMapTrue);
 			m_pDXManager->GetContext()->PSSetShaderResources(4, 1, &m_pSRVEmissiveMap);
 
-			// Actualizar camara si fue movida
-			UpdateCamera();
-
 			/* Set params */
 			m_pDXPainter->m_Params.Brightness = Black;
 			m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
@@ -602,10 +652,30 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			{
 				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
 				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
+<<<<<<< HEAD
 			}*/
 
 			m_pDXPainter->m_Params.World = Identity();
 			m_pDXPainter->DrawIndexed(&MiVariable.m_Vertices[0], MiVariable.m_Vertices.size(), &MiVariable.m_Indices[0], MiVariable.m_Indices.size(), m_nFlagsPainter);
+=======
+				
+			}
+
+			/* Check if the objects was moved */
+			if (m_lFlags & PHYSICS_DRAW_OCTREE)
+			{
+				m_pDXPainter->m_Params.World = Identity();
+				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
+
+				//m_pOctree->DrawOctree(m_pDXPainter);
+
+				for (unsigned long i = 0; i < m_Scene.size(); i++)
+				{
+					m_pDXPainter->m_Params.World = Identity();
+					m_Scene[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_Scene[i].m_TranslationBVH);
+				}
+			}
+>>>>>>> origin/master
 			/* Draw surface */
 			/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0],
 			m_Surface.m_Vertices.size(),
@@ -624,7 +694,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 		switch (pWin32->m_msg)
 		{
 		case WM_CHAR:
-			if (pWin32->m_wParam == 'z')
+			if (pWin32->m_wParam == '9')
 			{
 				m_pSMOwner->Transition(CLSID_CSIntro);
 				CSMain* main = (CSMain*)GetSuperState();
@@ -666,84 +736,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			ManageKeyboardEvents(pWin32->m_msg, pWin32->m_wParam);
 			return 0;
 		}
-		case WM_PAINT:
-
-			//if (m_pDXManager->GetSwapChain())
-			//{
-
-			//	ID3D11Texture2D* pBackBuffer = 0;
-			//	MATRIX4D AC; /* Matriz de correction de aspecto */
-			//	// Colors
-			//	VECTOR4D DarkGray = { 0.25,0.25,0.25,1 };
-			//	VECTOR4D White = { 1,1,1,1 };
-			//	VECTOR4D Gray = { .5,.5,.5,0 };
-			//	VECTOR4D NightBlue = { 0,0,.1, 0 };
-			//	VECTOR4D Black = { 0, 0, 0, 0 };
-			//	D3D11_TEXTURE2D_DESC dtd;
-
-			//	/* Get Backbuffer to get height and width */
-			//	m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
-			//	pBackBuffer->GetDesc(&dtd);
-			//	dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
-			//	SAFE_RELEASE(pBackBuffer);
-
-			//	/* Create AC Matrix */
-			//	AC = Scaling((float)dtd.Height / dtd.Width, 1, 1);
-
-			//	/* Set Material parameters */
-			//	m_pDXPainter->SetRenderTarget(m_pDXManager->GetMainRTV());
-			//	m_pDXPainter->m_Params.Material.Diffuse = Gray;
-			//	m_pDXPainter->m_Params.Material.Ambient = Gray;
-
-			//	/* Clear main render target */
-			//	/*m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&NightBlue);
-			//	m_pDXManager->GetContext()->ClearDepthStencilView(
-			//		m_pDXManager->GetMainDSV(),
-			//		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-			//		1.0f,
-			//		0);*/
-
-			//	/* Set SRVs */
-			//	m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVTexture);
-			//	m_pDXManager->GetContext()->PSSetShaderResources(1, 1, &m_pSRVNormalMap);
-			//	m_pDXManager->GetContext()->PSSetShaderResources(2, 1, &m_pSRVEnvMap);
-			//	m_pDXManager->GetContext()->PSSetShaderResources(3, 1, &m_pSRVNormalMapTrue);
-			//	m_pDXManager->GetContext()->PSSetShaderResources(4, 1, &m_pSRVEmissiveMap);
-
-			//	// Actualizar camara si fue movida
-			//	UpdateCamera();
-
-			//	/* Set params */
-			//	m_pDXPainter->m_Params.Brightness = Black;
-			//	m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
-			//	
-			//	m_pDXPainter->m_Params.World = m_World;
-			//	m_pDXPainter->m_Params.View = m_View;
-			//	m_pDXPainter->m_Params.Projection = m_Projection*AC;
-
-			//	/* Render with Left Hand*/
-			//	m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
-
-			//	/* Draw scene */
-			//	for (unsigned long i = 0; i < m_Scene.size(); i++)
-			//	{
-			//		m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-			//		m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
-			//	}
-			//	
-			//	/* Draw surface */
-			//	/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0], 
-			//		m_Surface.m_Vertices.size(), 
-			//		&m_Surface.m_Indices[0], 
-			//		m_Surface.m_Indices.size(), 
-			//		PAINTER_DRAW);*/
-
-			//	m_pDXManager->GetSwapChain()->Present(1, 0);
-
-			//}
-			
-			break;
-		
 		default:
 			break;
 		}
@@ -794,6 +786,7 @@ void CSOnGame::LoadScene(char * filename)
 	const struct aiScene* scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_MaxQuality);
 
 	m_Scene.resize(scene->mNumMeshes);
+	
 	for (unsigned long i = 0; i < scene->mNumMeshes; i++)
 	{
 		float maxX, maxY, maxZ;
@@ -855,8 +848,8 @@ void CSOnGame::LoadScene(char * filename)
 			{
 				m_Scene[i].m_Indices[j*scene->mMeshes[i]->mFaces[j].mNumIndices + k] = scene->mMeshes[i]->mFaces[j].mIndices[k];
 			}
-
 		}
+
 		for (unsigned long j = 0; j < m_Scene[i].m_Vertices.size(); j++)
 		{
 			VECTOR4D TexCoord = { 0,0,0,0 };

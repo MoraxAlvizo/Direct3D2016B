@@ -15,16 +15,7 @@ struct VERTEX_OUTPUT
     float4 Color : COLOR;
 };
 
-VERTEX_OUTPUT VSMain(VERTEX_INPUT Input)
-{
-    VERTEX_OUTPUT Output;
 
-    Output.Position = Input.Position;
-    Output.Color = Input.Color;
-    Output.TexCoord = Input.TexCoord;
-    Output.PositionNonProjected = Input.Position;
-    return Output;
-}
 
 cbuffer PARAMS
 {
@@ -37,6 +28,20 @@ cbuffer PARAMS
 	uint4  flags;
     // Add here more params as requiered
 };
+
+VERTEX_OUTPUT VSMain(VERTEX_INPUT Input)
+{
+	VERTEX_OUTPUT Output;
+	float4 Position = mul(Input.Position, WVP);
+
+	Output.Position = Position;
+	Output.Color = Input.Color;
+	Output.TexCoord = Input.TexCoord;
+	Output.PositionNonProjected = Input.Position;
+
+
+	return Output;
+}
 
 Texture2D Frame : register(t0);
 Texture2D BrightPassM : register(t1);
