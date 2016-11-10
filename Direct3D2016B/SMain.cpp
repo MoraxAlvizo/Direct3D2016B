@@ -133,6 +133,7 @@ unsigned long CSMain::OnEvent(CEventBase * pEvent)
 		case WM_CHAR:
 			switch (pWin32->m_lParam)
 			{
+				//
 			case '2':
 				MAIN->m_pNetProcessor->Connect(L"127.0.0.1");
 			default:
