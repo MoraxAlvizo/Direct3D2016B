@@ -19,6 +19,7 @@ CSMain::~CSMain()
 	m_pSndManager = NULL;
 	m_pInputManager = NULL;
 	m_pInputProcessor = NULL;
+	m_pNetProcessor = NULL;
 }
 
 void CSMain::OnEntry(void)
@@ -86,6 +87,14 @@ void CSMain::OnEntry(void)
 	}
 
 	m_pInputProcessor = new CInputProcessor(this->m_pSMOwner);
+
+	m_pNetProcessor = new CNetProcessor(m_pSMOwner);
+	printf("Init NetProcessor . . .");
+	if (!m_pNetProcessor->InitNetwork())
+		printf("No se pudo inicializar NetProcessor\n");
+	else
+		printf("NetProcessor inicializado correctamente\n");
+		
 }
 
 unsigned long CSMain::OnEvent(CEventBase * pEvent)
@@ -121,6 +130,14 @@ unsigned long CSMain::OnEvent(CEventBase * pEvent)
 		case WM_CLOSE: 
 			m_pSMOwner->Transition(CLSID_CStateNull);
 			return 0;
+		case WM_CHAR:
+			switch (pWin32->m_lParam)
+			{
+			case '2':
+				MAIN->m_pNetProcessor->Connect(L"127.0.0.1");
+			default:
+				break;
+			}
 		default:
 			break;
 		}

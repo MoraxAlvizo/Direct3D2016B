@@ -14,6 +14,7 @@
 #include "Sound\SndFx.h"
 #include "Sound\SndFactory.h"
 #include "Input\InputManager.h"
+#include "NetProcessor.h"
 
 #define CLSID_CSMain 0xd5d6a900
 #define MAIN ((CSMain*)m_pSMOwner->GetObjectByID(CLSID_CSMain))
@@ -73,6 +74,7 @@ public:
 	CSndManager* m_pSndManager;
 	CInputManager* m_pInputManager;
 	CInputProcessor* m_pInputProcessor;
+	CNetProcessor* m_pNetProcessor;
 
 	CFX* m_FX;
 	bool m_bInitCorrect;

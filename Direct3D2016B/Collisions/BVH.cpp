@@ -430,6 +430,72 @@ void BVH::Postconstruction(CMesh & object)
 	}
 }
 
+bool BVH::CheckIfPrimitivesCollision(BVH * pTree, 
+	unsigned long nodeThis, 
+	unsigned long nodeTree,
+	CMesh& object1,
+	CMesh& object2)
+{
+	// Crear funcion de revisar triangulos
+
+	unsigned long indicesThis = this->LBVH[nodeThis].idPrimitive * 3;
+
+	VECTOR4D object1_V0 = object1.m_Vertices[object1.m_Indices[indicesThis]].Position * object1.m_World;
+	VECTOR4D object1_V1 = object1.m_Vertices[object1.m_Indices[indicesThis + 1]].Position* object1.m_World;
+	VECTOR4D object1_V2 = object1.m_Vertices[object1.m_Indices[indicesThis + 2]].Position* object1.m_World;
+
+	unsigned long indicesPTree = pTree->LBVH[nodeTree].idPrimitive * 3;
+
+	VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position* object2.m_World;
+	VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position* object2.m_World;
+	VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position* object2.m_World;
+
+	VECTOR4D Intersection;
+	VECTOR4D RayOrigin;
+	VECTOR4D RayDir;
+
+	/* Revisar triangulo objeto1 contra el objeto2 */
+
+	RayOrigin = object2_V0;
+	RayDir = Normalize(object2_V1 - RayOrigin);
+
+	if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
+		return true;
+	
+	RayOrigin = object2_V1;
+	RayDir = Normalize(object2_V2 - RayOrigin);
+
+	if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
+		return true;
+
+	RayOrigin = object2_V2;
+	RayDir = Normalize(object2_V0 - RayOrigin);
+
+	if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
+		return true;
+
+	/* Revisar triangulo objeto2 contra el objeto1 */
+	RayOrigin = object1_V0;
+	RayDir = Normalize(object1_V1 - RayOrigin);
+
+	if (RayCastOnTriangle(object2_V0, object2_V1, object2_V2, RayOrigin, RayDir, Intersection))
+		return true;
+
+	RayOrigin = object1_V1;
+	RayDir = Normalize(object1_V2 - RayOrigin);
+
+	if (RayCastOnTriangle(object2_V0, object2_V1, object2_V2, RayOrigin, RayDir, Intersection))
+		return true;
+
+	RayOrigin = object1_V2;
+	RayDir = Normalize(object1_V0 - RayOrigin);
+
+	if (RayCastOnTriangle(object2_V0, object2_V1, object2_V2, RayOrigin, RayDir, Intersection))
+		return true;
+
+	return false;
+}
+
 void BVH::DrawLBVH(CDXBasicPainter * painter, int node, MATRIX4D translation)
 {
 	/* Caso base */
@@ -521,85 +587,11 @@ void BVH::TraversalLBVH(
 			if (pTree->LBVH[nodeTree].isLeaf)
 			{
 				// Crear funcion de revisar triangulos
-
-				unsigned long indicesThis = this->LBVH[nodeThis].idPrimitive * 3;
-
-				VECTOR4D object1_V0 = object1.m_Vertices[object1.m_Indices[indicesThis]].Position * object1.m_World;
-				VECTOR4D object1_V1 = object1.m_Vertices[object1.m_Indices[indicesThis + 1]].Position* object1.m_World;
-				VECTOR4D object1_V2 = object1.m_Vertices[object1.m_Indices[indicesThis + 2]].Position* object1.m_World;
-
-				unsigned long indicesPTree = pTree->LBVH[nodeTree].idPrimitive * 3;
-
-				VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position* object2.m_World;
-				VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position* object2.m_World;
-				VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position* object2.m_World;
-
-				VECTOR4D Intersection;
-				VECTOR4D RayOrigin;
-				VECTOR4D RayDir;
-
-				/* Revisar triangulo objeto1 contra el objeto2 */
-
-				RayOrigin = object2_V0;
-				RayDir = Normalize(object2_V1 - RayOrigin);
-
-				if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
+				if (CheckIfPrimitivesCollision(pTree, nodeThis, nodeTree, object1, object2))
 				{
-					this->m_Color = { 1, 1, 0, 0 };
-					pTree->m_Color = { 1, 1, 0, 0 };
-					BVH_SET_COLOR(object1, indicesThis, m_Color);
-					BVH_SET_COLOR(object2, indicesPTree, m_Color);
+					unsigned long indicesThis = this->LBVH[nodeThis].idPrimitive * 3;
+					unsigned long indicesPTree = pTree->LBVH[nodeTree].idPrimitive * 3;
 
-				}
-				RayOrigin = object2_V1;
-				RayDir = Normalize(object2_V2 - RayOrigin);
-
-				if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
-				{
-					this->m_Color = { 1, 1, 0, 0 };
-					pTree->m_Color = { 1, 1, 0, 0 };
-					BVH_SET_COLOR(object1, indicesThis, m_Color);
-					BVH_SET_COLOR(object2, indicesPTree, m_Color);
-				}
-
-				RayOrigin = object2_V2;
-				RayDir = Normalize(object2_V0 - RayOrigin);
-
-				if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
-				{
-					this->m_Color = { 1, 1, 0, 0 };
-					pTree->m_Color = { 1, 1, 0, 0 };
-					BVH_SET_COLOR(object1, indicesThis, m_Color);
-					BVH_SET_COLOR(object2, indicesPTree, m_Color);
-				}
-
-				/* Revisar triangulo objeto2 contra el objeto1 */
-				RayOrigin = object1_V0;
-				RayDir = Normalize(object1_V1 - RayOrigin);
-
-				if (RayCastOnTriangle(object2_V0, object2_V1, object2_V2, RayOrigin, RayDir, Intersection))
-				{
-					this->m_Color = { 1, 1, 0, 0 };
-					pTree->m_Color = { 1, 1, 0, 0 };
-					BVH_SET_COLOR(object1, indicesThis, m_Color);
-					BVH_SET_COLOR(object2, indicesPTree, m_Color);
-				}
-				RayOrigin = object1_V1;
-				RayDir = Normalize(object1_V2 - RayOrigin);
-
-				if (RayCastOnTriangle(object2_V0, object2_V1, object2_V2, RayOrigin, RayDir, Intersection))
-				{
-					this->m_Color = { 1, 1, 0, 0 };
-					pTree->m_Color = { 1, 1, 0, 0 };
-					BVH_SET_COLOR(object1, indicesThis, m_Color);
-					BVH_SET_COLOR(object2, indicesPTree, m_Color);
-				}
-
-				RayOrigin = object1_V2;
-				RayDir = Normalize(object1_V0 - RayOrigin);
-
-				if (RayCastOnTriangle(object2_V0, object2_V1, object2_V2, RayOrigin, RayDir, Intersection))
-				{
 					this->m_Color = { 1, 1, 0, 0 };
 					pTree->m_Color = { 1, 1, 0, 0 };
 					BVH_SET_COLOR(object1, indicesThis, m_Color);
@@ -610,7 +602,7 @@ void BVH::TraversalLBVH(
 			{
 				/* Sino es nodo hoja el pTree entonces revisar si sus hijos collision con este nodo hoja */
 				TraversalLBVH(pTree, nodeThis, nodeTree << 1, thisTranslation, translationTree, object1, object2);
-				TraversalLBVH(pTree, nodeThis, (nodeTree << 1)+1, thisTranslation, translationTree, object1, object2);
+				TraversalLBVH(pTree, nodeThis, (nodeTree << 1) + 1, thisTranslation, translationTree, object1, object2);
 			}
 		}
 		/*
@@ -626,5 +618,95 @@ void BVH::TraversalLBVH(
 		TraversalLBVH(pTree, nodeThis << 1, (nodeTree << 1) + 1, thisTranslation, translationTree, object1, object2);
 		TraversalLBVH(pTree, (nodeThis << 1) + 1, nodeTree << 1, thisTranslation, translationTree, object1, object2);
 		TraversalLBVH(pTree, (nodeThis << 1) + 1, (nodeTree << 1) + 1, thisTranslation, translationTree, object1, object2);
+	}
+}
+
+int firstbitlow(int num)
+{
+	for (int i = 0; i < 32; i++)
+	{
+		if (num & (1 << i))
+			return 1 << i;
+	}
+	return 0;
+
+}
+
+int firstbithigh(int num)
+{
+	for (int i = 31; i >= 0; i--)
+	{
+		if (num & (1 << i))
+			return 1 << i;
+	}
+	return 0;
+
+}
+
+void BVH::BitTrailTraversal(BVH * pTree, MATRIX4D & thisTranslation, MATRIX4D & translationTree, CMesh & object1, CMesh & object2)
+{
+
+	int iTriangleId = -1;
+
+	int nodeNum = 2;
+	//int trail = (1 << (firstbithigh(nodeNum)));
+	int nodeNum2 = 1;
+	int trail2 = (1 << (firstbithigh(nodeNum2)));
+
+
+	while (true)
+	{
+		int p2 = 0;
+
+		while (!pTree->LBVH[nodeNum2].isLeaf)
+		{
+			Box thisBox;
+			Box treeBox;
+			p2 = firstbitlow(trail2 + 1);
+
+			thisBox.max = this->LBVH[nodeNum].max * thisTranslation;
+			thisBox.min = this->LBVH[nodeNum].min * thisTranslation;
+
+			treeBox.max = pTree->LBVH[nodeNum2].max * translationTree;
+			treeBox.min = pTree->LBVH[nodeNum2].min * translationTree;
+			
+
+			if (!BVH_BOXES_COLLISION(thisBox, treeBox))
+			{
+				//does not intersect, change to next node
+				trail2 = (trail2 >> p2) + 1;
+				nodeNum2 = (nodeNum2 >> p2) ^ 1;
+				
+			}
+			else
+			{
+				trail2 = trail2 << 1;
+				nodeNum2 = (nodeNum2 << 1);
+				
+			}
+			if ( trail2 <= 1) break;
+		}
+
+		if (trail2 <= 1) break;
+
+		p2 = firstbitlow(trail2 + 1);
+
+		//it is a leaf, compare against all the primitives and asign next node
+		if (CheckIfPrimitivesCollision(pTree, nodeNum, nodeNum2, object1, object2))
+		{
+			unsigned long indicesThis = this->LBVH[nodeNum].idPrimitive * 3;
+			unsigned long indicesPTree = pTree->LBVH[nodeNum2].idPrimitive * 3;
+
+			this->m_Color = { 1, 1, 0, 0 };
+			pTree->m_Color = { 1, 1, 0, 0 };
+			BVH_SET_COLOR(object1, indicesThis, m_Color);
+			BVH_SET_COLOR(object2, indicesPTree, m_Color);
+		}
+
+
+		trail2 = (trail2 >> p2) + 1;
+		nodeNum2 = (nodeNum2 >> p2) ^ 1;
+
+		if (trail2 <=1 ) break;
 	}
 }

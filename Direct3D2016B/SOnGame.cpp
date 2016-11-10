@@ -390,7 +390,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					{
 						//object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
 						object1->m_BVH->TraversalLBVH(object2->m_BVH,1,1, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-
+						//object1->m_BVH->BitTrailTraversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
 					}
 				}
 

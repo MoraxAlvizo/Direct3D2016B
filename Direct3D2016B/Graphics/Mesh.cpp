@@ -326,6 +326,7 @@ void CMesh::Optimize()
 	Indices.resize(IndicesOut);
 	m_Indices = Indices;
 	m_Indices.shrink_to_fit();
+
 }
 
 void CMesh::GenerarCentroides()
