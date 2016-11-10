@@ -638,7 +638,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			m_pDXPainter->m_Params.Brightness = Black;
 			m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
 
-			m_pDXPainter->m_Params.World = m_World;
+ 			m_pDXPainter->m_Params.World = m_World;
 			m_pDXPainter->m_Params.View = m_View;
 			m_pDXPainter->m_Params.Projection = m_Projection*AC;
 
