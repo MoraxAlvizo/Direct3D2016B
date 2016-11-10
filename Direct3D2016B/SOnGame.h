@@ -20,11 +20,9 @@ Descrition:
 #include "Graphics\MeshMathSurface.h"
 #include "Collisions\MeshCollision.h"
 #include "Collisions\OctreeCube.h"
-<<<<<<< HEAD
 #include "VMesh.h"
-=======
 #include "Collisions\BVH.h"
->>>>>>> origin/master
+
 
 #define CLSID_CSOnGame 0x14638246
 
@@ -74,11 +72,9 @@ public:
 	/* Scene */
 	CMeshMathSurface m_Surface;
 	vector<CMeshCollision> m_Scene;
-<<<<<<< HEAD
+
 	CVMesh MiVariable;
-=======
 	//vector<BVH> m_BVHs;
->>>>>>> origin/master
 
 	bool flag = true;
 

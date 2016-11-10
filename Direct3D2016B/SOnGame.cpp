@@ -19,12 +19,10 @@ Descrition:
 #include "SIntro.h"
 #include "Graphics\ImageBMP.h"
 #include "SMain.h"
-<<<<<<< HEAD
 #include "Plane.h"
-=======
 #include "Collisions\BVH.h"
 #include "ActionEvent.h"
->>>>>>> origin/master
+
 #include <iostream>
 #include "VMesh.h"
 /* assimp include files. */
@@ -231,17 +229,17 @@ void CSOnGame::OnEntry(void)
 		for (unsigned long j = 0; j < m_Scene[i].m_Centroides.size(); j++)
 			primitives[j] = j;
 
-<<<<<<< HEAD
-	m_nFlagsPainter = 0;
-	MiVariable.LoadMSHFile("torus.msh");
-=======
+
+		m_nFlagsPainter = 0;
+		MiVariable.LoadMSHFile("torus.msh");
+
 		m_Scene[i].m_BVH = new BVH();
 		m_Scene[i].m_BVH->Preconstruction(m_Scene[i]);
 		m_Scene[i].m_BVH->Construction(m_Scene[i], 1, primitives);
 		m_Scene[i].m_BVH->Postconstruction(m_Scene[i]);
 		//m_Scene[i].m_BVH->Build(m_Scene[i], primitives);
 	}
->>>>>>> origin/master
+
 
 }
 
@@ -647,20 +645,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			/* Render with Left Hand*/
 			m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
 
-			/* Draw scene */
-			/*for (unsigned long i = 0; i < m_Scene.size(); i++)
-			{
-				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
-<<<<<<< HEAD
-			}*/
-
-			m_pDXPainter->m_Params.World = Identity();
-			m_pDXPainter->DrawIndexed(&MiVariable.m_Vertices[0], MiVariable.m_Vertices.size(), &MiVariable.m_Indices[0], MiVariable.m_Indices.size(), m_nFlagsPainter);
-=======
-				
-			}
-
 			/* Check if the objects was moved */
 			if (m_lFlags & PHYSICS_DRAW_OCTREE)
 			{
@@ -675,7 +659,20 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					m_Scene[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_Scene[i].m_TranslationBVH);
 				}
 			}
->>>>>>> origin/master
+
+			/* Draw scene */
+			/*for (unsigned long i = 0; i < m_Scene.size(); i++)
+			{
+				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
+				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
+			}*/
+
+			m_pDXPainter->m_Params.World = Identity();
+			m_pDXPainter->DrawIndexed(&MiVariable.m_Vertices[0], MiVariable.m_Vertices.size(), &MiVariable.m_Indices[0], MiVariable.m_Indices.size(), m_nFlagsPainter);
+				
+			
+
+			
 			/* Draw surface */
 			/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0],
 			m_Surface.m_Vertices.size(),
@@ -694,7 +691,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 		switch (pWin32->m_msg)
 		{
 		case WM_CHAR:
-			if (pWin32->m_wParam == '9')
+			if (pWin32->m_wParam == '8')
 			{
 				m_pSMOwner->Transition(CLSID_CSIntro);
 				CSMain* main = (CSMain*)GetSuperState();
