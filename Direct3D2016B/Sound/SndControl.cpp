@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include <windows.h>
 #include <mmreg.h>
 #include <dsound.h>
@@ -27,7 +27,7 @@ CSndControl* CSndControl::DuplicateSound(void)
 
 	pIDirectSoundBuffer->QueryInterface(IID_IDirectSoundBuffer8,(void**)&pSnd->m_pIDirectSoundBuffer);
 	pIDirectSoundBuffer->Release();
-	
+
 	//Microsoft Issue.... y está documentado... Workaraund
 	pSnd->m_pIDirectSoundBuffer->SetVolume(lVolume-1);
 	pSnd->m_pIDirectSoundBuffer->SetVolume(lVolume);

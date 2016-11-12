@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "ObjectStock.h"
 #include "ObjectBase.h"
 #include "ObjectCommand.h"

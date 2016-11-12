@@ -116,11 +116,11 @@ bool CFX::Initialize()
 						"PSDirectionalBlur",		//2
 						"PSGaussHorizontalBlur",	//3
 						"PSGaussVerticalBlur",		//4
-						"PSBrightPass",				//5 
+						"PSBrightPass",				//5
 						"PSMerged",					//6
 						"PSSky",					//7
 						"PSNone"
-						};				
+						};
 	for (auto FXName : Effects)
 	{
 		ID3D11PixelShader *pPS = m_pOwner->CompilePixelShader(
@@ -130,7 +130,7 @@ bool CFX::Initialize()
 			SAFE_RELEASE(m_pIL);
 			for (unsigned long i = 0; i < m_vecFX.size(); i++)
 				SAFE_RELEASE(m_vecFX[i]);
-			
+
 			m_vecFX.clear();
 			return false;
 		}
@@ -204,7 +204,7 @@ void CFX::Process(unsigned long vsEffect, unsigned long psEffect, float w, float
 	m_pOwner->GetContext()->PSSetShader(m_vecFX[psEffect], 0, 0);
 	//3.- Definir el puerto de visión y la topologia
 	// a dibujar
-	
+
 	D3D11_VIEWPORT ViewPort;
 
 	ViewPort.Width = (float)w;
@@ -216,7 +216,7 @@ void CFX::Process(unsigned long vsEffect, unsigned long psEffect, float w, float
 	m_pOwner->GetContext()->RSSetViewports(1, &ViewPort);
 	m_pOwner->GetContext()->IASetPrimitiveTopology(
 		D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	//4.- Configurar la salida. aqui lo omitimos por que ya fue seteado 
+	//4.- Configurar la salida. aqui lo omitimos por que ya fue seteado
 	if(psEffect == 7)
 		m_pOwner->GetContext()->OMSetDepthStencilState(m_pDSSDrawOnNoMask, 0x01);
 	m_pOwner->GetContext()->OMSetRenderTargets(1, &m_pRTVOutput, psEffect == 7 ? m_pOwner->GetMainDSV():0);
@@ -238,7 +238,7 @@ void CFX::Process(unsigned long vsEffect, unsigned long psEffect, float w, float
 	PARAMS Temp = m_Params;
 
 	Temp.WVP = Transpose(m_Params.WVP);
-	Temp.Delta = { 1 / (float)w,1 / (float)h,0,0 };	
+	Temp.Delta = { 1 / (float)w,1 / (float)h,0,0 };
 
 	memcpy(ms.pData, &Temp, sizeof(PARAMS));
 	m_pOwner->GetContext()->Unmap(m_pCB, 0);

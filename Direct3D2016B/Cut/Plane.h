@@ -1,5 +1,5 @@
 #pragma once
-#include"Graphics\DXBasicPainter.h"
+#include"..\Graphics\DXBasicPainter.h"
 class CPlane
 {
 
@@ -13,6 +13,6 @@ public:
 public:
 	VECTOR4D m_p1, m_p2, m_p3;
 	VECTOR4D m_d1, m_d2, m_d3;
-	
+
 };
 

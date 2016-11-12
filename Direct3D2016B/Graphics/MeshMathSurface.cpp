@@ -56,7 +56,7 @@ void CMeshMathSurface::BuildAnalyticSurface(
 		y += dy;
 	}
 	Tesselate();
-} 
+}
 
 
 void CMeshMathSurface::BuildParametricSurface(

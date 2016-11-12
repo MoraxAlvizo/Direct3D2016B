@@ -1,11 +1,11 @@
 /*
 
-File name: 
-	CSOnGame.cpp 
+File name:
+	CSOnGame.cpp
 
 Descrition:
 	This state is responsible to draw all the scene and manage
-	the camera. 
+	the camera.
 
 	DD/MM/AA	Name	- Coment
 	15/09/16	OMAR	- Creation
@@ -19,12 +19,12 @@ Descrition:
 #include "SIntro.h"
 #include "Graphics\ImageBMP.h"
 #include "SMain.h"
-#include "Plane.h"
+#include "Cut/Plane.h"
 #include "Collisions\BVH.h"
 #include "ActionEvent.h"
 
 #include <iostream>
-#include "VMesh.h"
+#include "Cut/VMesh.h"
 /* assimp include files. */
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -82,7 +82,7 @@ void CSOnGame::OnEntry(void)
 			L"Verificar recursos sombreadores", MB_ICONERROR);
 		return;
 	}
-	
+
 	m_pTexture = texture->CreateTexture(m_pDXManager);
 	if (!m_pTexture)
 	{
@@ -222,7 +222,7 @@ void CSOnGame::OnEntry(void)
 		m_pOctree->addObject(&m_Scene[i],
 			m_Scene[i].m_Box.min * m_Scene[i].m_World,
 			m_Scene[i].m_Box.max * m_Scene[i].m_World);
-		
+
 		vector<unsigned long> primitives;
 
 		primitives.resize(m_Scene[i].m_Centroides.size());
@@ -251,7 +251,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 		MATRIX4D Camera = FastInverse(m_View);
 		MATRIX4D Orientation = Camera;
 		VECTOR4D Pos = Camera.vec[3];
-		
+
 		Orientation.vec[3] = { 0,0,0,1 };
 
 		if (JOY_AXIS_LY == Action->m_iAction)
@@ -281,20 +281,20 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[0]);
 		}
 
-		
+
 		Camera.vec[0] = Orientation.vec[0];
 		Camera.vec[1] = Orientation.vec[1];
 		Camera.vec[2] = Orientation.vec[2];
 		Camera.vec[3] = Pos;
 
 		m_View = Orthogonalize(FastInverse(Camera));
-		
+
 	}
 	if (APP_LOOP == pEvent->m_ulEventType)
 	{
 		if (m_pDXManager->GetSwapChain())
 		{
-			// Clear render targer and deph stencil 
+			// Clear render targer and deph stencil
 			ID3D11Texture2D* pBackBuffer = 0;
 			MATRIX4D AC; /* Matriz de correction de aspecto */
 						 // Colors
@@ -392,20 +392,20 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					}
 				}
 
-				
+
 			}
-			
-	
+
+
 
 
 			CDXBasicPainter::VERTEX plane[3];
 			unsigned long   m_lIndicesFrame[6];
 
-			
+
 			plane[0].Position = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z + 1.1f,1 };
 			plane[1].Position = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z + 1.1f,1 };
 			plane[2].Position = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z + 1.1f,1 };
-			
+
 			VECTOR4D pX = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z + 1.1f,1 };
 			VECTOR4D pY = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z + 1.1f,1 };
 			VECTOR4D pZ = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z + 1.1f,1 };
@@ -425,10 +425,10 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			//m_lIndicesFrame[6] = 5;
 			//m_lIndicesFrame[7] = 1;
 
-			
+
 
 			//m_pDXPainter->DrawIndexed(plane, 3, m_lIndicesFrame, 6, PAINTER_DRAW);
-			
+
 			while (flag)
 			{
 				std::cout << "==================Obtenemos Vertices del Plano============" << std::endl;
@@ -461,7 +461,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				std::cout << m_Scene[0].m_Vertices[1].Position.y << std::endl;
 				std::cout << m_Scene[0].m_Vertices[1].Position.z << std::endl;
 				std::cout << m_Scene[0].m_Vertices[1].Position.w << std::endl;
-				
+
 
 				std::cout << "Vertice: 3" << std::endl;
 				std::cout << m_Scene[0].m_Vertices[2].Position.x << std::endl;
@@ -489,12 +489,12 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				int intersectionTestCount = 0;
 
 				// Test each node against the plane to detect if nodes are cut
-				for (int i = 0; i < 4; i++) 
+				for (int i = 0; i < 4; i++)
 				{
 					for (int j = 0; j < m_Scene[0].m_Vertices.size(); j++)
 					{
-						if (plane[i].Position.x == m_Scene[0].m_Vertices[j].Position.x && 
-							plane[i].Position.y == m_Scene[0].m_Vertices[j].Position.y && 
+						if (plane[i].Position.x == m_Scene[0].m_Vertices[j].Position.x &&
+							plane[i].Position.y == m_Scene[0].m_Vertices[j].Position.y &&
 							plane[i].Position.z == m_Scene[0].m_Vertices[j].Position.z)
 						{
 							//Aqui se tendria que guardar ese nodo que se corto
@@ -509,7 +509,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 							cutEdgesCount++;
 						}
 					}
-					
+
 				}
 				cout << "Number of edges: " << cutEdgesCount << endl;
 				cutEdgesCount > 3 ? cutEdgesCount = cutEdgesCount / 2 : cutEdgesCount = cutEdgesCount;
@@ -560,7 +560,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				{
 					switch (cutNodesCount)
 					{
-					case 0: 
+					case 0:
 						type = "Cut D";
 						break;
 					case 1:
@@ -607,12 +607,12 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				std::cout << "Tipo de Corte: " << type << std::endl;
 			}
 
-			
-			
-			// Draw 
+
+
+			// Draw
 			// Actualizar camara si fue movida
 			UpdateCamera();
-			
+
 			/* Get Backbuffer to get height and width */
 			m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 			pBackBuffer->GetDesc(&dtd);
@@ -669,10 +669,10 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 			m_pDXPainter->m_Params.World = Identity();
 			m_pDXPainter->DrawIndexed(&MiVariable.m_Vertices[0], MiVariable.m_Vertices.size(), &MiVariable.m_Indices[0], MiVariable.m_Indices.size(), m_nFlagsPainter);
-				
-			
 
-			
+
+
+
 			/* Draw surface */
 			/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0],
 			m_Surface.m_Vertices.size(),
@@ -780,10 +780,10 @@ void CSOnGame::Cut()
 void CSOnGame::LoadScene(char * filename)
 {
 	/* the global Assimp scene object */
-	const struct aiScene* scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_MaxQuality);
+	const struct aiScene* scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_Fast); //  aiProcessPreset_TargetRealtime_MaxQuality
 
 	m_Scene.resize(scene->mNumMeshes);
-	
+
 	for (unsigned long i = 0; i < scene->mNumMeshes; i++)
 	{
 		float maxX, maxY, maxZ;
@@ -925,7 +925,7 @@ void CSOnGame::UpdateCamera()
 	m_pDXPainter->m_Params.lights[1].Position = EyePos;
 	m_pDXPainter->m_Params.lights[1].Direction = ZDir;
 
-	// Set camara pos in params 
+	// Set camara pos in params
 	m_pDXPainter->m_Params.CameraPosition = EyePos;
 	float speed = .02;
 
@@ -1154,5 +1154,5 @@ void CSOnGame::ManageKeyboardEvents(UINT event, WPARAM wParam)
 	default:
 		break;
 	}
-	
+
 }

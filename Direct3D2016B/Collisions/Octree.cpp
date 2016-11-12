@@ -13,7 +13,7 @@ COctree::COctree(VECTOR4D c1, VECTOR4D c2, int d, CDXBasicPainter* pPainter) {
 	depth = d;
 	numPoints = 0;
 	hasChildren = false;
-		
+
 	for (int i = 0; i < 2; i++)
 	{
 		for (int j = 0; j < 2; j++)
@@ -42,7 +42,7 @@ COctree::~COctree() {
 //@param	addBall			verdadero para agregar la pelota.
 
 void COctree::filePoint(Point* point, VECTOR4D pos, bool addBall) {
-	// Determina en cual de sus hijos la pelota pertenece. 
+	// Determina en cual de sus hijos la pelota pertenece.
 	for (int x = 0; x < 2; x++) {
 		if (x == 0) {
 			if (pos.v[0]  > center.v[0]) {
@@ -135,7 +135,7 @@ void COctree::haveChildren() {
 		}
 	}
 
-	// Itera sobre todas las bolas del antiguo nodo y las va colocando en los nuevos hijos con fileBall(). 
+	// Itera sobre todas las bolas del antiguo nodo y las va colocando en los nuevos hijos con fileBall().
 	for (set<Point*>::iterator it = Points.begin(); it != Points.end();
 		it++) {
 		Point* point = *it;
@@ -195,12 +195,12 @@ void COctree::remove(Point* Point, VECTOR4D pos) {
 	// Decrementamos el numero de @numBalls.
 	numPoints--;
 	// Si el numero de @numBalls es menor al que establecimos en un principio que debe contener
-	// cada nodo procedemos a destruir ese nodo. 
+	// cada nodo procedemos a destruir ese nodo.
 	if (hasChildren && numPoints < MIN_BALLS_PER_OCTREE) {
 		destroyChildren();
 	}
 	// De lo contrario si todavia es mayor al numero menor de pelotas por caja, procedemos a
-	// eliminar esa pelota con esa posicion del nodo. Por eso ponemos false en fileBall() 
+	// eliminar esa pelota con esa posicion del nodo. Por eso ponemos false en fileBall()
 	if (hasChildren) {
 		filePoint(Point, pos, false);
 	}
@@ -216,13 +216,13 @@ void COctree::add(Point* point) {
 	numPoints++;
 	// Si el numero de @numBalls es mayor que el numero maximo permitido por MAX_BALLS_PER_OCTREE y
 	// la profundidad es menor que el permitido por MAX_OCTREE_DEPTH y ese nodo no tiene hijos
-	// entonces se divide el nodo con haveChildren() 
+	// entonces se divide el nodo con haveChildren()
 	if (!hasChildren && depth < MAX_OCTREE_DEPTH &&
 		numPoints > MAX_BALLS_PER_OCTREE) {
 		haveChildren();
 	}
 	// Si el nodo tiene hijos simplemente se agrega la pelota y su posicion. De lo contrario
-	// solamente se agrega la pelota al set. 
+	// solamente se agrega la pelota al set.
 	if (hasChildren) {
 		filePoint(point, (VECTOR4D)*point, true);
 	}
@@ -262,12 +262,12 @@ void COctree::potentialPointPointCollisions(vector<PointPair> &collisions) {
 		}
 	}
 	else {
-		// Agregamos todos los pares de pelotas. 
+		// Agregamos todos los pares de pelotas.
 		for (set<Point*>::iterator it = Points.begin(); it != Points.end();it++) {
 			Point* ball1 = *it;
 			for (set<Point*>::iterator it2 = Points.begin();it2 != Points.end(); it2++) {
 				Point* ball2 = *it2;
-				// Nos aseguramos que agregamos cada par solamente una vez. 
+				// Nos aseguramos que agregamos cada par solamente una vez.
 				if (ball1 < ball2) {
 					PointPair bp;
 					bp.Point1 = ball1;
@@ -283,14 +283,14 @@ void COctree::potentialPointPointCollisions(vector<PointPair> &collisions) {
 // Nos ayuda a debuguear la creacion del arbol
 void COctree::printCHildren(int tab, COctree* raiz)
 {
-		
+
 	if (raiz == NULL)
 	{
 		return;
 	}
 	for (int i = 0; i < tab; i++)printf(" ");
 
-		
+
 	printf("%i, E1: [%.2f][%.2f][%.2f], E2: [%.2f][%.2f][%.2f]\n", raiz->numPoints, raiz->corner1.v[0], raiz->corner1.v[1], raiz->corner1.v[2], raiz->corner2.v[0], raiz->corner2.v[1], raiz->corner2.v[2]);
 	for (auto point:raiz->Points)
 	{
@@ -365,7 +365,7 @@ void COctree::DrawOctree()
 }
 
 //Va a encontrar todas las colisiones posibles entre pares de pelotas. Va a
-//guardar los resultados en el vector @potentialCollisions. Realiza esto al 
+//guardar los resultados en el vector @potentialCollisions. Realiza esto al
 //llamar uno de los metodos del Octree potentialBallBallCollisions()
 void potentialPointPointCollisions(vector<PointPair> &potentialCollisions,
 	vector<Point*> &balls, COctree* octree) {
@@ -398,10 +398,10 @@ bool testBallBallCollision(Point* b1, Point* b2) {
 	return false;
 }
 
-// Va a encontrar todas las colisiones potenciales entre pelotas usando 
-// potentialBallBallCollsions(). Luego va a recorrer todo el vector @bsp que 
+// Va a encontrar todas las colisiones potenciales entre pelotas usando
+// potentialBallBallCollsions(). Luego va a recorrer todo el vector @bsp que
 // contiene las colisiones potenciales y revisar si si hay colisiones con
-// testBallBallCollision(). En el caso que si exista va a realizar las 
+// testBallBallCollision(). En el caso que si exista va a realizar las
 // matematicas para cambiar la direccion de ambas pelotas y que reboten sin que
 // pierdan su velocidad.
 void handleBallBallCollisions(vector<Point*> &balls, COctree* octree) {

@@ -35,10 +35,10 @@ IDXGIAdapter* CDXManager::EnumAndChooseAdapter(HWND hWnd, wchar_t* name)
 		{
 			*lowercase = towlower(*lowercase);
 			lowercase++;
-		}	
-		
+		}
+
 		wchar_t * substring = wcsstr(dad.Description, name);
-		if (substring)
+		//if (substring)
 		{
 			pFactory->Release();
 			return pAdapter;
@@ -72,7 +72,7 @@ IDXGIAdapter* CDXManager::EnumAndChooseAdapter(HWND hWnd, wchar_t* name)
 	return NULL;
 }
 
-bool CDXManager::Initialize(HWND hWnd, 
+bool CDXManager::Initialize(HWND hWnd,
 	IDXGIAdapter* pAdapter)
 {
 
@@ -81,7 +81,7 @@ bool CDXManager::Initialize(HWND hWnd,
 	DXGI_SWAP_CHAIN_DESC dscd;
 	memset(&dscd, 0, sizeof(dscd));
 	dscd.BufferCount = 2;
-	dscd.BufferUsage = 
+	dscd.BufferUsage =
 		DXGI_USAGE_RENDER_TARGET_OUTPUT |
 		DXGI_USAGE_UNORDERED_ACCESS;
 	dscd.OutputWindow = hWnd;
@@ -140,7 +140,7 @@ void CDXManager::Resize(int cx, int cy)
 		m_pSwapChain->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 		m_pDevice->CreateRenderTargetView(pBackBuffer, NULL, &m_pRTV);
 
-		// Creacion del buffer Z 
+		// Creacion del buffer Z
 		D3D11_TEXTURE2D_DESC dtd;
 		pBackBuffer->GetDesc(&dtd);
 		dtd.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -178,7 +178,7 @@ ID3D10Blob* CDXManager::CompileShader(
 		D3D_COMPILE_STANDARD_FILE_INCLUDE,
 		pszEntryPoint, pszTarget,
 #ifdef _DEBUG
-		D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 
+		D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG,
 #else
 		D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3,
 #endif

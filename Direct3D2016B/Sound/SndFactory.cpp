@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SndFactory.h"
 #include "SndFx.h"
 #include "SndManager.h"

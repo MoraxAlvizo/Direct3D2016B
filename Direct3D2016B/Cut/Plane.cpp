@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Plane.h"
-#include "Graphics\Matrix4D.h"
+#include "..\Graphics\Matrix4D.h"
 
 
 CPlane::CPlane(VECTOR4D &p1v, VECTOR4D &p2v, VECTOR4D &p3v) : m_p1(p1v), m_p2(p2v), m_p3(p3v)
@@ -69,7 +69,7 @@ int CPlane::OnAboveOrBelow(VECTOR4D & Pnodo)
 	double planeEq = m_d3.x * (Pnodo.x - m_p1.x) + m_d3.y * (Pnodo.y - m_p1.y) + m_d3.z * (Pnodo.z - m_p1.z);
 	double TOLERANCE = 1.0e-9;
 	if (fabs(planeEq) <= TOLERANCE) {
-		return 1; //on 
+		return 1; //on
 	}
 	else if (planeEq > TOLERANCE) {
 		return 1; //above

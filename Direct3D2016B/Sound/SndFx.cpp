@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SndFx.h"
 #include <windows.h>
 #include <mmreg.h>
@@ -8,13 +8,13 @@ CSndFx::CSndFx(CSndManager* pManager):CSndControl(pManager)
 }
 CSndFx::~CSndFx(void)
 {
-	
+
 }
 float CSndFx::GetPlayPosition()
 {
 	DSBCAPS dsc;
 	dsc.dwSize=sizeof(DSBCAPS);
-	
+
 	DWORD dwPlay;
 	m_pIDirectSoundBuffer->GetCurrentPosition(&dwPlay,NULL);
 	m_pIDirectSoundBuffer->GetCaps(&dsc);
@@ -36,5 +36,5 @@ float CSndFx::GetPlayTime(void)
 	dsc.dwSize=sizeof(DSBCAPS);
 	m_pIDirectSoundBuffer->GetCaps(&dsc);
 	m_pIDirectSoundBuffer->GetFormat(&wfx,sizeof(WAVEFORMATEX),NULL);
-	return (float)dsc.dwBufferBytes/wfx.nAvgBytesPerSec;	
+	return (float)dsc.dwBufferBytes/wfx.nAvgBytesPerSec;
 }

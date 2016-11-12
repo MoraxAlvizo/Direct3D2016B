@@ -26,10 +26,10 @@ BVH::~BVH()
 void BVH::Build(CMesh & object, vector<unsigned long> Primitives)
 {
 
-	/* Case base */		
+	/* Case base */
 	if (Primitives.size() == 1)
 	{
-		m_Box.max = object.m_Centroides[Primitives[0]].max ;	
+		m_Box.max = object.m_Centroides[Primitives[0]].max ;
 		m_Box.min = object.m_Centroides[Primitives[0]].min ;
 		m_Box.idPrimitive = Primitives[0];
 		return;
@@ -47,7 +47,7 @@ void BVH::Build(CMesh & object, vector<unsigned long> Primitives)
 	float size_x = max_box.x - min_box.x;
 	float size_y = max_box.y - min_box.y;
 	float size_z = max_box.z - min_box.z;
-	
+
 	int axis = -1;
 	if (size_x > size_y)
 	{
@@ -158,7 +158,7 @@ void BVH::Draw(CDXBasicPainter * painter, int depth, MATRIX4D translation)
 
 	if(!m_pLeft && !m_pRight)
 		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
-	
+
 	if (m_pLeft /*&& depth != 1*/)
 	{
 		m_pLeft->Draw(painter, depth+1, translation);
@@ -211,7 +211,7 @@ void BVH::Traversal(BVH * pTree, MATRIX4D& thisTranslation,MATRIX4D& translation
 				VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position* object2.m_World;
 				VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position* object2.m_World;
 				VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position* object2.m_World;
-				
+
 				VECTOR4D Intersection;
 				VECTOR4D RayOrigin;
 				VECTOR4D RayDir;
@@ -227,7 +227,7 @@ void BVH::Traversal(BVH * pTree, MATRIX4D& thisTranslation,MATRIX4D& translation
 					pTree->m_Color = { 1, 1, 0, 0 };
 					BVH_SET_COLOR(object1, indicesThis, m_Color);
 					BVH_SET_COLOR(object2, indicesPTree, m_Color);
-					
+
 				}
 				RayOrigin = object2_V1;
 				RayDir = Normalize(object2_V2 - RayOrigin);
@@ -293,13 +293,13 @@ void BVH::Traversal(BVH * pTree, MATRIX4D& thisTranslation,MATRIX4D& translation
 					Traversal(pTree->m_pRight, thisTranslation, translationTree, object1, object2);
 			}
 		}
-		/* 
-		
+		/*
+
 		Son 4 casos para saber por donde recorrer el arbol:
 			1. this->left vs pTree->left.
 			2. this->left vs pTree->right.
 			3. this->right vs pTree->left.
-			4. this->right vs pTree->right 
+			4. this->right vs pTree->right
 		*/
 
 		if (m_pLeft != NULL)
@@ -390,7 +390,7 @@ void BVH::Construction(CMesh & object, unsigned long node, vector<unsigned long>
 		LBVH[node << 1].max = SET_MIN_VEC4D;
 		LBVH[node << 1].min = SET_MAX_VEC4D;
 	}
-		
+
 
 	if (primitivesRight.size() > 0)
 		Construction(object, (node << 1) + 1, primitivesRight);
@@ -430,8 +430,8 @@ void BVH::Postconstruction(CMesh & object)
 	}
 }
 
-bool BVH::CheckIfPrimitivesCollision(BVH * pTree, 
-	unsigned long nodeThis, 
+bool BVH::CheckIfPrimitivesCollision(BVH * pTree,
+	unsigned long nodeThis,
 	unsigned long nodeTree,
 	CMesh& object1,
 	CMesh& object2)
@@ -461,7 +461,7 @@ bool BVH::CheckIfPrimitivesCollision(BVH * pTree,
 
 	if (RayCastOnTriangle(object1_V0, object1_V1, object1_V2, RayOrigin, RayDir, Intersection))
 		return true;
-	
+
 	RayOrigin = object2_V1;
 	RayDir = Normalize(object2_V2 - RayOrigin);
 
@@ -554,16 +554,16 @@ void BVH::DrawLBVH(CDXBasicPainter * painter, int node, MATRIX4D translation)
 
 	DrawLBVH(painter, node << 1, translation);
 	DrawLBVH(painter, (node << 1)+1, translation);
-	
+
 }
 
 void BVH::TraversalLBVH(
 	BVH * pTree,
 	unsigned long nodeThis,
 	unsigned long nodeTree,
-	MATRIX4D & thisTranslation, 
-	MATRIX4D & translationTree, 
-	CMesh & object1, 
+	MATRIX4D & thisTranslation,
+	MATRIX4D & translationTree,
+	CMesh & object1,
 	CMesh & object2)
 {
 	Box thisBox;
@@ -575,7 +575,7 @@ void BVH::TraversalLBVH(
 	treeBox.max = pTree->LBVH[nodeTree].max * translationTree;
 	treeBox.min = pTree->LBVH[nodeTree].min * translationTree;
 
-	if (pTree->LBVH[nodeTree].numPrimitives <= 0 || 
+	if (pTree->LBVH[nodeTree].numPrimitives <= 0 ||
 		this->LBVH[nodeThis].numPrimitives <= 0)
 		return;
 
@@ -669,20 +669,20 @@ void BVH::BitTrailTraversal(BVH * pTree, MATRIX4D & thisTranslation, MATRIX4D & 
 
 			treeBox.max = pTree->LBVH[nodeNum2].max * translationTree;
 			treeBox.min = pTree->LBVH[nodeNum2].min * translationTree;
-			
+
 
 			if (!BVH_BOXES_COLLISION(thisBox, treeBox))
 			{
 				//does not intersect, change to next node
 				trail2 = (trail2 >> p2) + 1;
 				nodeNum2 = (nodeNum2 >> p2) ^ 1;
-				
+
 			}
 			else
 			{
 				trail2 = trail2 << 1;
 				nodeNum2 = (nodeNum2 << 1);
-				
+
 			}
 			if ( trail2 <= 1) break;
 		}

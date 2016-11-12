@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "StateMachineManager.h"
 #include <stdio.h>
 
@@ -93,7 +93,7 @@ void CStateMachineManager::Transition(unsigned long ulIDTargetState)
 			SAFE_RELEASE(pState);
 			m_ulIDCurrentState=QuerySuperStateOf(m_ulIDCurrentState);
 		}
-	//Encontrar el ancestro común para determinar hasta que estado es necesario salir. 
+	//Encontrar el ancestro común para determinar hasta que estado es necesario salir.
 	//Recordar que si las transisiones son intraestado, no es necesario salir del estado que
 	//contiene la transición que se está solicitando.
 	do
@@ -103,11 +103,11 @@ void CStateMachineManager::Transition(unsigned long ulIDTargetState)
 			pState->OnExit();
 		SAFE_RELEASE(pState);
 		m_ulIDCurrentState=QuerySuperStateOf(m_ulIDCurrentState);
-		m_ulIDSourceState=ulIDTargetState; 
+		m_ulIDSourceState=ulIDTargetState;
 		do
 		{
 			m_ulIDSourceState=QuerySuperStateOf(m_ulIDSourceState);
-			if(m_ulIDSourceState==m_ulIDCurrentState)  
+			if(m_ulIDSourceState==m_ulIDCurrentState)
 				goto match;
 		}
 		while(m_ulIDSourceState);
@@ -120,7 +120,7 @@ match:
 		//Este ciclo se asegura que inicialicemos primero a los superestados de manera descendente
 		while(m_ulIDSourceState!=QuerySuperStateOf(m_ulIDCurrentState))
 			m_ulIDCurrentState=QuerySuperStateOf(m_ulIDCurrentState);
-		if(m_ulIDCurrentState!=ulIDTargetState)  
+		if(m_ulIDCurrentState!=ulIDTargetState)
 		{
 			pState=(CStateBase*)GetObjectByID(m_ulIDCurrentState);
 			pState->OnEntry();
@@ -137,14 +137,14 @@ void CStateMachineManager::Dispatch(CEventBase* pEvent)
 	m_ulIDSourceState=m_ulIDCurrentState;
 	/*
 		Enviar el evento hacia el estado actual, si el estado no lo procesa o lo delega
-		invocar al superestado para que lo procese, y así en forma ascendente 
+		invocar al superestado para que lo procese, y así en forma ascendente
 	*/
 	while(m_ulIDSourceState)
 	{
 		CStateBase* pState=(CStateBase*)GetObjectByID(m_ulIDSourceState);
 		if(pState)
 			m_ulIDSourceState=pState->OnEvent(pEvent);
-		else 
+		else
 			m_ulIDSourceState=0;
 		SAFE_RELEASE(pState);
 	}
@@ -156,12 +156,12 @@ void CStateMachineManager::InitState(unsigned long ulIDState)
 	{
 		//Entrar en el estado y si se trata de un superestado, entonces consultar el estado inicial y entrar en el nuevo estado y así recurrentemente
 		CStateBase* pState=(CStateBase*)GetObjectByID(m_ulIDCurrentState);
-		pState->OnEntry();	
+		pState->OnEntry();
 		m_ulIDSourceState=pState->InitialSubState();
 		SAFE_RELEASE(pState);
 		if(m_ulIDSourceState)
 			m_ulIDCurrentState=m_ulIDSourceState;
-		else 
+		else
 			break;
 	}
 }

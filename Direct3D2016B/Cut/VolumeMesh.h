@@ -1,9 +1,9 @@
 #pragma once
 #include <vector>
-#include"Graphics\Matrix4D.h"
-#include "Graphics\Mesh.h"
+#include"..\Graphics\Matrix4D.h"
+#include "..\Graphics\Mesh.h"
 #include "VolumeMeshGenericID.h"
-#include "Graphics\DXBasicPainter.h"
+#include "..\Graphics\DXBasicPainter.h"
 
 typedef CDXBasicPainter::VERTEX Vertex;
 using namespace std;
@@ -23,7 +23,7 @@ public: /* Temporary. To be removed */
 	vector<Volume>& Volumes() { return mVolumes; }
 	VECTOR4D& getPoint(VertexId id);
 
-protected: 
+protected:
 	vector<Vertex> mVertices;
 	vector<Edge> mEdges;
 	vector<Volume> mVolumes;

@@ -94,11 +94,11 @@ void CMesh::LoadSuzanne()
 		in.read((char*)&V, sizeof(VECTOR4D));
 		m_Vertices[i].Position = V;
 	}
-	
+
 	in.close();
 
 	in.open("..\\Assets\\Monkey.normal", ios::in | ios::binary);
-	
+
 	if (!in.is_open())
 	{
 		return;
@@ -124,7 +124,7 @@ void CMesh::LoadSuzanne()
 	in.close();
 
 	// Generar espacio de coordenadas de textura
-	// Estrategia: Vamos a generar el espacio de textura 
+	// Estrategia: Vamos a generar el espacio de textura
 	// a partir de las posiciones de los vertices
 
 	for (unsigned long i = 0; i < m_Vertices.size(); i++)

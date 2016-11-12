@@ -19,8 +19,8 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	m_Params.World = m_Params.View = m_Params.Projection = Identity();
 	VECTOR4D Zero = { 0, 0, 0, 0 };
 	m_Params.Brightness = Zero;
-	
-	MATERIAL MatDef = { 
+
+	MATERIAL MatDef = {
 		{1,1,1,1},  // Ambient
 		{1,1,1,1},	// Diffuse
 		{1,1,1,1},	// Specular
@@ -30,9 +30,9 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	m_Params.Material = MatDef;
 	memset(m_Params.lights, 0, sizeof(m_Params.lights));
 
-	LIGHT LightDef = { 
+	LIGHT LightDef = {
 		{LIGHT_ON, LIGHT_DIRECTIONAL,0,0 },
-		{0.1,0.1,0.1,0}, 
+		{0.1,0.1,0.1,0},
 		{0.5,0.5,0.5,0.5},
 		{1,1,1,0},
 		{1,0,0,0},
@@ -43,46 +43,46 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 
 	LIGHT LightDef2 = {
 		{ LIGHT_ON, LIGHT_SPOT,0,0 },  // Flags
-		{ 0.1,0.1,0.1,0 },				// Ambient 
+		{ 0.1,0.1,0.1,0 },				// Ambient
 		{ 5,5,5,5 },			// Diffuse
 		{ 5,5,5,0 },					// Specular
 		{ 1,.05,0.05,0 },					// Attenuation
 		{ 0,0,1,1 },					// Position
 		{ 0,0,0,0 },					// Direction
-		{ 30,0,0,0 }						// Factors 
+		{ 30,0,0,0 }						// Factors
 	};
 
 	LIGHT LightDef3 = {
 		{ LIGHT_ON, LIGHT_POINT,0,0 },	// Flags
-		{ 0.1,0.1,0.1,0 },				// Ambient 
+		{ 0.1,0.1,0.1,0 },				// Ambient
 		{ 1,1,1,1 },					// Diffuse
 		{ 1,1,0.7,0 },					// Specular
 		{ 1,0,0,0 },					// Attenuation
 		{ 3,3,3,1 },					// Position
 		{ -.5773,-.5773,-.5773,0 },		// Direction
-		{ 30,0,0,0 }						// Factors 
+		{ 30,0,0,0 }						// Factors
 	};
 
 	LIGHT LightDef4 = {
 		{ 0, LIGHT_POINT,0,0 },	// Flags
-		{ 0.1,0.1,0.1,0 },				// Ambient 
+		{ 0.1,0.1,0.1,0 },				// Ambient
 		{ 1,1,1,1 },					// Diffuse
 		{ 1,1,0.7,0 },					// Specular
 		{ 1,0,0,0 },					// Attenuation
 		{ 3,3,-3,1 },					// Position
 		{ -.5773,-.5773,.5773,0 },		// Direction
-		{ 30,0,0,0 }						// Factors 
+		{ 30,0,0,0 }						// Factors
 	};
 
 	LIGHT LightDef5 = {
 		{ 0, LIGHT_POINT,0,0 },	// Flags
-		{ 0.1,0.1,0.1,0 },				// Ambient 
+		{ 0.1,0.1,0.1,0 },				// Ambient
 		{ 1,1,1,1 },					// Diffuse
 		{ 1,1,0.7,0 },					// Specular
 		{ 1,0,0,0 },					// Attenuation
 		{ 3,-3,3,1 },					// Position
 		{ -.5773,.5773,-.5773,0 },		// Direction
-		{ 30,0,0,0 }						// Factors 
+		{ 30,0,0,0 }						// Factors
 	};
 
 	m_Params.lights[0] = LightDef;
@@ -103,9 +103,9 @@ void CDXBasicPainter::Uninitialize()
 }
 
 D3D11_INPUT_ELEMENT_DESC CDXBasicPainter::VERTEX::InputLayout[] =
-{ 
-	{"POSITION",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 }, 
-	{"NORMAL",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,16,D3D11_INPUT_PER_VERTEX_DATA,0}, 
+{
+	{"POSITION",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
+	{"NORMAL",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,16,D3D11_INPUT_PER_VERTEX_DATA,0},
 	{"TANGENT",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,32,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	{"BINORMAL",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,48,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 64, D3D11_INPUT_PER_VERTEX_DATA, 0 },
@@ -168,7 +168,7 @@ bool CDXBasicPainter::Initialize()
 	drd.FrontCounterClockwise = false;
 	drd.MultisampleEnable = false;
 	drd.ScissorEnable = false;
-	drd.SlopeScaledDepthBias = 0.0f; 
+	drd.SlopeScaledDepthBias = 0.0f;
 
 	m_pManager->GetDevice()->CreateRasterizerState(&drd, &m_pDrawLH);
 	drd.FillMode = D3D11_FILL_WIREFRAME;
@@ -176,7 +176,7 @@ bool CDXBasicPainter::Initialize()
 	drd.FillMode = D3D11_FILL_SOLID;
 	drd.CullMode = D3D11_CULL_FRONT;
 	m_pManager->GetDevice()->CreateRasterizerState(&drd, &m_pDrawRH);
-	
+
 
 	// Creacion de estados de profuncidad/stencil Dibujar / Marcar / Dibujar en Marcado
 	/* 1. Marcar la zona del espejo, con geometria coplanar al plano de reflexion
@@ -221,7 +221,7 @@ bool CDXBasicPainter::Initialize()
 	// Limpiar la profuncidad
 	// Dibujar espejo
 	// Dibujar mundo real
-	
+
 	// Recursos para sombras
 	ID3D11Texture2D* pMemory = NULL;
 	D3D11_TEXTURE2D_DESC dtd;
@@ -245,7 +245,7 @@ bool CDXBasicPainter::Initialize()
 	m_pManager->GetDevice()->CreateTexture2D(&dtd, NULL, &pMemory);
 	m_pManager->GetDevice()->CreateShaderResourceView(pMemory, NULL, &m_pSRVShadowMap);
 	m_pManager->GetDevice()->CreateRenderTargetView(pMemory, NULL, &m_pRTVShadowMap);
-	
+
 	SAFE_RELEASE(pMemory);
 	return true;
 }
@@ -329,9 +329,9 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	else
 		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDraw, 0x01);
 
-	
-	m_pManager->GetContext()->OMSetRenderTargets(1, 
-		bShadow ? &m_pRTVShadowMap : &m_pRTV, 
+
+	m_pManager->GetContext()->OMSetRenderTargets(1,
+		bShadow ? &m_pRTVShadowMap : &m_pRTV,
 		bShadow ? m_pDSVShadowMap: m_pManager->GetMainDSV());
 
 	if (!bShadow)
@@ -362,7 +362,7 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 
 	memcpy(ms.pData, &Temp, sizeof(PARAMS));
 	m_pManager->GetContext()->Unmap(m_pCB, 0);
-	
+
 	m_pManager->GetContext()->VSSetConstantBuffers(0, 1, &m_pCB);
 	m_pManager->GetContext()->PSSetConstantBuffers(0, 1, &m_pCB);
 	m_pManager->GetContext()->DrawIndexed(nIndices, 0, 0);

@@ -65,7 +65,7 @@ void CVMesh::LoadMSHFile(char * filename)
 				}
 
 			}
-			
+
 		}
 	}
 	tourus.close();
@@ -80,7 +80,7 @@ void CVMesh::LoadMSHFile(char * filename)
 		v2 = m_IndicesTetrahedros[i+2];
 		v3 = m_IndicesTetrahedros[i+3];
 
-		
+
 		m_Indices[j] = v0;
 		m_Indices[j+1] = v2;
 		m_Indices[j + 2] = v1;
@@ -97,7 +97,7 @@ void CVMesh::LoadMSHFile(char * filename)
 		m_Indices[j + 10] = v3;
 		m_Indices[j + 11] = v2;
 	}
-	
+
 
 	for (unsigned long j = 0; j < m_Vertices.size(); j++)
 	{

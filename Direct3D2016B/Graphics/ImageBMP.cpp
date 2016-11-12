@@ -30,14 +30,14 @@ CImageBMP* CImageBMP::CreateBitmapFromFile(
 	file.read((char*)&bfh.bfType, sizeof(WORD));
 	if (bfh.bfType != 'MB')
 		return 0;
-	file.read((char*)&bfh.bfSize, 
+	file.read((char*)&bfh.bfSize,
 		sizeof(bfh) - sizeof(WORD));
 	file.read((char*)&bih.biSize, sizeof(DWORD));
 	if (bih.biSize != sizeof(BITMAPINFOHEADER))
 		return 0;
-	file.read((char*)&bih.biWidth, 
+	file.read((char*)&bih.biWidth,
 		sizeof(bih) - sizeof(DWORD));
-	//Ya se tiene la información del bitmap en 
+	//Ya se tiene la información del bitmap en
 	//bih. Se procede con la carga de datos.
 	unsigned long RowLength =
 		4 * ((bih.biBitCount*bih.biWidth + 31) / 32);
@@ -56,7 +56,7 @@ CImageBMP* CImageBMP::CreateBitmapFromFile(
 		pNewImage = new CImageBMP();
 		pNewImage->m_ulSizeX = bih.biWidth;
 		pNewImage->m_ulSizeY = bih.biHeight;
-		pNewImage->m_pBuffer = 
+		pNewImage->m_pBuffer =
 			new PIXEL[bih.biWidth*bih.biHeight];
 		for (long j = 0; j < bih.biHeight; j++)
 		{

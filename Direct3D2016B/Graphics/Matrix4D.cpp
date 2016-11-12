@@ -1,4 +1,3 @@
-
 #include "stdafx.h"
 #include "Matrix4D.h"
 #include <math.h>
@@ -228,18 +227,18 @@ VECTOR4D Lerp(VECTOR4D& A, VECTOR4D &B, float u)
 	VECTOR4D U = { u, u, u, u };
 	return A + U*(B - A);
 }
-bool PtInTriangle(VECTOR4D &V0, VECTOR4D &V1, 
+bool PtInTriangle(VECTOR4D &V0, VECTOR4D &V1,
 	VECTOR4D &V2, VECTOR4D &P)
 {
 	float alpha, beta, gamma;
 	VECTOR4D I=V0-P, J=V1-P, K=V2-P;
-	float mI = Magnity(I), 
+	float mI = Magnity(I),
 		  mJ = Magnity(J),
 		  mK = Magnity(K);
 	alpha = acosf(Dot(I, J) / (mI*mJ));
 	beta = acosf(Dot(J, K) / (mJ*mK));
 	gamma = acosf(Dot(K, I) / (mK*mI));
-	return fabs((2 * 3.141592 - (alpha + beta + gamma))) 
+	return fabs((2 * 3.141592 - (alpha + beta + gamma)))
 		    < 0.00001;
 }
 bool PtInTriangleBarycentric(
@@ -466,7 +465,7 @@ MATRIX4D RotationAxis(float theta, VECTOR4D& A)
 	R.m00 = c + _1c*Axis.x*Axis.x;
 	R.m01 = _1c*(Axis.x*Axis.y) - s*Axis.z;
 	R.m02 = _1c*(Axis.z*Axis.x) + s*Axis.y;
-	
+
 	R.m10 = _1c*(Axis.x*Axis.y) + s*Axis.z;
 	R.m11 = c + _1c*(Axis.y*Axis.y);
 	R.m12 = _1c*(Axis.z*Axis.y) - s*Axis.x;

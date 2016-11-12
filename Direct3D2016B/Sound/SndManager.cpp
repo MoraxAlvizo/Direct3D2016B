@@ -1,4 +1,4 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "SndManager.h"
 #include "SndFactory.h"
 #include "SndFx.h"
@@ -26,7 +26,7 @@ struct WAVEFILE
 	DWORD lonF; //longitud de los datos del segmento de formato.		16
 	//FORMAT DATA
 	WORD wFormatTag; //Etiqueta del formato							20
-	WORD nChannels; //Canales de salida 1 Mono 2 Estereo				22	
+	WORD nChannels; //Canales de salida 1 Mono 2 Estereo				22
 	DWORD nSamplesPerSec; //Numero de muestras por segundo					24
 	DWORD nAvgBytesPerSec; //Bytes por segundo							28
 	WORD  nBlockAlign; //Alineamiento de bloque de datos
@@ -114,7 +114,7 @@ void CSndManager::UnitializeSoundEngine()
 	SAFE_RELEASE(m_pIPrimaryBuffer);
 	SAFE_RELEASE(m_pIDirectSound);
 	SAFE_DELETE(m_pFactory);
-	
+
 }
 
 CSndFx* CSndManager::LoadSoundFx(TCHAR *pszFileName, unsigned long ulIDSndFx)
@@ -298,7 +298,7 @@ void CSndManager::StopAll()
 	while(!m_pSndFxPlayingPool->empty())
 	{
 		itA=m_pSndFxPlayingPool->begin();
-		m_pFactory->DestroyObject(itA->second);	
+		m_pFactory->DestroyObject(itA->second);
 		m_pSndFxPlayingPool->erase(itA);
 	}
 }
@@ -310,7 +310,7 @@ void CSndManager::ClearEngine(void)
 	while(!m_pSndFxPool->empty())
 	{
 		itA=m_pSndFxPool->begin();
-		m_pFactory->DestroyObject(itA->second);	
+		m_pFactory->DestroyObject(itA->second);
 		m_pSndFxPool->erase(itA);
 	}
 }

@@ -1,11 +1,11 @@
-#include "StdAfx.h"
+#include "stdafx.h"
 #include "ObjectBase.h"
 
 //Master instance counter
 unsigned long CObjectBase::s_ulInstanceCount=0;
 CObjectBase::CObjectBase(void)
 {
-	s_ulInstanceCount++;  
+	s_ulInstanceCount++;
 	m_ulRefCount=1; //Regla 1
 	m_ulObjectID=0;
 }

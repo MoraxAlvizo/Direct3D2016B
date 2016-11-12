@@ -4,7 +4,7 @@ File name:
 	CSOnGame.h
 
 Descrition:
-	This file contains the definition of CSOnGame state. 
+	This file contains the definition of CSOnGame state.
 	This state is responsible to draw all the scene and manage
 	the camera.
 
@@ -20,7 +20,7 @@ Descrition:
 #include "Graphics\MeshMathSurface.h"
 #include "Collisions\MeshCollision.h"
 #include "Collisions\OctreeCube.h"
-#include "VMesh.h"
+#include "Cut/VMesh.h"
 #include "Collisions\BVH.h"
 
 
@@ -64,7 +64,7 @@ public:
 	ID3D11ShaderResourceView* m_pSRVEnvMap ;
 	ID3D11ShaderResourceView* m_pSRVEmissiveMap ;
 	ID3D11ShaderResourceView* m_pSRVNormalMapTrue;
-	/* Matrix */ 
+	/* Matrix */
 	MATRIX4D m_World;
 	MATRIX4D m_View;
 	MATRIX4D m_Projection;
@@ -91,7 +91,7 @@ public:
 
 		};
 	};
-	
+
 
 	/* Constructor and destructor */
 	CSOnGame();
