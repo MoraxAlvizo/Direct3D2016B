@@ -121,6 +121,10 @@ void CSMainMenu::OnEntry(void)
 
 	m_vMenu[MAIN_MENU_EXIT].stateButton = BUTTON_UP;
 
+	/* Load text */
+	spriteBatch = new SpriteBatch(m_pDXManager->GetContext());
+	spriteFont = new SpriteFont(m_pDXManager->GetDevice(), L"..\\Assets\\myfileb.spritefont");
+
 }
 
 unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
@@ -167,6 +171,7 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 		{
 			ID3D11Texture2D* pBackBuffer = 0;
 			D3D11_TEXTURE2D_DESC dtd;
+			
 
 			m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 			pBackBuffer->GetDesc(&dtd);
@@ -183,19 +188,17 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			for (unsigned long i = 0; i < MAIN_MENU_SIZE; i++)
 			{
 				m_FX->SetImgVertex(m_vMenu[i].frame, m_vMenu[i].indices);
-
+				m_FX->m_Params.Brightness = { 0,0,0,0 };
 				m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
 				m_FX->SetInput(m_vMenu[i].pSRV[m_vMenu[i].stateButton]);
 				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height, FX_FLAGS_USE_IMG_BUFFR);
 			}
-/*
-			std::unique_ptr<SpriteBatch> spriteBatch(new SpriteBatch(m_pDXManager->GetContext()));
-			std::unique_ptr<SpriteFont> spriteFont(new SpriteFont(m_pDXManager->GetDevice(), L"myfileb.spritefont"));
 
-			spriteBatch->Begin();
-			spriteFont->DrawString(spriteBatch.get(), L"Hello, world!", XMFLOAT2(0, 0));
-			spriteBatch->End();*/
-
+			
+			//spriteBatch->Begin();
+			//spriteFont->DrawString(spriteBatch, L"Hello, world!", XMFLOAT2(0, 0), Colors::Aqua);
+			//spriteBatch->End();
+			
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 
 			SAFE_RELEASE(pBackBuffer);

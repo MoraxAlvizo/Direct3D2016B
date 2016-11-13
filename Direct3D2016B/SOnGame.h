@@ -22,9 +22,12 @@ Descrition:
 #include "Collisions\OctreeCube.h"
 #include "Cut/VMesh.h"
 #include "Collisions\BVH.h"
+#include "GameMap.h"
 
 
 #define CLSID_CSOnGame 0x14638246
+#define MAP_TIMER_PLAYER1 1
+#define MAP_TIMER_PLAYER2 2
 
 class CSOnGame :
 	public CStateBase
@@ -73,6 +76,9 @@ public:
 	CMeshMathSurface m_Surface;
 	vector<CMeshCollision> m_Scene;
 
+	/* Map */
+	CGameMap m_Map;
+
 	CVMesh MiVariable;
 	//vector<BVH> m_BVHs;
 
@@ -112,6 +118,10 @@ private:
 
 	/* Draw options */
 	unsigned long m_nFlagsPainter;
+
+	/* Timers */
+	bool m_bTimerPlayer1;
+	bool m_bTimerPlayer2;
 
 protected:
 

@@ -43,8 +43,8 @@ void CSOnGame::OnEntry(void)
 {
 	CSMain* main = (CSMain*)GetSuperState();
 	VECTOR4D White = { 1, 1, 1, 1 };
-	VECTOR4D EyePos = { 6, 10, 6, 1 };
-	VECTOR4D Target = { 0, 0, 0, 1 };
+	VECTOR4D EyePos = { 9, 20, 20, 1 };
+	VECTOR4D Target = { 10, 10, 0, 1 };
 	VECTOR4D Up = { 0, 0, 1, 0 };
 
 	printf("[HCM] %s:OnEntry\n", GetClassString());
@@ -64,9 +64,8 @@ void CSOnGame::OnEntry(void)
 	char buffer[BUF_SIZE];
 	int ret;
 	ret = wcstombs(buffer, main->m_Params.scene, sizeof(buffer));
-
-
 	LoadScene(buffer);
+	m_Map.LoadMeshes();
 
 	/* Load pointers */
 	m_pDXManager = main->m_pDXManager;
@@ -188,8 +187,6 @@ void CSOnGame::OnEntry(void)
 
 	CImageBMP::DestroyBitmap(pImage);
 
-	/* Create a timer */
-	SetTimer(main->m_hWnd, 1, 5000, NULL);
 
 	/* Create SRVs */
 	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pTexture, NULL, &m_pSRVTexture);
@@ -202,7 +199,7 @@ void CSOnGame::OnEntry(void)
 	m_bLeft =  m_bRight =
 	m_bUp = m_bDown =
 	m_bForward =  m_bBackward = m_bTurnLeft = m_bTurnRight =
-	m_bTurnUp =  m_bTurnDown = m_bTurnS =  m_bTurnS1 =false;
+	m_bTurnUp =  m_bTurnDown = m_bTurnS =  m_bTurnS1 = m_bTimerPlayer1 = m_bTimerPlayer2 = false;
 
 	/* Init collisions structures */
 	for (unsigned long i = 0; i < m_Scene.size(); i++)
@@ -211,35 +208,9 @@ void CSOnGame::OnEntry(void)
 		m_Scene[i].m_octree->m_Color = { i % 2 ? 1.f : 0.f , 1,i % 3 ? 1.f : 0.f,0 };
 	}
 
-
-	m_pOctree = new COctreeCube({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
-	{ BOX_SIZE / 2, BOX_SIZE / 2, BOX_SIZE / 2 }, 0);
-
-	//Create objects
-	//int i = 1;
-	for (unsigned long i = 0; i < m_Scene.size(); i++)
-	{
-		m_pOctree->addObject(&m_Scene[i],
-			m_Scene[i].m_Box.min * m_Scene[i].m_World,
-			m_Scene[i].m_Box.max * m_Scene[i].m_World);
-
-		vector<unsigned long> primitives;
-
-		primitives.resize(m_Scene[i].m_Centroides.size());
-		for (unsigned long j = 0; j < m_Scene[i].m_Centroides.size(); j++)
-			primitives[j] = j;
-
-
-		m_nFlagsPainter = 0;
-		MiVariable.LoadMSHFile("torus.msh");
-
-		m_Scene[i].m_BVH = new BVH();
-		m_Scene[i].m_BVH->Preconstruction(m_Scene[i]);
-		m_Scene[i].m_BVH->Construction(m_Scene[i], 1, primitives);
-		m_Scene[i].m_BVH->Postconstruction(m_Scene[i]);
-		//m_Scene[i].m_BVH->Build(m_Scene[i], primitives);
-	}
-
+	/* Create timers */
+	SetTimer(main->m_hWnd, MAP_TIMER_PLAYER1, 200, NULL);
+	SetTimer(main->m_hWnd, MAP_TIMER_PLAYER2, 1000, NULL);
 
 }
 
@@ -254,32 +225,33 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 		Orientation.vec[3] = { 0,0,0,1 };
 
-		if (JOY_AXIS_LY == Action->m_iAction)
-		{
-			// Dead Zone
-			VECTOR4D Dir = Camera.vec[2];
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
-			Pos = Pos + Dir*Stimulus*0.1;
-		}
-		if (JOY_AXIS_LX == Action->m_iAction)
-		{
-			// Dead Zone
-			VECTOR4D Dir = Camera.vec[0];
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
-			Pos = Pos + Dir*Stimulus*0.1;
-		}
-		if (JOY_AXIS_RX == Action->m_iAction)
-		{
-			// Dead Zone
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
-			Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[1]);
-		}
-		if (JOY_AXIS_RY == Action->m_iAction)
-		{
-			// Dead Zone
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
-			Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[0]);
-		}
+		//if (JOY_AXIS_LY == Action->m_iAction)
+		//{
+		//	// Dead Zone
+		//	VECTOR4D Dir = Camera.vec[2];
+		//	float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+		//	Pos = Pos + Dir*Stimulus*0.1;
+		//}
+		//if (JOY_AXIS_LX == Action->m_iAction)
+		//{
+		//	// Dead Zone
+		//	VECTOR4D Dir = Camera.vec[0];
+		//	float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+		//	Pos = Pos + Dir*Stimulus*0.1;
+		//}
+		//if (JOY_AXIS_RX == Action->m_iAction)
+		//{
+		//	// Dead Zone
+		//	float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+		//	Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[1]);
+		//}
+		//if (JOY_AXIS_RY == Action->m_iAction)
+		//{
+		//	// Dead Zone
+		//	float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+		//	Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[0]);
+		//}
+
 
 
 		Camera.vec[0] = Orientation.vec[0];
@@ -289,6 +261,38 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 		m_View = Orthogonalize(FastInverse(Camera));
 
+		if (JOY_AXIS_LY == Action->m_iAction )
+		{
+			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+
+			if (fabs(Action->m_fAxis) < 0.2)
+				return 0;
+
+			if (Stimulus > 0.0f)
+				m_Map.MovePlayer(0, PLAYER_MOVE_LESS_Y);
+			else
+				m_Map.MovePlayer(0, PLAYER_MOVE_MORE_Y);
+
+		}
+		if (JOY_AXIS_LX == Action->m_iAction )
+		{
+			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+
+			if (fabs(Action->m_fAxis) < 0.2)
+				return 0;
+
+			if (Stimulus > 0.0f)
+				m_Map.MovePlayer(0, PLAYER_MOVE_MORE_X);
+			else
+				m_Map.MovePlayer(0, PLAYER_MOVE_LESS_X);
+		}
+		if (JOY_BUTTON_A_PRESSED == Action->m_iAction)
+		{
+			if (!m_Map.PlayerHasTarget(0))
+				m_Map.GetTarget(0);
+			else
+				m_Map.DropTarget(0);
+		}
 	}
 	if (APP_LOOP == pEvent->m_ulEventType)
 	{
@@ -310,304 +314,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 				1.0f,
 				0);
-
-			if (m_lFlags & PHYSICS_PRINT_OCTREE)
-			{
-				printf("\n------------------- Octree scene ----------------------\n\n");
-				m_pOctree->printCHildren(0);
-				printf("\n-------------------------------------------------------\n\n");
-				m_lFlags ^= PHYSICS_PRINT_OCTREE;
-			}
-
-			if (m_lMoveSphere1 || m_lMoveSphere2)
-			{
-
-				for (unsigned long i = 0; i < m_Scene.size(); i++)
-				{
-					m_Scene[i].ResetColors();
-					unsigned long flags;
-					if ((strcmp(m_Scene[i].m_cName, "Sphere") == 0 && (flags = m_lMoveSphere1)) ||
-						(strcmp(m_Scene[i].m_cName, "Sphere.001") == 0 && (flags = m_lMoveSphere2)))
-					{
-						float direction = -1;
-
-						if (flags)
-						{
-							if (flags & MOVE_DOWN)
-								direction = -1;
-							else if (flags & MOVE_UP)
-								direction = 1;
-							else
-								direction = 0;
-						}
-
-						m_pOctree->removeObject(&m_Scene[i],
-							m_Scene[i].m_Box.min * m_Scene[i].m_World,
-							m_Scene[i].m_Box.max * m_Scene[i].m_World);
-
-						//m_Scene[i].MoveVertex(Translation(0, 0, direction*0.1));
-						m_Scene[i].m_World = m_Scene[i].m_World * Translation(0, 0, direction*0.1);
-						m_Scene[i].m_TranslationBVH = m_Scene[i].m_TranslationBVH * Translation(0, 0, direction*0.1);
-
-						m_pOctree->addObject(&m_Scene[i],
-							m_Scene[i].m_Box.min * m_Scene[i].m_World,
-							m_Scene[i].m_Box.max * m_Scene[i].m_World);
-					}
-				}
-
-				set<unsigned long long> potencialCollisions;
-				m_pOctree->potentialCollsions(potencialCollisions);
-
-				for (set<unsigned long long>::iterator it2 = potencialCollisions.begin(); it2 != potencialCollisions.end(); it2++)
-				{
-					COctreeCube::MeshPair meshPair;
-					CMeshCollision *object1;
-					CMeshCollision *object2;
-					VECTOR4D min1, max1;
-					VECTOR4D min2, max2;
-
-					meshPair.m_idColision = *it2;
-					object1 = &m_Scene[meshPair.m_object1ID];
-					object2 = &m_Scene[meshPair.m_object2ID];
-
-					/* Max min object 1*/
-					min1 = object1->m_Box.min * object1->m_World;
-					max1 = object1->m_Box.max * object1->m_World;
-
-					/* Max min object 2*/
-					min2 = object2->m_Box.min * object2->m_World;
-					max2 = object2->m_Box.max * object2->m_World;
-
-					/* Check if boxes collision */
-					if (min1.x < max2.x &&
-						max1.x > min2.x &&
-						min1.y < max2.y &&
-						max1.y > min2.y &&
-						min1.z < max2.z &&
-						max1.z > min2.z)
-					{
-						//object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-						object1->m_BVH->TraversalLBVH(object2->m_BVH,1,1, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-						//object1->m_BVH->BitTrailTraversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-					}
-				}
-
-
-			}
-
-
-
-
-			CDXBasicPainter::VERTEX plane[3];
-			unsigned long   m_lIndicesFrame[6];
-
-
-			plane[0].Position = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z + 1.1f,1 };
-			plane[1].Position = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z + 1.1f,1 };
-			plane[2].Position = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z + 1.1f,1 };
-
-			VECTOR4D pX = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z + 1.1f,1 };
-			VECTOR4D pY = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z + 1.1f,1 };
-			VECTOR4D pZ = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z + 1.1f,1 };
-
-			CPlane meshPlane(pX, pY, pZ);
-			/*
-			plane[0].Position = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z,1 };
-			plane[1].Position = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z,1 };
-			plane[2].Position = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z,1 };
-			*/
-			m_lIndicesFrame[0] = 0;
-			m_lIndicesFrame[1] = 1;
-			m_lIndicesFrame[2] = 2;
-			//m_lIndicesFrame[3] = 2;
-			//m_lIndicesFrame[4] = 0;
-			//m_lIndicesFrame[5] = 4;
-			//m_lIndicesFrame[6] = 5;
-			//m_lIndicesFrame[7] = 1;
-
-
-
-			//m_pDXPainter->DrawIndexed(plane, 3, m_lIndicesFrame, 6, PAINTER_DRAW);
-
-			while (flag)
-			{
-				std::cout << "==================Obtenemos Vertices del Plano============" << std::endl;
-				std::cout << "Vertice: 1" << std::endl;
-				std::cout << plane[0].Position.x << std::endl;
-				std::cout << plane[0].Position.y << std::endl;
-				std::cout << plane[0].Position.z << std::endl;
-
-
-				std::cout << "Vertice: 2" << std::endl;
-				std::cout << plane[1].Position.x << std::endl;
-				std::cout << plane[1].Position.y << std::endl;
-				std::cout << plane[1].Position.z << std::endl;
-
-
-				std::cout << "Vertice: 3" << std::endl;
-				std::cout << plane[2].Position.x << std::endl;
-				std::cout << plane[2].Position.y << std::endl;
-				std::cout << plane[2].Position.z << std::endl;
-				std::cout << "==================Obtenemos Vertices del Tetrahedro============" << std::endl;
-
-				std::cout << "Vertice: 1" << std::endl;
-				std::cout << m_Scene[0].m_Vertices[0].Position.x << std::endl;
-				std::cout << m_Scene[0].m_Vertices[0].Position.y << std::endl;
-				std::cout << m_Scene[0].m_Vertices[0].Position.z << std::endl;
-				std::cout << m_Scene[0].m_Vertices[0].Position.w << std::endl;
-
-				std::cout << "Vertice: 2" << std::endl;
-				std::cout << m_Scene[0].m_Vertices[1].Position.x << std::endl;
-				std::cout << m_Scene[0].m_Vertices[1].Position.y << std::endl;
-				std::cout << m_Scene[0].m_Vertices[1].Position.z << std::endl;
-				std::cout << m_Scene[0].m_Vertices[1].Position.w << std::endl;
-
-
-				std::cout << "Vertice: 3" << std::endl;
-				std::cout << m_Scene[0].m_Vertices[2].Position.x << std::endl;
-				std::cout << m_Scene[0].m_Vertices[2].Position.y << std::endl;
-				std::cout << m_Scene[0].m_Vertices[2].Position.z << std::endl;
-				std::cout << m_Scene[0].m_Vertices[2].Position.w << std::endl;
-
-				std::cout << "Vertice: 4" << std::endl;
-				std::cout << m_Scene[0].m_Vertices[3].Position.x << std::endl;
-				std::cout << m_Scene[0].m_Vertices[3].Position.y << std::endl;
-				std::cout << m_Scene[0].m_Vertices[3].Position.z << std::endl;
-				std::cout << m_Scene[0].m_Vertices[3].Position.w << std::endl;
-
-				std::cout << m_Scene[0].m_Indices.size() << std::endl;
-
-				std::cout << "==================Obtenemos Vertices del Tetrahedro============" << std::endl;
-				flag = false;
-
-				std::cout << "Se realizo un corte" << std::endl;
-
-				enum EdgeState { UNTESTED, CUT, UNCUT };
-
-				int cutEdgesCount = 0;
-				int cutNodesCount = 0;
-				int intersectionTestCount = 0;
-
-				// Test each node against the plane to detect if nodes are cut
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < m_Scene[0].m_Vertices.size(); j++)
-					{
-						if (plane[i].Position.x == m_Scene[0].m_Vertices[j].Position.x &&
-							plane[i].Position.y == m_Scene[0].m_Vertices[j].Position.y &&
-							plane[i].Position.z == m_Scene[0].m_Vertices[j].Position.z)
-						{
-							//Aqui se tendria que guardar ese nodo que se corto
-							cutNodesCount++;
-						}
-
-						VECTOR4D dp1 = m_Scene[0].m_Vertices[i].Position; //p[id1];
-						VECTOR4D dp2 = m_Scene[0].m_Vertices[j].Position; //p[id2];
-						VECTOR4D intersectionPoint;
-						if (plane[i].Intersection(dp1, dp2, intersectionPoint, plane[0].Position, plane[1].Position, plane[2].Position))
-						{
-							cutEdgesCount++;
-						}
-					}
-
-				}
-				cout << "Number of edges: " << cutEdgesCount << endl;
-				cutEdgesCount > 3 ? cutEdgesCount = cutEdgesCount / 2 : cutEdgesCount = cutEdgesCount;
-				string type;
-				switch (cutEdgesCount)
-				{
-				case 0:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "No cuts";
-						break;
-					case 1:
-						type = "Cut Node";
-						break;
-					case 2:
-						type = "Cut Node";
-						break;
-					case 3:
-						type = "Cut Z";
-						break;
-					default:
-						type = "Unkown";
-					}
-				}
-				break;
-				case 1:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "Cut C";
-						break;
-					case 1:
-						type = "Cut X";
-						break;
-					case 2:
-						type = "Cut Y";
-						break;
-					default:
-						type = "Unkown";
-					}
-
-				}
-				break;
-				case 2:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "Cut D";
-						break;
-					case 1:
-						type = "Cut X";
-						break;
-					default:
-						type = "Cut Z";
-					}
-
-				}
-				break;
-				case 3:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "Cut A";
-						break;
-					case 1:
-						type = "Cut E";
-						break;
-					default:
-						type = "Unkown";
-					}
-				}
-				break;
-				case 4:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "Cut B";
-						break;
-					default:
-						type = "Unkown";
-					}
-
-				}
-				break;
-				}
-
-				std::cout << "Total Cut Nodes: " << cutNodesCount << std::endl;
-				std::cout << "Total Cut Edges: " << cutEdgesCount << std::endl;
-				std::cout << "Tipo de Corte: " << type << std::endl;
-			}
-
-
 
 			// Draw
 			// Actualizar camara si fue movida
@@ -645,21 +351,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			/* Render with Left Hand*/
 			m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
 
-			/* Check if the objects was moved */
-			if (m_lFlags & PHYSICS_DRAW_OCTREE)
-			{
-				m_pDXPainter->m_Params.World = Identity();
-				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
-
-				//m_pOctree->DrawOctree(m_pDXPainter);
-
-				for (unsigned long i = 0; i < m_Scene.size(); i++)
-				{
-					m_pDXPainter->m_Params.World = Identity();
-					m_Scene[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_Scene[i].m_TranslationBVH);
-				}
-			}
-
 			/* Draw scene */
 			/*for (unsigned long i = 0; i < m_Scene.size(); i++)
 			{
@@ -667,18 +358,8 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
 			}*/
 
-			m_pDXPainter->m_Params.World = Identity();
-			m_pDXPainter->DrawIndexed(&MiVariable.m_Vertices[0], MiVariable.m_Vertices.size(), &MiVariable.m_Indices[0], MiVariable.m_Indices.size(), m_nFlagsPainter);
+			m_Map.DrawMap(m_pDXPainter);
 
-
-
-
-			/* Draw surface */
-			/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0],
-			m_Surface.m_Vertices.size(),
-			&m_Surface.m_Indices[0],
-			m_Surface.m_Indices.size(),
-			PAINTER_DRAW);*/
 
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 
@@ -717,11 +398,9 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 		case WM_TIMER:
 			switch (pWin32->m_wParam)
 			{
-			case 1:
+			case MAP_TIMER_PLAYER1:
 			{
-				/*m_pSMOwner->Transition(CLSID_CSIntro);
-				CSMain* main = (CSMain*)GetSuperState();
-				InvalidateRect(main->m_hWnd, NULL, false);*/
+				m_bTimerPlayer1 = true;
 				return 0;
 			}
 			default:
@@ -746,7 +425,8 @@ void CSOnGame::OnExit(void)
 
 	printf("[HCM] %s:OnExit\n", GetClassString());
 	/* Kill timer */
-	KillTimer(main->m_hWnd, 1);
+	KillTimer(main->m_hWnd, MAP_TIMER_PLAYER1);
+	KillTimer(main->m_hWnd, MAP_TIMER_PLAYER2);
 
 	/* Release textures */
 	SAFE_RELEASE(m_pTexture);   //GPU

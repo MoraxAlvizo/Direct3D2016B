@@ -44,6 +44,9 @@ private:
 	ID3D11ShaderResourceView* m_pSRVStartGame;
 	ID3D11ShaderResourceView* m_pSRVExitGame;
 
+	SpriteBatch *spriteBatch;
+	SpriteFont  *spriteFont;
+
 	struct MenuOption
 	{
 		ID3D11ShaderResourceView* pSRV[BUTTON_STATE_SIZE];

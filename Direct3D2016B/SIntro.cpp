@@ -147,5 +147,6 @@ void CSIntro::OnExit(void)
 	printf("[HCM] %s:OnExit\n", GetClassString());
 	CSMain* main = (CSMain*)GetSuperState();
 	KillTimer(main->m_hWnd, 1);
+	KillTimer(main->m_hWnd, 2);
 	SAFE_RELEASE(m_pImgIntro);
 }
