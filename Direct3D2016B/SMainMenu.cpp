@@ -36,9 +36,12 @@ void CSMainMenu::OnEntry(void)
 		"..\\Assets\\MMStartGameOptionUp.bmp" ,			//0
 		"..\\Assets\\MMStartGameOptionDown.bmp" ,		//0
 		"..\\Assets\\MMStartGameOptionOver.bmp" ,		//0
-		"..\\Assets\\MMExitGameUp.bmp",					//1
-		"..\\Assets\\MMExitGameDown.bmp",				//1
-		"..\\Assets\\MMExitGameOver.bmp",				//1
+		"..\\Assets\\MMUnirseGameUp.bmp" ,		//1
+		"..\\Assets\\MMUnirseGameDown.bmp" ,		//1
+		"..\\Assets\\MMUnirseGameOver.bmp" ,		//1
+		"..\\Assets\\MMExitGameUp.bmp",					//2
+		"..\\Assets\\MMExitGameDown.bmp",				//2
+		"..\\Assets\\MMExitGameOver.bmp",				//2
 	};
 
 	
@@ -65,7 +68,7 @@ void CSMainMenu::OnEntry(void)
 
 			if (!img)
 			{
-				printf("Recurso %s no encontrado", menuOption[i]);
+				printf("Recurso %s no encontrado", menuOption[i * 3 + j]);
 			}
 			else
 			{
@@ -79,10 +82,10 @@ void CSMainMenu::OnEntry(void)
 	}
 	
 	/* Set position and texcoord in start option */
-	m_vMenu[MAIN_MENU_START].frame[0].Position = { -0.5f, 2.0f / 3.0f,0,1.0f };
-	m_vMenu[MAIN_MENU_START].frame[1].Position = { 0.5f, 2.0f / 3.0f ,0,1.0f };
-	m_vMenu[MAIN_MENU_START].frame[2].Position = { -0.5f,1.0f / 3.0f,0,1.0f };
-	m_vMenu[MAIN_MENU_START].frame[3].Position = { 0.5f, 1.0f / 3.0f,0,1.0f };
+	m_vMenu[MAIN_MENU_START].frame[0].Position = { 0.2f, .75f, 0,1.0f };
+	m_vMenu[MAIN_MENU_START].frame[1].Position = { 0.8f, .75f ,0,1.0f };
+	m_vMenu[MAIN_MENU_START].frame[2].Position = { 0.2f, .5f  ,0,1.0f };
+	m_vMenu[MAIN_MENU_START].frame[3].Position = { 0.8f, .5f ,0,1.0f };
 
 	m_vMenu[MAIN_MENU_START].frame[0].TexCoord = { 0,0,0,0 };
 	m_vMenu[MAIN_MENU_START].frame[1].TexCoord = { 1,0,0,0 };
@@ -100,12 +103,31 @@ void CSMainMenu::OnEntry(void)
 
 	m_lOptionSelected = MAIN_MENU_START;
 
-	/* Set position and texcoord in exit option */
+	/* Set position and texcoord in unirse option */
+	m_vMenu[MAIN_MENU_UNIRSE].frame[0].Position = { 0.2f, .5f, 0,1.0f };
+	m_vMenu[MAIN_MENU_UNIRSE].frame[1].Position = { 0.8f, .5f ,0,1.0f };
+	m_vMenu[MAIN_MENU_UNIRSE].frame[2].Position = { 0.2f, .25f  ,0,1.0f };
+	m_vMenu[MAIN_MENU_UNIRSE].frame[3].Position = { 0.8f, .25f ,0,1.0f };
 
-	m_vMenu[MAIN_MENU_EXIT].frame[0].Position = { -0.5f, -1.0f / 3.0f,0,1.0f };
-	m_vMenu[MAIN_MENU_EXIT].frame[1].Position = { 0.5f, -1.0f / 3.0f ,0,1.0f };
-	m_vMenu[MAIN_MENU_EXIT].frame[2].Position = { -0.5f,-2.0f / 3.0f,0,1.0f };
-	m_vMenu[MAIN_MENU_EXIT].frame[3].Position = { 0.5f, -2.0f / 3.0f,0,1.0f };
+	m_vMenu[MAIN_MENU_UNIRSE].frame[0].TexCoord = { 0,0,0,0 };
+	m_vMenu[MAIN_MENU_UNIRSE].frame[1].TexCoord = { 1,0,0,0 };
+	m_vMenu[MAIN_MENU_UNIRSE].frame[2].TexCoord = { 0,1,0,0 };
+	m_vMenu[MAIN_MENU_UNIRSE].frame[3].TexCoord = { 1,1,0,0 };
+
+	m_vMenu[MAIN_MENU_UNIRSE].indices[0] = 0;
+	m_vMenu[MAIN_MENU_UNIRSE].indices[1] = 1;
+	m_vMenu[MAIN_MENU_UNIRSE].indices[2] = 2;
+	m_vMenu[MAIN_MENU_UNIRSE].indices[3] = 2;
+	m_vMenu[MAIN_MENU_UNIRSE].indices[4] = 1;
+	m_vMenu[MAIN_MENU_UNIRSE].indices[5] = 3;
+
+	m_vMenu[MAIN_MENU_UNIRSE].stateButton = BUTTON_UP;
+
+	/* Set position and texcoord in exit option */
+	m_vMenu[MAIN_MENU_EXIT].frame[0].Position = { 0.2f, .25f, 0,1.0f };
+	m_vMenu[MAIN_MENU_EXIT].frame[1].Position = { 0.8f, .25f ,0,1.0f };
+	m_vMenu[MAIN_MENU_EXIT].frame[2].Position = { 0.2f, 0.f  ,0,1.0f };
+	m_vMenu[MAIN_MENU_EXIT].frame[3].Position = { 0.8f, 0.f ,0,1.0f };
 
 	m_vMenu[MAIN_MENU_EXIT].frame[0].TexCoord = { 0,0,0,0 };
 	m_vMenu[MAIN_MENU_EXIT].frame[1].TexCoord = { 1,0,0,0 };
@@ -120,6 +142,14 @@ void CSMainMenu::OnEntry(void)
 	m_vMenu[MAIN_MENU_EXIT].indices[5] = 3;
 
 	m_vMenu[MAIN_MENU_EXIT].stateButton = BUTTON_UP;
+
+	for (unsigned long i = 0; i < MAIN_MENU_SIZE; i++)
+	{
+		m_vMenu[i].frame[0].Position = m_vMenu[i].frame[0].Position * Translation(0, -0.5,0);
+		m_vMenu[i].frame[1].Position = m_vMenu[i].frame[1].Position * Translation(0, -0.5, 0);
+		m_vMenu[i].frame[2].Position = m_vMenu[i].frame[2].Position * Translation(0, -0.5, 0);
+		m_vMenu[i].frame[3].Position = m_vMenu[i].frame[3].Position * Translation(0, -0.5, 0);
+	}
 
 	/* Load text */
 	spriteBatch = new SpriteBatch(m_pDXManager->GetContext());
@@ -156,13 +186,40 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			return 0;
 			//MAIN->m_pSndManager->PlayFx(0);
 		}
-		if (JOY_AXIS_LX == pAction->m_iAction)
+		/*if (JOY_AXIS_LX == pAction->m_iAction)
 		{
 			m_fOffsetX = m_fOffsetX + (pAction->m_fAxis - m_fOffsetX) * 0.1;
-		}
+		}*/
 		if (JOY_AXIS_LY == pAction->m_iAction)
 		{
-			m_fOffsetY = m_fOffsetY+ (pAction->m_fAxis - m_fOffsetY) * 0.1;
+
+			if (fabs(pAction->m_fAxis) < 0.2)
+				return 0;
+
+
+			if (pAction->m_fAxis > 0.0f)
+			{
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
+				m_lOptionSelected++;
+				if (m_lOptionSelected >= MAIN_MENU_SIZE)
+					m_lOptionSelected = 0;
+
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+			}
+			else
+			{
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
+				m_lOptionSelected--;
+				if (m_lOptionSelected < 0)
+					m_lOptionSelected = MAIN_MENU_SIZE - 1;
+
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+			}
+
+		
+			return 0;
 		}
 	}
 	if (APP_LOOP == pEvent->m_ulEventType)
@@ -227,20 +284,22 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			case VK_UP:
 				m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
 
+				m_lOptionSelected--;
+				if (m_lOptionSelected < 0)
+					m_lOptionSelected = MAIN_MENU_SIZE - 1;
+
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+				break;
+			case VK_DOWN:
+
+				m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
 				m_lOptionSelected++;
 				if (m_lOptionSelected >= MAIN_MENU_SIZE)
 					m_lOptionSelected = 0;
 
 				m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
-				break;
-			case VK_DOWN:
-				m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
-
-				m_lOptionSelected--;
-				if (m_lOptionSelected < 0)
-					m_lOptionSelected = MAIN_MENU_SIZE -1;
-
-				m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+				
 				break;
 			case VK_RETURN:
 				switch (m_lOptionSelected)

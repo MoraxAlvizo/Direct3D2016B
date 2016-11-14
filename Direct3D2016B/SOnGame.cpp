@@ -44,7 +44,7 @@ void CSOnGame::OnEntry(void)
 	CSMain* main = (CSMain*)GetSuperState();
 	VECTOR4D White = { 1, 1, 1, 1 };
 	VECTOR4D EyePos = { 9, 20, 20, 1 };
-	VECTOR4D Target = { 10, 10, 0, 1 };
+	VECTOR4D Target = { 9, 9, 0, 1 };
 	VECTOR4D Up = { 0, 0, 1, 0 };
 
 	printf("[HCM] %s:OnEntry\n", GetClassString());

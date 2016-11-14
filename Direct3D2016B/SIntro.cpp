@@ -56,8 +56,8 @@ void CSIntro::OnEntry(void)
 	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\FFX.wav", INTRO_SND_BACKGROUND);
 	/*if (m_pSndBackground)
 		m_pSndBackground->Play(false);*/
-	SetTimer(main->m_hWnd, 1, 5000, NULL);
-	SetTimer(main->m_hWnd, 2, 1000, NULL);
+	SetTimer(main->m_hWnd, 1, 3000, NULL);
+	/*SetTimer(main->m_hWnd, 2, 1000, NULL);*/
 	return;
 }
 
@@ -98,12 +98,12 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 		case WM_CHAR:
 			if (pWin32->m_wParam == 'a')
 			{
-				CSMain* main = (CSMain*)GetSuperState();
+				/*CSMain* main = (CSMain*)GetSuperState();
 				m_pSMOwner->Transition(CLSID_CSMainMenu);
-				InvalidateRect(main->m_hWnd, NULL, false);
+				InvalidateRect(main->m_hWnd, NULL, false);*/
 				return 0;
 			}
-			{
+			/*{
 				static float speed = 1.0f;
 				if (pWin32->m_wParam == 'm')
 				{
@@ -117,7 +117,7 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 					m_pSndBackground->SetSpeed(speed);
 					return 0;
 				}
-			}
+			}*/
 			
 		case WM_TIMER:
 			if (1 == pWin32->m_wParam)
@@ -127,12 +127,12 @@ unsigned long CSIntro::OnEvent(CEventBase * pEvent)
 				//InvalidateRect(main->m_hWnd, NULL, false);
 				return 0;
 			}
-			if (2 == pWin32->m_wParam)
+			/*if (2 == pWin32->m_wParam)
 			{
 				CSMain* main = (CSMain*)GetSuperState();
 				KillTimer(main->m_hWnd, 2);
 				main->m_pSndManager->PlayFx(INTRO_SND_EXPLOSION);
-			}
+			}*/
 			break;
 		default:
 			break;
@@ -147,6 +147,6 @@ void CSIntro::OnExit(void)
 	printf("[HCM] %s:OnExit\n", GetClassString());
 	CSMain* main = (CSMain*)GetSuperState();
 	KillTimer(main->m_hWnd, 1);
-	KillTimer(main->m_hWnd, 2);
+	/*KillTimer(main->m_hWnd, 2);*/
 	SAFE_RELEASE(m_pImgIntro);
 }

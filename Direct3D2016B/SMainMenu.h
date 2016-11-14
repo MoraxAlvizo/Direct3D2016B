@@ -11,6 +11,7 @@ using namespace DirectX;
 enum
 {
 	MAIN_MENU_START = 0,
+	MAIN_MENU_UNIRSE,
 	MAIN_MENU_EXIT ,
 	MAIN_MENU_SIZE
 };
