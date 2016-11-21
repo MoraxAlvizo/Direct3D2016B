@@ -54,8 +54,8 @@ void CSIntro::OnEntry(void)
 		printf("Explosion load fail\n");
 
 	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\FFX.wav", INTRO_SND_BACKGROUND);
-	/*if (m_pSndBackground)
-		m_pSndBackground->Play(false);*/
+	if (m_pSndBackground)
+		m_pSndBackground->Play(false);
 	SetTimer(main->m_hWnd, 1, 3000, NULL);
 	/*SetTimer(main->m_hWnd, 2, 1000, NULL);*/
 	return;

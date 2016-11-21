@@ -3,6 +3,7 @@
 #include "Graphics\FX.h"
 #include <d3d11.h>
 #include <SpriteFont.h>
+#include "DXTextRender.h"
 
 using namespace DirectX;
 
@@ -44,6 +45,8 @@ private:
 	ID3D11ShaderResourceView* m_pSRVBackGround;
 	ID3D11ShaderResourceView* m_pSRVStartGame;
 	ID3D11ShaderResourceView* m_pSRVExitGame;
+
+	CDXTextRender* m_pTextRender;
 
 	SpriteBatch *spriteBatch;
 	SpriteFont  *spriteFont;

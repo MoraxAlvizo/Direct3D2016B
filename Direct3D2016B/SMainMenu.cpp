@@ -155,6 +155,10 @@ void CSMainMenu::OnEntry(void)
 	spriteBatch = new SpriteBatch(m_pDXManager->GetContext());
 	spriteFont = new SpriteFont(m_pDXManager->GetDevice(), L"..\\Assets\\myfileb.spritefont");
 
+	// Initializar el render text,
+	m_pTextRender = new CDXTextRender(m_pDXManager, m_pDXPainter, m_FX);
+	m_pTextRender->Initialize();
+
 }
 
 unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
@@ -192,33 +196,41 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 		}*/
 		if (JOY_AXIS_LY == pAction->m_iAction)
 		{
+			static bool alreadyMove = false;
 
 			if (fabs(pAction->m_fAxis) < 0.2)
+			{
+				if (alreadyMove)
+					alreadyMove = false;
 				return 0;
-
-
-			if (pAction->m_fAxis > 0.0f)
-			{
-				m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
-
-				m_lOptionSelected++;
-				if (m_lOptionSelected >= MAIN_MENU_SIZE)
-					m_lOptionSelected = 0;
-
-				m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
 			}
-			else
+				
+			if (!alreadyMove)
 			{
-				m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+				if (pAction->m_fAxis > 0.0f)
+				{
+					m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
 
-				m_lOptionSelected--;
-				if (m_lOptionSelected < 0)
-					m_lOptionSelected = MAIN_MENU_SIZE - 1;
+					m_lOptionSelected--;
+					if (m_lOptionSelected < 0)
+						m_lOptionSelected = MAIN_MENU_SIZE - 1;
 
-				m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+					m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+					alreadyMove = true;
+				}
+				else
+				{
+					m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
+					m_lOptionSelected++;
+					if (m_lOptionSelected >= MAIN_MENU_SIZE)
+						m_lOptionSelected = 0;
+
+					m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+
+					alreadyMove = true;
+				}
 			}
-
-		
 			return 0;
 		}
 	}
@@ -251,10 +263,13 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height, FX_FLAGS_USE_IMG_BUFFR);
 			}
 
-			
-			//spriteBatch->Begin();
-			//spriteFont->DrawString(spriteBatch, L"Hello, world!", XMFLOAT2(0, 0), Colors::Aqua);
-			//spriteBatch->End();
+			MATRIX4D ST =
+				Translation(0.5, -0.5, 0)*
+				Scaling(0.05, 0.1, 1)*
+				RotationZ(3.141592 / 4)*
+				Translation(-1, 1, 0);
+
+			m_pTextRender->RenderText(ST, "OMAR ALVIZO!");
 			
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 
@@ -339,4 +354,6 @@ void CSMainMenu::OnExit(void)
 	SAFE_RELEASE(m_pSRVBackGround);
 	SAFE_RELEASE(m_pSRVStartGame);
 	SAFE_RELEASE(m_pSRVExitGame);
+	m_pTextRender->Uninitialize();
+	SAFE_DELETE(m_pTextRender);
 }

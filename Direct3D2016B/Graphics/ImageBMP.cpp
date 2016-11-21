@@ -91,10 +91,16 @@ CImageBMP* CImageBMP::CreateBitmapFromFile(
 				p->b = pRow[i*3];
 				p->g = pRow[i*3+1];
 				p->r = pRow[i*3+2];
-				if(bih.biBitCount == 32)
+				if (bih.biBitCount == 32)
+				{
 					p->a = pRow[i * 3 + 3];
+				}
 				else
-					p->a = 1;
+				{
+					p->a = 0xff;
+				}
+					
+				*p = pFnAlpha ? pFnAlpha(*p) : *p;
 			}
 		}
 		return pNewImage;

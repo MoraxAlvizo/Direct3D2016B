@@ -355,12 +355,19 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			/*for (unsigned long i = 0; i < m_Scene.size(); i++)
 			{
 				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
+
 				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
 			}*/
-
+			m_pDXManager->GetContext()->OMSetBlendState(NULL, NULL, -1);
 			m_Map.DrawMap(m_pDXPainter);
 
+			MATRIX4D ST =
+				Translation(0.5, -0.5, 0)*
+				Scaling(0.05, 0.1, 1)*
+				RotationZ(3.141592 / 4)*
+				Translation(-1, 1, 0);
 
+			MAIN->m_pTextRender->RenderText(ST, "OMAR ALVIZO!");
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 
 		}

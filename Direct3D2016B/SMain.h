@@ -9,6 +9,7 @@
 #include "Graphics\DXManager.h"
 #include "Graphics\DXBasicPainter.h"
 #include "Graphics\FX.h"
+#include "DXTextRender.h"
 #include "Sound\SndManager.h"
 #include "Sound\SndControl.h"
 #include "Sound\SndFx.h"
@@ -75,6 +76,7 @@ public:
 	CInputManager* m_pInputManager;
 	CInputProcessor* m_pInputProcessor;
 	CNetProcessor* m_pNetProcessor;
+	CDXTextRender* m_pTextRender;
 
 	CFX* m_FX;
 	bool m_bInitCorrect;

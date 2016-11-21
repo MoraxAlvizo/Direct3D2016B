@@ -334,6 +334,8 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 		bShadow ? &m_pRTVShadowMap : &m_pRTV,
 		bShadow ? m_pDSVShadowMap: m_pManager->GetMainDSV());
 
+	//m_pManager->GetContext()->OMSetBlendState()
+
 	if (!bShadow)
 		m_pManager->GetContext()->PSSetShaderResources(5, 1, &m_pSRVShadowMap);
 	SAFE_RELEASE(pBackBuffer);

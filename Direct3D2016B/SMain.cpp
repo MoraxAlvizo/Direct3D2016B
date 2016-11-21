@@ -94,6 +94,10 @@ void CSMain::OnEntry(void)
 		printf("No se pudo inicializar NetProcessor\n");
 	else
 		printf("NetProcessor inicializado correctamente\n");
+
+	// Initializar el render text,
+	m_pTextRender = new CDXTextRender(m_pDXManager, m_pDXPainter, m_FX);
+	m_pTextRender->Initialize();
 		
 }
 
@@ -166,6 +170,9 @@ void CSMain::OnExit(void)
 	SAFE_DELETE(m_pInputManager);
 
 	delete m_pInputProcessor;
+
+	m_pTextRender->Uninitialize();
+	SAFE_DELETE(m_pTextRender);
 
 }
 
