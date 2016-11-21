@@ -67,7 +67,6 @@ Debug\*
 *.filters
 *.ipch
 *.zip
-*.blend
 *.pdf
 *.dll
 *.db
