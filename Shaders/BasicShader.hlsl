@@ -292,15 +292,16 @@ float4 PSMain(VERTEX_OUTPUT Input) :SV_Target
         }
     }
 
-    if (Flags.x & MAPPING_DIFFUSE)
-        ColorDiffuse *= Diffuse.Sample(Sampler, Input.TexCoord.xy);
+	if (Flags.x & MAPPING_DIFFUSE)
+		ColorDiffuse *= Diffuse.Sample(Sampler, Input.TexCoord.xy);
+	else
+		ColorDiffuse *= Input.Color;
     
     ColorOutput  = Material.Emissive +
            ColorDiffuse  * Material.Diffuse  + 
            ColorSpecular * Material.Specular +
            ColorEnviomental * Material.Ambient+
            ColorEmissive + 
-		   Input.Color +
            Brightness;
 
     if (Flags.x & FOG_ENABLE)

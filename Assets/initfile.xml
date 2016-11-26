@@ -6,7 +6,7 @@
 	<Effects3d>
 		<EMISSIVE value="off"/>
 		<NORMALMAP value="off"/>
-		<DIFFUSE value="on"/>
+		<DIFFUSE value="off"/>
 		<SHADOW value="off"/>
 		<NORMAL value="off"/>
 		<ENVIROMENTFAST value="off"/>

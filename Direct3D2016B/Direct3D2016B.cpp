@@ -9,6 +9,7 @@
 #include "SIntro.h"
 #include "SOnGame.h"
 #include "SMainMenu.h"
+#include "SCredits.h"
 #include "HSM\StateMachineManager.h"
 #include "HSM\EventWin32.h"
 
@@ -146,15 +147,18 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	CSIntro* psIntro = new CSIntro();
 	CSOnGame* psOnGame = new CSOnGame();
 	CSMainMenu* psMainMenu = new CSMainMenu();
+	CSCredits* psCredits = new CSCredits();
 
 	g_Game.RegisterState(psIntro, CLSID_CSIntro, 0);
 	g_Game.RegisterState(psMainMenu, CLSID_CSMainMenu, 0);
 	g_Game.RegisterState(psOnGame, CLSID_CSOnGame, 0);
+	g_Game.RegisterState(psCredits, CLSID_CSCredits, 0);
 	g_Game.RegisterState(pSMain, CLSID_CSMain, CLSID_CSIntro); // CLSID_CSIntro
 
 	g_Game.LinkToSuperState(CLSID_CSIntro, CLSID_CSMain);
 	g_Game.LinkToSuperState(CLSID_CSOnGame, CLSID_CSMain);
 	g_Game.LinkToSuperState(CLSID_CSMainMenu, CLSID_CSMain);
+	g_Game.LinkToSuperState(CLSID_CSCredits, CLSID_CSMain);
 
 	g_Game.SetInitialState(CLSID_CSMain);
 
@@ -162,7 +166,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 	pSMain->m_hInstance = hInstance;
 
 	g_Game.Start();
-
 
 	MoveWindow(hWnd, 1, 1, 1024, 800, 1);
 	ShowWindow(hWnd, nCmdShow);

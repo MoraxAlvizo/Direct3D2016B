@@ -9,13 +9,7 @@ using namespace DirectX;
 
 #define CLSID_CSMainMenu 0xa2c4a2c4
 
-enum
-{
-	MAIN_MENU_START = 0,
-	MAIN_MENU_UNIRSE,
-	MAIN_MENU_EXIT ,
-	MAIN_MENU_SIZE
-};
+
 
 enum
 {
@@ -23,6 +17,14 @@ enum
 	BUTTON_DOWN,
 	BUTTON_UP,
 	BUTTON_STATE_SIZE
+};
+
+struct MenuOption
+{
+	ID3D11ShaderResourceView* pSRV[BUTTON_STATE_SIZE];
+	CFX::VERTEX frame[4];
+	unsigned long indices[6];
+	int stateButton;
 };
 
 class CSMainMenu :
@@ -51,17 +53,17 @@ private:
 	SpriteBatch *spriteBatch;
 	SpriteFont  *spriteFont;
 
-	struct MenuOption
-	{
-		ID3D11ShaderResourceView* pSRV[BUTTON_STATE_SIZE];
-		CFX::VERTEX frame[4];
-		unsigned long indices[6];
-		int stateButton;
-	};
-
 	/* Vector menu */
 	vector<MenuOption> m_vMenu;
 	long m_lOptionSelected;
+
+	enum
+	{
+		MAIN_MENU_START = 0,
+		MAIN_MENU_UNIRSE,
+		MAIN_MENU_EXIT,
+		MAIN_MENU_SIZE
+	};
 protected:
 	void OnEntry(void);
 	unsigned long OnEvent(CEventBase* pEvent);

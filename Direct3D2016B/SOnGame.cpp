@@ -22,6 +22,8 @@ Descrition:
 #include "Cut/Plane.h"
 #include "Collisions\BVH.h"
 #include "ActionEvent.h"
+#include "SCredits.h"
+
 
 #include <iostream>
 #include "Cut/VMesh.h"
@@ -43,14 +45,14 @@ void CSOnGame::OnEntry(void)
 {
 	CSMain* main = (CSMain*)GetSuperState();
 	VECTOR4D White = { 1, 1, 1, 1 };
-	VECTOR4D EyePos = { 9, 20, 20, 1 };
-	VECTOR4D Target = { 9, 9, 0, 1 };
-	VECTOR4D Up = { 0, 0, 1, 0 };
+	m_cameraEyePos = { 10, 22, 20, 1 };
+	m_cameraTarget = { 10, 10, 0, 1 };
+	m_cameraUp = { 0, 0, 1, 0 };
 
 	printf("[HCM] %s:OnEntry\n", GetClassString());
 
 	/* Create View, Projection and World Matrix */
-	m_View = View(EyePos, Target, Up);
+	m_View = View(m_cameraEyePos, m_cameraTarget, m_cameraUp);
 	m_Projection = PerspectiveWidthHeightLH(0.05, 0.05, 0.1, 100);
 	m_World = Identity();
 
@@ -211,6 +213,86 @@ void CSOnGame::OnEntry(void)
 	/* Create timers */
 	SetTimer(main->m_hWnd, MAP_TIMER_PLAYER1, 200, NULL);
 	SetTimer(main->m_hWnd, MAP_TIMER_PLAYER2, 1000, NULL);
+	SetTimer(main->m_hWnd, MAP_TIMER_CLOCK, 1000, NULL);
+
+	/* Init clock */
+	m_lClock = 20;
+
+	/* Set state */
+	m_lState = ON_GAME_STATE_GAMING;
+
+	char* menuOption[ON_GAME_MENU_SIZE*BUTTON_STATE_SIZE] = {
+		"..\\Assets\\OGContinueOptionUp.bmp" ,			//0
+		"..\\Assets\\OGContinueOptionDown.bmp" ,		//0
+		"..\\Assets\\OGContinueOptionOver.bmp" ,		//0
+		"..\\Assets\\MMExitGameUp.bmp",					//1
+		"..\\Assets\\MMExitGameDown.bmp",				//1
+		"..\\Assets\\MMExitGameOver.bmp",				//1
+	};
+
+	/* Load Menu option */
+	m_vMenu.resize(ON_GAME_MENU_SIZE);
+	for (unsigned long i = 0; i <ON_GAME_MENU_SIZE; i++)
+	{
+		for (unsigned long j = 0; j < BUTTON_STATE_SIZE; j++)
+		{
+			CImageBMP* img = CImageBMP::CreateBitmapFromFile(menuOption[i * 3 + j], NULL);
+
+			if (!img)
+			{
+				printf("Recurso %s no encontrado", menuOption[i * 3 + j]);
+			}
+			else
+			{
+				auto tex = img->CreateTexture(main->m_pDXManager);
+				ID3D11ShaderResourceView* m_pSRV = NULL;
+				main->m_pDXManager->GetDevice()->CreateShaderResourceView(tex, NULL, &m_pSRV);
+				m_vMenu[i].pSRV[j] = m_pSRV;
+			}
+		}
+	}
+
+	/* Set position and texcoord in start option */
+	m_vMenu[ON_GAME_MENU_CONTINUE].frame[0].Position = { 0.2f, .75f, 0,1.0f };
+	m_vMenu[ON_GAME_MENU_CONTINUE].frame[1].Position = { 0.8f, .75f ,0,1.0f };
+	m_vMenu[ON_GAME_MENU_CONTINUE].frame[2].Position = { 0.2f, .5f  ,0,1.0f };
+	m_vMenu[ON_GAME_MENU_CONTINUE].frame[3].Position = { 0.8f, .5f ,0,1.0f };
+
+	m_vMenu[ON_GAME_MENU_CONTINUE].frame[0].TexCoord = { 0,0,0,0 };
+	m_vMenu[ON_GAME_MENU_CONTINUE].frame[1].TexCoord = { 1,0,0,0 };
+	m_vMenu[ON_GAME_MENU_CONTINUE].frame[2].TexCoord = { 0,1,0,0 };
+	m_vMenu[ON_GAME_MENU_CONTINUE].frame[3].TexCoord = { 1,1,0,0 };
+
+	m_vMenu[ON_GAME_MENU_CONTINUE].indices[0] = 0;
+	m_vMenu[ON_GAME_MENU_CONTINUE].indices[1] = 1;
+	m_vMenu[ON_GAME_MENU_CONTINUE].indices[2] = 2;
+	m_vMenu[ON_GAME_MENU_CONTINUE].indices[3] = 2;
+	m_vMenu[ON_GAME_MENU_CONTINUE].indices[4] = 1;
+	m_vMenu[ON_GAME_MENU_CONTINUE].indices[5] = 3;
+
+	m_vMenu[ON_GAME_MENU_CONTINUE].stateButton = BUTTON_OVER;
+
+	m_lOptionSelected = ON_GAME_MENU_CONTINUE;
+
+	/* Set position and texcoord in unirse option */
+	m_vMenu[ON_GAME_MENU_SALIR].frame[0].Position = { 0.2f, .5f, 0,1.0f };
+	m_vMenu[ON_GAME_MENU_SALIR].frame[1].Position = { 0.8f, .5f ,0,1.0f };
+	m_vMenu[ON_GAME_MENU_SALIR].frame[2].Position = { 0.2f, .25f  ,0,1.0f };
+	m_vMenu[ON_GAME_MENU_SALIR].frame[3].Position = { 0.8f, .25f ,0,1.0f };
+
+	m_vMenu[ON_GAME_MENU_SALIR].frame[0].TexCoord = { 0,0,0,0 };
+	m_vMenu[ON_GAME_MENU_SALIR].frame[1].TexCoord = { 1,0,0,0 };
+	m_vMenu[ON_GAME_MENU_SALIR].frame[2].TexCoord = { 0,1,0,0 };
+	m_vMenu[ON_GAME_MENU_SALIR].frame[3].TexCoord = { 1,1,0,0 };
+
+	m_vMenu[ON_GAME_MENU_SALIR].indices[0] = 0;
+	m_vMenu[ON_GAME_MENU_SALIR].indices[1] = 1;
+	m_vMenu[ON_GAME_MENU_SALIR].indices[2] = 2;
+	m_vMenu[ON_GAME_MENU_SALIR].indices[3] = 2;
+	m_vMenu[ON_GAME_MENU_SALIR].indices[4] = 1;
+	m_vMenu[ON_GAME_MENU_SALIR].indices[5] = 3;
+
+	m_vMenu[ON_GAME_MENU_SALIR].stateButton = BUTTON_UP;
 
 }
 
@@ -261,38 +343,116 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 		m_View = Orthogonalize(FastInverse(Camera));
 
-		if (JOY_AXIS_LY == Action->m_iAction )
+		if (JOY_BUTTON_START_PRESSED == Action->m_iAction)
 		{
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+			if (m_lState == ON_GAME_STATE_GAMING)
+				m_lState = ON_GAME_STATE_PAUSE;
+			else if (m_lState == ON_GAME_STATE_PAUSE)
+				m_lState = ON_GAME_STATE_GAMING;
+		}
 
-			if (fabs(Action->m_fAxis) < 0.2)
+	
+		if (m_lState == ON_GAME_STATE_GAMING)
+		{
+			if (JOY_AXIS_LY == Action->m_iAction)
+			{
+				float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+
+				if (fabs(Action->m_fAxis) < 0.2)
+					return 0;
+
+				if (Stimulus > 0.0f)
+					m_Map.MovePlayer(0, PLAYER_MOVE_LESS_Y);
+				else
+					m_Map.MovePlayer(0, PLAYER_MOVE_MORE_Y);
+
+			}
+			if (JOY_AXIS_LX == Action->m_iAction)
+			{
+				float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+
+				if (fabs(Action->m_fAxis) < 0.2)
+					return 0;
+
+				if (Stimulus > 0.0f)
+					m_Map.MovePlayer(0, PLAYER_MOVE_MORE_X);
+				else
+					m_Map.MovePlayer(0, PLAYER_MOVE_LESS_X);
+			}
+			if (JOY_BUTTON_A_PRESSED == Action->m_iAction)
+			{
+				if (!m_Map.PlayerHasTarget(0))
+					m_Map.GetTarget(0);
+				else
+					m_Map.DropTarget(0);
+			}
+			
+		}
+		else if (m_lState == ON_GAME_STATE_PAUSE)
+		{
+			if (Action->m_iAction == JOY_BUTTON_A_PRESSED)
+			{
+				//m_pSMOwner->Transition(CLSID_CSOnGame);
+				switch (m_lOptionSelected)
+				{
+				case ON_GAME_MENU_CONTINUE:
+				{
+					m_lState = ON_GAME_STATE_GAMING;
+					return 0;
+				}
+				case ON_GAME_MENU_SALIR:
+				{
+					m_pSMOwner->Transition(CLSID_CSMainMenu);
+					return 0;
+				}
+				default:
+					break;
+				}
 				return 0;
+				//MAIN->m_pSndManager->PlayFx(0);
+			}
+			if (JOY_AXIS_LY == Action->m_iAction)
+			{
+				static bool alreadyMove = false;
 
-			if (Stimulus > 0.0f)
-				m_Map.MovePlayer(0, PLAYER_MOVE_LESS_Y);
-			else
-				m_Map.MovePlayer(0, PLAYER_MOVE_MORE_Y);
+				if (fabs(Action->m_fAxis) < 0.2)
+				{
+					if (alreadyMove)
+						alreadyMove = false;
+					return 0;
+				}
 
-		}
-		if (JOY_AXIS_LX == Action->m_iAction )
-		{
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+				if (!alreadyMove)
+				{
+					if (Action->m_fAxis > 0.0f)
+					{
+						m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
 
-			if (fabs(Action->m_fAxis) < 0.2)
+						m_lOptionSelected--;
+						if (m_lOptionSelected < 0)
+							m_lOptionSelected = ON_GAME_MENU_SIZE - 1;
+
+						m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+						alreadyMove = true;
+					}
+					else
+					{
+						m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
+						m_lOptionSelected++;
+						if (m_lOptionSelected >= ON_GAME_MENU_SIZE)
+							m_lOptionSelected = 0;
+
+						m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+
+						alreadyMove = true;
+					}
+				}
 				return 0;
+			}
+		}
 
-			if (Stimulus > 0.0f)
-				m_Map.MovePlayer(0, PLAYER_MOVE_MORE_X);
-			else
-				m_Map.MovePlayer(0, PLAYER_MOVE_LESS_X);
-		}
-		if (JOY_BUTTON_A_PRESSED == Action->m_iAction)
-		{
-			if (!m_Map.PlayerHasTarget(0))
-				m_Map.GetTarget(0);
-			else
-				m_Map.DropTarget(0);
-		}
+		
 	}
 	if (APP_LOOP == pEvent->m_ulEventType)
 	{
@@ -361,15 +521,143 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			m_pDXManager->GetContext()->OMSetBlendState(NULL, NULL, -1);
 			m_Map.DrawMap(m_pDXPainter);
 
-			MATRIX4D ST =
-				Translation(0.5, -0.5, 0)*
-				Scaling(0.05, 0.1, 1)*
-				RotationZ(3.141592 / 4)*
-				Translation(-1, 1, 0);
+			if (m_lState == ON_GAME_STATE_GAMING)
+			{
+				if (!m_Map.stillAreTargetsInMap())
+				{
+					m_lState = ON_GAME_STATE_WIN;
+					statusAnimation = ON_GAME_GAMEOVER_ANIMATION_INIT;
+					/* start timer */
+					SetTimer(MAIN->m_hWnd, MAP_TIMER_GAME_OVER, 10000, NULL);
+				}
+				else if (m_lClock < 1 && m_Map.stillAreTargetsInMap())
+				{
+					m_lState = ON_GAME_STATE_LOSE;
+					statusAnimation = ON_GAME_GAMEOVER_ANIMATION_INIT;
+					/* start timer */
+					SetTimer(MAIN->m_hWnd, MAP_TIMER_GAME_OVER, 10000, NULL);
+				}
+			}
 
-			MAIN->m_pTextRender->RenderText(ST, "OMAR ALVIZO!");
+			if (m_lState == ON_GAME_STATE_WIN  || m_lState == ON_GAME_STATE_LOSE)
+			{
+				switch (statusAnimation)
+				{
+				case ON_GAME_GAMEOVER_ANIMATION_INIT:
+				{
+					Position playerPos = m_Map.GetPlayerPos(0);
+					VECTOR4D Target = { playerPos.x * 2.f, playerPos.y * 2.f, 0 ,1 };
+					VECTOR4D EyePos = { (playerPos.x)*2.f, (playerPos.y + 1)*2.f, 0, 1 };
+
+					incrementosEyepos.x = -(m_cameraEyePos.x - EyePos.x) / GAME_OVER_STEPS;
+					incrementosEyepos.y = -(m_cameraEyePos.y - EyePos.y) / GAME_OVER_STEPS;
+					incrementosEyepos.z = -(m_cameraEyePos.z - EyePos.z) / GAME_OVER_STEPS;
+					incrementosEyepos.w = 0;
+
+					incrementosTarget.x = -(m_cameraTarget.x - Target.x) / GAME_OVER_STEPS;
+					incrementosTarget.y = -(m_cameraTarget.y - Target.y) / GAME_OVER_STEPS;
+					incrementosTarget.z = -(m_cameraTarget.z - Target.z) / GAME_OVER_STEPS;
+					incrementosTarget.w = 0;
+
+					statusAnimation = ON_GAME_GAMEOVER_ANIMATION_ON;
+					steps = 0;
+				}
+					break;
+				case ON_GAME_GAMEOVER_ANIMATION_ON:
+				{
+					
+					m_cameraEyePos = m_cameraEyePos + incrementosEyepos;
+					m_cameraTarget = m_cameraTarget + incrementosTarget;
+
+
+					/* Create View, Projection and World Matrix */
+					m_View = View(m_cameraEyePos, m_cameraTarget, m_cameraUp);
+
+					steps++;
+					if (steps >= GAME_OVER_STEPS)
+						statusAnimation = ON_GAME_GAMEOVER_ANIMATION_DONE;
+				}
+					break;
+				case ON_GAME_GAMEOVER_ANIMATION_DONE:
+				{
+
+				}
+					break;
+				default:
+					break;
+				}
+
+			}
+
+			switch (m_lState)
+			{
+			case ON_GAME_STATE_GAMING:
+			{
+				MATRIX4D ST =
+					Translation(0.5, -0.5, 0)*
+					Scaling(0.05, 0.1, 1) *
+					Translation(0, .9, 0);
+				//RotationZ(3.141592 / 4)*
+				//Translation(-1, 1, 0);
+
+				char time[3];
+
+				time[0] = ((m_lClock / 10) % 10) + 48;
+				time[1] = (m_lClock % 10) + 48;
+				time[2] = '\0';
+
+				MAIN->m_pTextRender->RenderText(ST, time);
+			}
+			break;
+			case ON_GAME_STATE_LOSE:
+			{
+				MATRIX4D ST =
+					Translation(0.5, -0.5, 0)*
+					Scaling(0.1, 0.1, 1) *
+					Translation(0, .9, 0);
+
+				/* You lose */
+				MAIN->m_pTextRender->RenderText(ST, "You lose!!");
+			}
+			break;
+			case ON_GAME_STATE_WIN:
+			{
+				MATRIX4D ST =
+					Translation(0.5, -0.5, 0)*
+					Scaling(0.1, 0.1, 1) *
+					Translation(0, .9, 0);
+
+				/* You win */
+				MAIN->m_pTextRender->RenderText(ST, "You win!!");
+
+			}
+			break;
+			case ON_GAME_STATE_PAUSE:
+			{
+				ID3D11Texture2D* pBackBuffer = 0;
+				D3D11_TEXTURE2D_DESC dtd;
+
+
+				m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
+				pBackBuffer->GetDesc(&dtd);
+
+				MAIN->m_FX->m_Params.WVP = Identity();
+
+				for (unsigned long i = 0; i < ON_GAME_MENU_SIZE; i++)
+				{
+					MAIN->m_FX->SetImgVertex(m_vMenu[i].frame, m_vMenu[i].indices);
+					MAIN->m_FX->m_Params.Brightness = { 0,0,0,0 };
+					MAIN->m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
+					MAIN->m_FX->SetInput(m_vMenu[i].pSRV[m_vMenu[i].stateButton]);
+					MAIN->m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height, FX_FLAGS_USE_IMG_BUFFR);
+				}
+
+				SAFE_RELEASE(pBackBuffer);
+			}
+			default:
+				break;
+			}
 			m_pDXManager->GetSwapChain()->Present(1, 0);
-
 		}
 
 	}
@@ -410,6 +698,17 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				m_bTimerPlayer1 = true;
 				return 0;
 			}
+			case MAP_TIMER_CLOCK:
+			{
+				if (m_lState == ON_GAME_STATE_GAMING)
+					m_lClock--;
+				return 0;
+			}
+			case MAP_TIMER_GAME_OVER:
+			{
+				KillTimer(MAIN->m_hWnd, MAP_TIMER_GAME_OVER);
+				m_pSMOwner->Transition(CLSID_CSCredits);
+			}
 			default:
 				break;
 			}
@@ -434,6 +733,7 @@ void CSOnGame::OnExit(void)
 	/* Kill timer */
 	KillTimer(main->m_hWnd, MAP_TIMER_PLAYER1);
 	KillTimer(main->m_hWnd, MAP_TIMER_PLAYER2);
+	KillTimer(main->m_hWnd, MAP_TIMER_CLOCK);
 
 	/* Release textures */
 	SAFE_RELEASE(m_pTexture);   //GPU

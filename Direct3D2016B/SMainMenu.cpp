@@ -262,14 +262,6 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 				m_FX->SetInput(m_vMenu[i].pSRV[m_vMenu[i].stateButton]);
 				m_FX->Process(0, FX_NONE, dtd.Width, dtd.Height, FX_FLAGS_USE_IMG_BUFFR);
 			}
-
-			MATRIX4D ST =
-				Translation(0.5, -0.5, 0)*
-				Scaling(0.05, 0.1, 1)*
-				RotationZ(3.141592 / 4)*
-				Translation(-1, 1, 0);
-
-			m_pTextRender->RenderText(ST, "OMAR ALVIZO!");
 			
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 

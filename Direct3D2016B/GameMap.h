@@ -5,7 +5,7 @@
 #include "Graphics\DXBasicPainter.h"
 
 using namespace std;
-#define GAME_MAP_SIZE 10
+#define GAME_MAP_SIZE 11
 
 /* Map values */
 #define GAME_MAP_WALL		0x01
@@ -99,6 +99,9 @@ public:
 	void DropTarget(int id);
 	int LookForTarget(Position pos);
 	bool PlayerHasTarget(int id) { return m_Players[id].idTarget != -1; }
+	bool stillAreTargetsInMap();
+	void setColorTo(int idMesh, VECTOR4D& Color);
+	Position GetPlayerPos(int id);
 	ViewMap m_pGameMap;
 private:
 	vector<CMesh>		m_Meshes;

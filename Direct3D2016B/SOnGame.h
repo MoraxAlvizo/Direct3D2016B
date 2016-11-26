@@ -23,11 +23,37 @@ Descrition:
 #include "Cut/VMesh.h"
 #include "Collisions\BVH.h"
 #include "GameMap.h"
+#include "SMainMenu.h"
 
+#include <vector>
+
+using namespace std;
 
 #define CLSID_CSOnGame 0x14638246
-#define MAP_TIMER_PLAYER1 1
-#define MAP_TIMER_PLAYER2 2
+
+/* Timers */
+#define MAP_TIMER_PLAYER1		1
+#define MAP_TIMER_PLAYER2		2
+#define MAP_TIMER_CLOCK			3
+#define MAP_TIMER_GAME_OVER		4
+
+
+enum {
+	ON_GAME_STATE_GAMING = 1,
+	ON_GAME_STATE_PAUSE ,
+	ON_GAME_STATE_WIN ,
+	ON_GAME_STATE_LOSE,
+	ON_GAME_STATE_INTRO
+};
+
+#define GAME_OVER_STEPS 40.f
+
+enum GameOverAnimation
+{
+	ON_GAME_GAMEOVER_ANIMATION_INIT = 1,
+	ON_GAME_GAMEOVER_ANIMATION_ON,
+	ON_GAME_GAMEOVER_ANIMATION_DONE
+};
 
 class CSOnGame :
 	public CStateBase
@@ -83,6 +109,29 @@ public:
 	//vector<BVH> m_BVHs;
 
 	bool flag = true;
+	long m_lClock;
+	long m_lState;
+
+	/* Vector menu */
+	vector<MenuOption> m_vMenu;
+	long m_lOptionSelected;
+
+	/* Animation var game over */
+	GameOverAnimation statusAnimation;
+	long steps;
+	VECTOR4D incrementosTarget;
+	VECTOR4D incrementosEyepos;
+
+	VECTOR4D m_cameraTarget;
+	VECTOR4D m_cameraEyePos;
+	VECTOR4D m_cameraUp;
+
+	enum
+	{
+		ON_GAME_MENU_CONTINUE = 0,
+		ON_GAME_MENU_SALIR,
+		ON_GAME_MENU_SIZE
+	};
 
 	struct Edges
 	{
@@ -133,6 +182,7 @@ protected:
 	void LoadScene(char * filename);
 	void UpdateCamera();
 	void ManageKeyboardEvents(UINT event, WPARAM wParam);
+	
 
 };
 

@@ -109,7 +109,7 @@ void CDXTextRender::RenderText(MATRIX4D M, char * szText)
 		
 		for (int i = 0; i < 4; i++)
 		{
-			VECTOR4D Derecha = { 2,0,0,0 };
+			VECTOR4D Derecha = { 1,0,0,0 };
 			Frame[i].Position = Frame[i].Position + Derecha;
 		}
 

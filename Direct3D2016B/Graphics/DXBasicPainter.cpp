@@ -42,7 +42,7 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	};
 
 	LIGHT LightDef2 = {
-		{ LIGHT_ON, LIGHT_SPOT,0,0 },  // Flags
+		{ 0, LIGHT_SPOT,0,0 },  // Flags
 		{ 0.1,0.1,0.1,0 },				// Ambient
 		{ 5,5,5,5 },			// Diffuse
 		{ 5,5,5,0 },					// Specular

@@ -25,6 +25,7 @@ unsigned long CInputProcessor::OnEvent(CEventBase * pEvent)
 		{
 			auto Last = GamePad->second->m_js2;
 			auto Curr = pInput->m_js2;
+
 			if (!Last.rgbButtons[0] && Curr.rgbButtons[0])
 			{
 				auto Action = new CActionEvent(GamePad->first, pInput->m_ulTime, JOY_BUTTON_A_PRESSED);
@@ -53,6 +54,17 @@ unsigned long CInputProcessor::OnEvent(CEventBase * pEvent)
 			if (Last.rgbButtons[2] && !Curr.rgbButtons[2])
 			{
 				auto Action = new CActionEvent(GamePad->first, pInput->m_ulTime, JOY_BUTTON_X_RELEASED);
+				m_pHSMOwner->PostEvent(Action);
+			}
+			/* start button */
+			if (Last.rgbButtons[7] && !Curr.rgbButtons[7])
+			{
+				auto Action = new CActionEvent(GamePad->first, pInput->m_ulTime, JOY_BUTTON_START_UNPRESSED);
+				m_pHSMOwner->PostEvent(Action);
+			}
+			if (!Last.rgbButtons[7] && Curr.rgbButtons[7])
+			{
+				auto Action = new CActionEvent(GamePad->first, pInput->m_ulTime, JOY_BUTTON_START_PRESSED);
 				m_pHSMOwner->PostEvent(Action);
 			}
 			/* Reportar el estado de los ejes */
