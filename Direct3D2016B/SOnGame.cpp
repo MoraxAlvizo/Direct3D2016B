@@ -818,7 +818,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					m_pSndBackground->Restart();
 					m_pSndBackground->Play(true);
 				}
-					
 			}
 			default:
 				break;

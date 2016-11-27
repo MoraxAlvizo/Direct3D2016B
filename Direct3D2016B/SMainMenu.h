@@ -9,8 +9,6 @@ using namespace DirectX;
 
 #define CLSID_CSMainMenu 0xa2c4a2c4
 
-
-
 enum
 {
 	BUTTON_OVER,
