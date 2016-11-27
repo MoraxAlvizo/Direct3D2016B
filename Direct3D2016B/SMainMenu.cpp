@@ -36,9 +36,9 @@ void CSMainMenu::OnEntry(void)
 		"..\\Assets\\MMStartGameOptionUp.bmp" ,			//0
 		"..\\Assets\\MMStartGameOptionDown.bmp" ,		//0
 		"..\\Assets\\MMStartGameOptionOver.bmp" ,		//0
-		"..\\Assets\\MMUnirseGameUp.bmp" ,		//1
-		"..\\Assets\\MMUnirseGameDown.bmp" ,		//1
-		"..\\Assets\\MMUnirseGameOver.bmp" ,		//1
+		"..\\Assets\\MMUnirseGameUp.bmp" ,				//1
+		"..\\Assets\\MMUnirseGameDown.bmp" ,			//1
+		"..\\Assets\\MMUnirseGameOver.bmp" ,			//1
 		"..\\Assets\\MMExitGameUp.bmp",					//2
 		"..\\Assets\\MMExitGameDown.bmp",				//2
 		"..\\Assets\\MMExitGameOver.bmp",				//2

@@ -19,6 +19,11 @@ enum
 	BUTTON_STATE_SIZE
 };
 
+enum MenuSounds
+{
+	ON_GAME_SOUNDS_MOVE_OPTION_MENU
+};
+
 struct MenuOption
 {
 	ID3D11ShaderResourceView* pSRV[BUTTON_STATE_SIZE];

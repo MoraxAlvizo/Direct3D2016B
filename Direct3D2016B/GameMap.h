@@ -72,6 +72,8 @@ struct Player
 #define TARGET_STATE_NOT_MOVE	0x08
 #define TARGET_STATE_MOVING		0x10
 
+#define GAME_MAP_LEVELS 3
+
 struct Target
 {
 	Position pos;
@@ -94,7 +96,7 @@ public:
 	~CGameMap();
 	void LoadMeshes();
 	void DrawMap(CDXBasicPainter* m_pPainter);
-	void MovePlayer(int id, int move);
+	bool MovePlayer(int id, int move);
 	void GetTarget(int id);
 	void DropTarget(int id);
 	int LookForTarget(Position pos);
@@ -102,11 +104,18 @@ public:
 	bool stillAreTargetsInMap();
 	void setColorTo(int idMesh, VECTOR4D& Color);
 	Position GetPlayerPos(int id);
-	ViewMap m_pGameMap;
+	ViewMap m_pGameMap[GAME_MAP_LEVELS];
+
+	void LoadLevel(int level, int numPlayer);
+	void ResetLevel(int numPlayers) { this->LoadLevel(m_iLevel, numPlayers); }
+	void LoadNextLevel(int numPlayers) { this->LoadLevel(++m_iLevel, numPlayers); }
+	bool HasMoreLevels() { return m_iLevel < (GAME_MAP_LEVELS - 1);  }
 private:
 	vector<CMesh>		m_Meshes;
 	vector<Player>		m_Players;
 	vector<Target>		m_Targets;
 	vector<Container>	m_Containers;
+	long				m_iLevel;
+	
 };
 

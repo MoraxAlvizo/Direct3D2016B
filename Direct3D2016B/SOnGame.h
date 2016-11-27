@@ -24,6 +24,7 @@ Descrition:
 #include "Collisions\BVH.h"
 #include "GameMap.h"
 #include "SMainMenu.h"
+#include "Sound\SndFx.h"
 
 #include <vector>
 
@@ -53,6 +54,13 @@ enum GameOverAnimation
 	ON_GAME_GAMEOVER_ANIMATION_INIT = 1,
 	ON_GAME_GAMEOVER_ANIMATION_ON,
 	ON_GAME_GAMEOVER_ANIMATION_DONE
+};
+
+enum GameSounds
+{
+	ON_GAME_SOUNDS_BACKGROUND,
+	ON_GAME_SOUNDS_NOT_MOVE,
+	ON_GAME_SOUNDS_YOU_LOSE
 };
 
 class CSOnGame :
@@ -126,6 +134,9 @@ public:
 	VECTOR4D m_cameraEyePos;
 	VECTOR4D m_cameraUp;
 
+	/* Sounds */
+	CSndFx* m_pSndBackground;
+
 	enum
 	{
 		ON_GAME_MENU_CONTINUE = 0,
@@ -171,6 +182,11 @@ private:
 	/* Timers */
 	bool m_bTimerPlayer1;
 	bool m_bTimerPlayer2;
+
+	/* create RTV1 */
+	ID3D11Texture2D* m_pRT1;			// Memoria
+	ID3D11ShaderResourceView* m_pSRV1;	// Input
+	ID3D11RenderTargetView* m_pRTV1;		// Output
 
 protected:
 

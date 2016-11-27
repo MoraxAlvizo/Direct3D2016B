@@ -16,7 +16,9 @@ protected:
 	virtual ~CSndControl(void);
 	CSndManager* m_pManagerOwner;
 	IDirectSoundBuffer8* m_pIDirectSoundBuffer;
+	
 public:
+	void Restart() { SetPlayPosition(0); }
 	virtual CSndControl* DuplicateSound(void);
 	virtual void SetVolume(float fVolume);
 	virtual void SetPan(float fBalance);

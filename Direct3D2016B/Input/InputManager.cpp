@@ -70,6 +70,7 @@ void CInputManager::FinalizeDirectInputSession(void)
 		m_pIDI=NULL;
 	}
 }
+
 bool CInputManager::ReadState(DIJOYSTATE2& JoyState,int nDeviceIndex)
 {
 	if(nDeviceIndex<m_nDIDeviceCount) //Bug FIXED. Out of range index device.

@@ -249,6 +249,7 @@ void CFX::Process(unsigned long vsEffect, unsigned long psEffect, float w, float
 	SAFE_RELEASE(pVB);
 
 }
+
 void CFX::Uninitialize()
 {
 	SAFE_RELEASE(m_pIL);
@@ -260,3 +261,4 @@ void CFX::Uninitialize()
 	m_vecFX.clear();
 	SAFE_RELEASE(m_pCB);
 }
+

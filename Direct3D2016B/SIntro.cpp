@@ -46,16 +46,16 @@ void CSIntro::OnEntry(void)
 	m_pImgIntro = pImage->CreateTexture(m_pDXManager);
 
 	main->m_pSndManager->ClearEngine();
-	auto fx = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Explosion.wav", INTRO_SND_EXPLOSION);
+	auto fx = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\intro.wav", INTRO_SND_EXPLOSION);
 
 	if (fx)
 		printf("Explosion load success \n");
 	else
 		printf("Explosion load fail\n");
 
-	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\FFX.wav", INTRO_SND_BACKGROUND);
-	/*if (m_pSndBackground)
-		m_pSndBackground->Play(false);*/
+	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\intro.wav", INTRO_SND_BACKGROUND);
+	if (m_pSndBackground)
+		m_pSndBackground->Play(false);
 	SetTimer(main->m_hWnd, 1, 3000, NULL);
 	/*SetTimer(main->m_hWnd, 2, 1000, NULL);*/
 	return;

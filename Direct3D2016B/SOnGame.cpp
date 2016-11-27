@@ -68,6 +68,7 @@ void CSOnGame::OnEntry(void)
 	ret = wcstombs(buffer, main->m_Params.scene, sizeof(buffer));
 	LoadScene(buffer);
 	m_Map.LoadMeshes();
+	m_Map.LoadLevel(0, 2);
 
 	/* Load pointers */
 	m_pDXManager = main->m_pDXManager;
@@ -198,10 +199,10 @@ void CSOnGame::OnEntry(void)
 	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pEmissiveMap, NULL, &m_pSRVEmissiveMap);
 
 	/* Initialize camera options */
-	m_bLeft =  m_bRight =
-	m_bUp = m_bDown =
-	m_bForward =  m_bBackward = m_bTurnLeft = m_bTurnRight =
-	m_bTurnUp =  m_bTurnDown = m_bTurnS =  m_bTurnS1 = m_bTimerPlayer1 = m_bTimerPlayer2 = false;
+	m_bLeft = m_bRight =
+		m_bUp = m_bDown =
+		m_bForward = m_bBackward = m_bTurnLeft = m_bTurnRight =
+		m_bTurnUp = m_bTurnDown = m_bTurnS = m_bTurnS1 = m_bTimerPlayer1 = m_bTimerPlayer2 = false;
 
 	/* Init collisions structures */
 	for (unsigned long i = 0; i < m_Scene.size(); i++)
@@ -232,7 +233,7 @@ void CSOnGame::OnEntry(void)
 
 	/* Load Menu option */
 	m_vMenu.resize(ON_GAME_MENU_SIZE);
-	for (unsigned long i = 0; i <ON_GAME_MENU_SIZE; i++)
+	for (unsigned long i = 0; i < ON_GAME_MENU_SIZE; i++)
 	{
 		for (unsigned long j = 0; j < BUTTON_STATE_SIZE; j++)
 		{
@@ -294,6 +295,46 @@ void CSOnGame::OnEntry(void)
 
 	m_vMenu[ON_GAME_MENU_SALIR].stateButton = BUTTON_UP;
 
+	/* Crear render target 1 */
+
+	// Crear Render Target Auxiliar
+
+	ID3D11Texture2D* pBackBuffer = 0;
+	m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
+
+	D3D11_TEXTURE2D_DESC dtd;
+	pBackBuffer->GetDesc(&dtd);
+	dtd.BindFlags |= (D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET);
+
+	m_pDXManager->GetDevice()->CreateTexture2D(&dtd, 0, &m_pRT1);
+	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pRT1, 0, &m_pSRV1);
+	m_pDXManager->GetDevice()->CreateRenderTargetView(m_pRT1, 0, &m_pRTV1);
+
+	SAFE_RELEASE(pBackBuffer);
+
+	MAIN->m_pSndManager->ClearEngine();
+	
+
+	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\ongame.wav", ON_GAME_SOUNDS_BACKGROUND);
+	if (m_pSndBackground)
+		m_pSndBackground->Play(true);
+
+	auto fx = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\notmove.wav", ON_GAME_SOUNDS_NOT_MOVE);
+
+	if (fx)
+		printf("Explosion load success \n");
+	else
+		printf("Explosion load fail\n");
+
+
+	fx = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\youlose.wav", ON_GAME_SOUNDS_YOU_LOSE);
+
+	if (fx)
+		printf("Explosion load success \n");
+	else
+		printf("Explosion load fail\n");
+
+
 }
 
 unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
@@ -334,8 +375,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 		//	Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[0]);
 		//}
 
-
-
 		Camera.vec[0] = Orientation.vec[0];
 		Camera.vec[1] = Orientation.vec[1];
 		Camera.vec[2] = Orientation.vec[2];
@@ -357,34 +396,77 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			if (JOY_AXIS_LY == Action->m_iAction)
 			{
 				float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+				bool move = false;
+				static bool alreadyReproduce = false;
 
 				if (fabs(Action->m_fAxis) < 0.2)
+				{
+					if (alreadyReproduce)
+						alreadyReproduce = false;
 					return 0;
+				}
+					
 
 				if (Stimulus > 0.0f)
-					m_Map.MovePlayer(0, PLAYER_MOVE_LESS_Y);
+				{
+					move = m_Map.MovePlayer(Action->m_nSource, PLAYER_MOVE_LESS_Y);
+				}
 				else
-					m_Map.MovePlayer(0, PLAYER_MOVE_MORE_Y);
+				{
+					move = m_Map.MovePlayer(Action->m_nSource, PLAYER_MOVE_MORE_Y);
+				}
+
+				if (!move)
+				{
+					if (!alreadyReproduce)
+					{
+						MAIN->m_pSndManager->PlayFx(ON_GAME_SOUNDS_NOT_MOVE);
+						alreadyReproduce = true;
+					}
+					
+				}
 
 			}
 			if (JOY_AXIS_LX == Action->m_iAction)
 			{
 				float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
+				bool move = false;
+				static bool alreadyReproduce = false;
 
 				if (fabs(Action->m_fAxis) < 0.2)
+				{
+					if (alreadyReproduce)
+						alreadyReproduce = false;
 					return 0;
+				}
+					
 
 				if (Stimulus > 0.0f)
-					m_Map.MovePlayer(0, PLAYER_MOVE_MORE_X);
+				{
+					move = m_Map.MovePlayer(Action->m_nSource, PLAYER_MOVE_MORE_X);
+				}
+					
 				else
-					m_Map.MovePlayer(0, PLAYER_MOVE_LESS_X);
+				{
+					move = m_Map.MovePlayer(Action->m_nSource, PLAYER_MOVE_LESS_X);
+				}
+				if (!move)
+				{
+					if (!alreadyReproduce)
+					{
+						MAIN->m_pSndManager->PlayFx(ON_GAME_SOUNDS_NOT_MOVE);
+						alreadyReproduce = true;
+					}
+					
+				}
+					
 			}
 			if (JOY_BUTTON_A_PRESSED == Action->m_iAction)
 			{
-				if (!m_Map.PlayerHasTarget(0))
-					m_Map.GetTarget(0);
+				if (!m_Map.PlayerHasTarget(Action->m_nSource))
+					m_Map.GetTarget(Action->m_nSource);
 				else
-					m_Map.DropTarget(0);
+					m_Map.DropTarget(Action->m_nSource);
 			}
 			
 		}
@@ -458,6 +540,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 	{
 		if (m_pDXManager->GetSwapChain())
 		{
+			m_pDXManager->GetContext()->ClearState();
 			// Clear render targer and deph stencil
 			ID3D11Texture2D* pBackBuffer = 0;
 			MATRIX4D AC; /* Matriz de correction de aspecto */
@@ -469,6 +552,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			VECTOR4D Black = { 0, 0, 0, 0 };
 			D3D11_TEXTURE2D_DESC dtd;
 			m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&NightBlue);
+			m_pDXManager->GetContext()->ClearRenderTargetView(m_pRTV1, (float*)&NightBlue);
 			m_pDXManager->GetContext()->ClearDepthStencilView(
 				m_pDXManager->GetMainDSV(),
 				D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
@@ -512,14 +596,10 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
 
 			/* Draw scene */
-			/*for (unsigned long i = 0; i < m_Scene.size(); i++)
-			{
-				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-
-				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
-			}*/
 			m_pDXManager->GetContext()->OMSetBlendState(NULL, NULL, -1);
 			m_Map.DrawMap(m_pDXPainter);
+
+			m_pDXManager->GetContext()->ClearState();
 
 			if (m_lState == ON_GAME_STATE_GAMING)
 			{
@@ -561,6 +641,12 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 					statusAnimation = ON_GAME_GAMEOVER_ANIMATION_ON;
 					steps = 0;
+
+					if (m_lState == ON_GAME_STATE_LOSE)
+					{
+						m_pSndBackground->Stop();
+						MAIN->m_pSndManager->PlayFx(ON_GAME_SOUNDS_YOU_LOSE);
+					}
 				}
 					break;
 				case ON_GAME_GAMEOVER_ANIMATION_ON:
@@ -634,12 +720,17 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			break;
 			case ON_GAME_STATE_PAUSE:
 			{
+
 				ID3D11Texture2D* pBackBuffer = 0;
 				D3D11_TEXTURE2D_DESC dtd;
 
 
 				m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 				pBackBuffer->GetDesc(&dtd);
+
+				//MAIN->m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
+				//MAIN->m_FX->SetInput(m_pSRV1);
+				//MAIN->m_FX->Process(0, FX_EDGE_DETECT, dtd.Width, dtd.Height);
 
 				MAIN->m_FX->m_Params.WVP = Identity();
 
@@ -707,7 +798,27 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			case MAP_TIMER_GAME_OVER:
 			{
 				KillTimer(MAIN->m_hWnd, MAP_TIMER_GAME_OVER);
-				m_pSMOwner->Transition(CLSID_CSCredits);
+				if (!m_Map.HasMoreLevels())
+					m_pSMOwner->Transition(CLSID_CSCredits);
+				else
+				{
+					if (m_lState == ON_GAME_STATE_WIN)
+						m_Map.LoadNextLevel(2);
+					else
+						m_Map.ResetLevel(2);
+					
+					m_lState = ON_GAME_STATE_GAMING;
+					m_lClock = 20;
+
+					m_cameraEyePos = { 10, 22, 20, 1 };
+					m_cameraTarget = { 10, 10, 0, 1 };
+					m_cameraUp = { 0, 0, 1, 0 };
+
+					m_View = View(m_cameraEyePos, m_cameraTarget, m_cameraUp);
+					m_pSndBackground->Restart();
+					m_pSndBackground->Play(true);
+				}
+					
 			}
 			default:
 				break;

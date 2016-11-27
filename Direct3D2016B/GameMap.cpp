@@ -18,19 +18,49 @@ CGameMap::~CGameMap()
 
 void CGameMap::LoadMeshes()
 {
-	m_pGameMap =
+	m_pGameMap[0] =
 	{
-		GAME_MAP_WALL , GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL , GAME_MAP_WALL,
-		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_WALL ,
-		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_WALL ,GAME_MAP_WALL , GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL,GAME_MAP_FLOOR,GAME_MAP_WALL ,
-		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR,GAME_MAP_WALL ,
-		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR, GAME_MAP_FLOOR,GAME_MAP_WALL ,
-		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR, GAME_MAP_FLOOR,GAME_MAP_WALL ,
-		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR,GAME_MAP_FLOOR, GAME_MAP_WALL ,
-		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_WALL ,GAME_MAP_WALL , GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_FLOOR, GAME_MAP_FLOOR,GAME_MAP_WALL ,
-		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR, GAME_MAP_FLOOR,GAME_MAP_WALL ,
-		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR,GAME_MAP_FLOOR,  GAME_MAP_WALL ,
-		GAME_MAP_WALL , GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL, GAME_MAP_WALL
+		GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  ,GAME_MAP_WALL,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  ,GAME_MAP_WALL
+	};
+
+	m_pGameMap[1] =
+	{
+		GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  ,GAME_MAP_WALL,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  ,GAME_MAP_WALL
+	};
+
+	m_pGameMap[2] =
+	{
+		GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  ,GAME_MAP_WALL,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_WALL, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_FLOOR , GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR, GAME_MAP_FLOOR ,GAME_MAP_WALL ,
+		GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL , GAME_MAP_WALL  ,GAME_MAP_WALL
 	};
 
 	char* fileMeshes[GAME_MAP_MESHES_SIZE] = {
@@ -105,44 +135,6 @@ void CGameMap::LoadMeshes()
 
 		strcpy(m_Meshes[i].m_cName, scene->mMeshes[0]->mName.C_Str());
 	}
-	
-	/* Init players */
-	m_Players.resize(1);
-	m_Players[0].id = 1;
-	m_Players[0].pos.x = 1;
-	m_Players[0].pos.y = 1;
-	m_Players[0].step = 0;
-	m_Players[0].idTarget = -1;
-	m_Players[0].state |= PLAYER_STATE_NOT_MOVE;
-	m_pGameMap.map[1][1] |= GAME_MAP_PLAYER;
-
-	
-	/* Init targets */
-	m_Targets.resize(3);
-	m_Targets[0].state = TARGET_STATE_IN_PLACE;
-	m_Targets[0].pos.x = 8;
-	m_Targets[0].pos.y = 8;
-
-	m_pGameMap.map[8][8] |= GAME_MAP_TARGET;
-
-	m_Targets[1].state = TARGET_STATE_IN_PLACE;
-	m_Targets[1].pos.x = 5;
-	m_Targets[1].pos.y = 5;
-
-	m_pGameMap.map[5][5] |= GAME_MAP_TARGET;
-
-	m_Targets[2].state = TARGET_STATE_IN_PLACE;
-	m_Targets[2].pos.x = 1;
-	m_Targets[2].pos.y = 8;
-
-	m_pGameMap.map[1][8] |= GAME_MAP_TARGET;
-
-	/* Init containers */
-	m_Containers.resize(1);
-	m_Containers[0].counter = 0;
-	m_Containers[0].pos.x = 8;
-	m_Containers[0].pos.y = 1;
-	m_pGameMap.map[8][1] |= GAME_MAP_CONTAINER;
 
 	/* Load color */
 	VECTOR4D red = { 1,0,0,0 };
@@ -163,7 +155,7 @@ void CGameMap::DrawMap(CDXBasicPainter * m_pPainter)
 	{
 		for (unsigned long j = 0; j < GAME_MAP_SIZE; j++)
 		{
-			if (m_pGameMap.map[i][j] & GAME_MAP_WALL)
+			if (m_pGameMap[m_iLevel].map[i][j] & GAME_MAP_WALL)
 			{
 				m_pPainter->m_Params.World = Translation(i * 2, j * 2, 0) * m_Meshes[GAME_MAP_CUBE].m_World;
 				m_pPainter->DrawIndexed(
@@ -174,7 +166,7 @@ void CGameMap::DrawMap(CDXBasicPainter * m_pPainter)
 					PAINTER_DRAW);
 			}
 
-			if (m_pGameMap.map[i][j] & GAME_MAP_FLOOR)
+			if (m_pGameMap[m_iLevel].map[i][j] & GAME_MAP_FLOOR)
 			{
 				m_pPainter->m_Params.World = Translation(i * 2, j * 2, -1)* m_Meshes[GAME_MAP_PLANE].m_World;
 				m_pPainter->DrawIndexed(
@@ -184,8 +176,6 @@ void CGameMap::DrawMap(CDXBasicPainter * m_pPainter)
 					m_Meshes[GAME_MAP_PLANE].m_Indices.size(),
 					PAINTER_DRAW);
 			}
-
-			
 		}
 	}
 	
@@ -260,12 +250,12 @@ void CGameMap::DrawMap(CDXBasicPainter * m_pPainter)
 
 			if (m_Targets[i].step == MAX_STEPS)
 			{
-				m_pGameMap.map[m_Targets[i].pos.x][m_Targets[i].pos.y] &= ~GAME_MAP_TARGET;
+				m_pGameMap[m_iLevel].map[m_Targets[i].pos.x][m_Targets[i].pos.y] &= ~GAME_MAP_TARGET;
 				m_Targets[i].pos = m_Targets[i].nextPos;
 				m_Targets[i].step = 0;
 				m_Targets[i].state &= ~TARGET_STATE_MOVING;
 				m_Targets[i].state |= TARGET_STATE_NOT_MOVE;
-				m_pGameMap.map[m_Targets[i].pos.x][m_Targets[i].pos.y] |= GAME_MAP_TARGET;
+				m_pGameMap[m_iLevel].map[m_Targets[i].pos.x][m_Targets[i].pos.y] |= GAME_MAP_TARGET;
 			}
 		}
 		
@@ -318,30 +308,34 @@ void CGameMap::DrawMap(CDXBasicPainter * m_pPainter)
 
 			if (m_Players[i].step == MAX_STEPS)
 			{
-				m_pGameMap.map[m_Players[i].pos.x][m_Players[i].pos.y] &= ~GAME_MAP_PLAYER;
+				m_pGameMap[m_iLevel].map[m_Players[i].pos.x][m_Players[i].pos.y] &= ~GAME_MAP_PLAYER;
 				m_Players[i].pos = m_Players[i].nextPos;
 				m_Players[i].step = 0;
 				m_Players[i].state &= ~PLAYER_STATE_MOVING;
 				m_Players[i].state |= PLAYER_STATE_NOT_MOVE;
-				m_pGameMap.map[m_Players[i].pos.x][m_Players[i].pos.y] |= GAME_MAP_PLAYER;
+				m_pGameMap[m_iLevel].map[m_Players[i].pos.x][m_Players[i].pos.y] |= GAME_MAP_PLAYER;
 
 			}
 		}
 	}
 }
 
-void CGameMap::MovePlayer(int id, int move)
+bool CGameMap::MovePlayer(int id, int move)
 {
+	bool canmove = false;
 	if (m_Players[id].state & PLAYER_STATE_NOT_MOVE)
 	{
 		//m_pGameMap.map[m_Players[id].pos.x][m_Players[id].pos.y] &= ~GAME_MAP_PLAYER;
 
+
 		if (move & PLAYER_MOVE_LESS_X)
 		{
-			if (m_pGameMap.map[m_Players[id].pos.x - 1][m_Players[id].pos.y] & GAME_MAP_FLOOR &&
-				!(m_pGameMap.map[m_Players[id].pos.x - 1][m_Players[id].pos.y] & GAME_MAP_CONTAINER))
+
+			if (m_pGameMap[m_iLevel].map[m_Players[id].pos.x - 1][m_Players[id].pos.y] & GAME_MAP_FLOOR &&
+				!(m_pGameMap[m_iLevel].map[m_Players[id].pos.x - 1][m_Players[id].pos.y] & GAME_MAP_PLAYER) &&
+				!(m_pGameMap[m_iLevel].map[m_Players[id].pos.x - 1][m_Players[id].pos.y] & GAME_MAP_CONTAINER))
 			{
-				if (m_pGameMap.map[m_Players[id].pos.x - 1][m_Players[id].pos.y] & GAME_MAP_TARGET)
+				if (m_pGameMap[m_iLevel].map[m_Players[id].pos.x - 1][m_Players[id].pos.y] & GAME_MAP_TARGET)
 				{
 					if (m_Players[id].idTarget != -1)
 					{
@@ -353,6 +347,7 @@ void CGameMap::MovePlayer(int id, int move)
 							m_Players[id].nextPos.y = m_Players[id].pos.y;
 							m_Players[id].state &= ~PLAYER_STATE_NOT_MOVE;
 							m_Players[id].state |= PLAYER_STATE_MOVING;
+							canmove =  true;
 						}
 					}
 					
@@ -363,15 +358,17 @@ void CGameMap::MovePlayer(int id, int move)
 					m_Players[id].nextPos.y = m_Players[id].pos.y;
 					m_Players[id].state &= ~PLAYER_STATE_NOT_MOVE;
 					m_Players[id].state |= PLAYER_STATE_MOVING;
+					canmove = true;
 				}
 			}
 		}
 		if (move & PLAYER_MOVE_MORE_X)
 		{
-			if (m_pGameMap.map[m_Players[id].pos.x + 1][m_Players[id].pos.y] & GAME_MAP_FLOOR && 
-				!(m_pGameMap.map[m_Players[id].pos.x + 1][m_Players[id].pos.y] & GAME_MAP_CONTAINER))
+			if (m_pGameMap[m_iLevel].map[m_Players[id].pos.x + 1][m_Players[id].pos.y] & GAME_MAP_FLOOR &&
+				!(m_pGameMap[m_iLevel].map[m_Players[id].pos.x + 1][m_Players[id].pos.y] & GAME_MAP_PLAYER) &&
+				!(m_pGameMap[m_iLevel].map[m_Players[id].pos.x + 1][m_Players[id].pos.y] & GAME_MAP_CONTAINER))
 			{
-				if (m_pGameMap.map[m_Players[id].pos.x + 1][m_Players[id].pos.y] & GAME_MAP_TARGET)
+				if (m_pGameMap[m_iLevel].map[m_Players[id].pos.x + 1][m_Players[id].pos.y] & GAME_MAP_TARGET)
 				{
 					if (m_Players[id].idTarget != -1)
 					{
@@ -383,6 +380,7 @@ void CGameMap::MovePlayer(int id, int move)
 							m_Players[id].nextPos.y = m_Players[id].pos.y;
 							m_Players[id].state &= ~PLAYER_STATE_NOT_MOVE;
 							m_Players[id].state |= PLAYER_STATE_MOVING;
+							canmove = true;
 						}
 					}
 					
@@ -393,6 +391,7 @@ void CGameMap::MovePlayer(int id, int move)
 					m_Players[id].nextPos.y = m_Players[id].pos.y;
 					m_Players[id].state &= ~PLAYER_STATE_NOT_MOVE;
 					m_Players[id].state |= PLAYER_STATE_MOVING;
+					canmove = true;
 				}
 				
 			}
@@ -400,10 +399,11 @@ void CGameMap::MovePlayer(int id, int move)
 		}
 		if (move & PLAYER_MOVE_LESS_Y)
 		{
-			if (m_pGameMap.map[m_Players[id].pos.x][m_Players[id].pos.y - 1] & GAME_MAP_FLOOR &&
-				!(m_pGameMap.map[m_Players[id].pos.x ][m_Players[id].pos.y-1] & GAME_MAP_CONTAINER))
+			if (m_pGameMap[m_iLevel].map[m_Players[id].pos.x][m_Players[id].pos.y - 1] & GAME_MAP_FLOOR &&
+				!(m_pGameMap[m_iLevel].map[m_Players[id].pos.x ][m_Players[id].pos.y-1] & GAME_MAP_PLAYER) &&
+				!(m_pGameMap[m_iLevel].map[m_Players[id].pos.x ][m_Players[id].pos.y-1] & GAME_MAP_CONTAINER))
 			{
-				if (m_pGameMap.map[m_Players[id].pos.x][m_Players[id].pos.y - 1] & GAME_MAP_TARGET)
+				if (m_pGameMap[m_iLevel].map[m_Players[id].pos.x][m_Players[id].pos.y - 1] & GAME_MAP_TARGET)
 				{
 					if (m_Players[id].idTarget != -1)
 					{
@@ -415,6 +415,7 @@ void CGameMap::MovePlayer(int id, int move)
 							m_Players[id].nextPos.y = m_Players[id].pos.y - 1;
 							m_Players[id].state &= ~PLAYER_STATE_NOT_MOVE;
 							m_Players[id].state |= PLAYER_STATE_MOVING;
+							canmove = true;
 						}
 					}
 				}
@@ -424,16 +425,18 @@ void CGameMap::MovePlayer(int id, int move)
 					m_Players[id].nextPos.y = m_Players[id].pos.y - 1;
 					m_Players[id].state &= ~PLAYER_STATE_NOT_MOVE;
 					m_Players[id].state |= PLAYER_STATE_MOVING;
+					canmove = true;
 				}
 				
 			}
 		}
 		if (move & PLAYER_MOVE_MORE_Y)
 		{
-			if (m_pGameMap.map[m_Players[id].pos.x][m_Players[id].pos.y + 1] & GAME_MAP_FLOOR &&
-				!(m_pGameMap.map[m_Players[id].pos.x][m_Players[id].pos.y + 1] & GAME_MAP_CONTAINER))
+			if (m_pGameMap[m_iLevel].map[m_Players[id].pos.x][m_Players[id].pos.y + 1] & GAME_MAP_FLOOR &&
+				!(m_pGameMap[m_iLevel].map[m_Players[id].pos.x][m_Players[id].pos.y + 1] & GAME_MAP_PLAYER) &&
+				!(m_pGameMap[m_iLevel].map[m_Players[id].pos.x][m_Players[id].pos.y + 1] & GAME_MAP_CONTAINER))
 			{
-				if (m_pGameMap.map[m_Players[id].pos.x][m_Players[id].pos.y + 1] & GAME_MAP_TARGET)
+				if (m_pGameMap[m_iLevel].map[m_Players[id].pos.x][m_Players[id].pos.y + 1] & GAME_MAP_TARGET)
 				{
 					if (m_Players[id].idTarget != -1)
 					{
@@ -445,6 +448,7 @@ void CGameMap::MovePlayer(int id, int move)
 							m_Players[id].nextPos.y = m_Players[id].pos.y + 1;
 							m_Players[id].state &= ~PLAYER_STATE_NOT_MOVE;
 							m_Players[id].state |= PLAYER_STATE_MOVING;
+							canmove = true;
 						}
 					}
 					
@@ -455,10 +459,10 @@ void CGameMap::MovePlayer(int id, int move)
 					m_Players[id].nextPos.y = m_Players[id].pos.y + 1;
 					m_Players[id].state &= ~PLAYER_STATE_NOT_MOVE;
 					m_Players[id].state |= PLAYER_STATE_MOVING;
+					canmove = true;
 				}
 			}
 		}
-
 		if (m_Players[id].state & PLAYER_STATE_MOVING && m_Players[id].idTarget != -1)
 		{
 			m_Targets[m_Players[id].idTarget].state &= ~TARGET_STATE_NOT_MOVE;
@@ -466,7 +470,14 @@ void CGameMap::MovePlayer(int id, int move)
 			m_Targets[m_Players[id].idTarget].step = 0;
 			m_Targets[m_Players[id].idTarget].nextPos = m_Players[id].pos;
 		}
+		//return false;
 	}
+	else if (m_Players[id].state & PLAYER_STATE_MOVING)
+	{
+		canmove = true;
+	}
+	return canmove;
+	
 }
 
 void CGameMap::GetTarget(int id)
@@ -475,7 +486,7 @@ void CGameMap::GetTarget(int id)
 	if (!(m_Players[id].state & PLAYER_STATE_MOVING) &&
 		m_Players[id].idTarget == -1)
 	{
-		if (m_pGameMap.map[posPlayer.x + 1][posPlayer.y] & GAME_MAP_TARGET)
+		if (m_pGameMap[m_iLevel].map[posPlayer.x + 1][posPlayer.y] & GAME_MAP_TARGET)
 		{
 			Position posTarget;
 			posTarget.x = posPlayer.x + 1;
@@ -486,7 +497,7 @@ void CGameMap::GetTarget(int id)
 			m_Targets[idTarget].state = 0;
 			m_Targets[idTarget].state = TARGET_STATE_PICK_UP | TARGET_STATE_NOT_MOVE;
 		}
-		if (m_pGameMap.map[posPlayer.x - 1][posPlayer.y] & GAME_MAP_TARGET)
+		if (m_pGameMap[m_iLevel].map[posPlayer.x - 1][posPlayer.y] & GAME_MAP_TARGET)
 		{
 			Position posTarget;
 			posTarget.x = posPlayer.x - 1;
@@ -498,7 +509,7 @@ void CGameMap::GetTarget(int id)
 			m_Targets[idTarget].state = TARGET_STATE_PICK_UP | TARGET_STATE_NOT_MOVE;
 
 		}
-		if (m_pGameMap.map[posPlayer.x][posPlayer.y + 1] & GAME_MAP_TARGET)
+		if (m_pGameMap[m_iLevel].map[posPlayer.x][posPlayer.y + 1] & GAME_MAP_TARGET)
 		{
 			Position posTarget;
 			posTarget.x = posPlayer.x;
@@ -510,7 +521,7 @@ void CGameMap::GetTarget(int id)
 			m_Targets[idTarget].state = TARGET_STATE_PICK_UP | TARGET_STATE_NOT_MOVE;
 
 		}
-		if (m_pGameMap.map[posPlayer.x][posPlayer.y - 1] & GAME_MAP_TARGET)
+		if (m_pGameMap[m_iLevel].map[posPlayer.x][posPlayer.y - 1] & GAME_MAP_TARGET)
 		{
 			Position posTarget;
 			posTarget.x = posPlayer.x;
@@ -530,14 +541,14 @@ void CGameMap::DropTarget(int id)
 	Position posPlayer = m_Players[id].pos;
 	if (!(m_Players[id].state & PLAYER_STATE_MOVING) && m_Players[id].idTarget != -1)
 	{
-		if (m_pGameMap.map[posPlayer.x + 1][posPlayer.y] & GAME_MAP_CONTAINER ||
-			m_pGameMap.map[posPlayer.x - 1][posPlayer.y] & GAME_MAP_CONTAINER ||
-			m_pGameMap.map[posPlayer.x][posPlayer.y + 1] & GAME_MAP_CONTAINER ||
-			m_pGameMap.map[posPlayer.x][posPlayer.y - 1] & GAME_MAP_CONTAINER)
+		if (m_pGameMap[m_iLevel].map[posPlayer.x + 1][posPlayer.y] & GAME_MAP_CONTAINER ||
+			m_pGameMap[m_iLevel].map[posPlayer.x - 1][posPlayer.y] & GAME_MAP_CONTAINER ||
+			m_pGameMap[m_iLevel].map[posPlayer.x][posPlayer.y + 1] & GAME_MAP_CONTAINER ||
+			m_pGameMap[m_iLevel].map[posPlayer.x][posPlayer.y - 1] & GAME_MAP_CONTAINER)
 		{
 			int idTarget = m_Players[id].idTarget;
 			Position targetPos = m_Targets[idTarget].pos;
-			m_pGameMap.map[targetPos.x][targetPos.y] &= ~GAME_MAP_TARGET;
+			m_pGameMap[m_iLevel].map[targetPos.x][targetPos.y] &= ~GAME_MAP_TARGET;
 			m_Players[id].idTarget = -1;
 			m_Targets[idTarget].state = 0;
 			m_Targets[idTarget].state = TARGET_STATE_DROP;
@@ -574,4 +585,56 @@ void CGameMap::setColorTo(int idMesh, VECTOR4D & Color)
 Position CGameMap::GetPlayerPos(int id)
 {
 	return m_Players[id].pos;
+}
+
+void CGameMap::LoadLevel(int level, int numPlayers)
+{
+	m_iLevel = level;
+	/* Init players */
+	m_Players.resize(numPlayers);
+	m_Players[0].id = 1;
+	m_Players[0].pos.x = 1;
+	m_Players[0].pos.y = 1;
+	m_Players[0].step = 0;
+	m_Players[0].idTarget = -1;
+	m_Players[0].state |= PLAYER_STATE_NOT_MOVE;
+	m_pGameMap[level].map[1][1] |= GAME_MAP_PLAYER;
+
+	if (numPlayers > 1)
+	{
+		m_Players[1].id = 2;
+		m_Players[1].pos.x = 1;
+		m_Players[1].pos.y = 2;
+		m_Players[1].step = 0;
+		m_Players[1].idTarget = -1;
+		m_Players[1].state |= PLAYER_STATE_NOT_MOVE;
+		m_pGameMap[level].map[1][2] |= GAME_MAP_PLAYER;
+	}
+
+	/* Init targets */
+	m_Targets.resize(3);
+	m_Targets[0].state = TARGET_STATE_IN_PLACE;
+	m_Targets[0].pos.x = 8;
+	m_Targets[0].pos.y = 8;
+
+	m_pGameMap[level].map[8][8] |= GAME_MAP_TARGET;
+
+	m_Targets[1].state = TARGET_STATE_IN_PLACE;
+	m_Targets[1].pos.x = 5;
+	m_Targets[1].pos.y = 5;
+
+	m_pGameMap[level].map[5][5] |= GAME_MAP_TARGET;
+
+	m_Targets[2].state = TARGET_STATE_IN_PLACE;
+	m_Targets[2].pos.x = 1;
+	m_Targets[2].pos.y = 8;
+
+	m_pGameMap[level].map[1][8] |= GAME_MAP_TARGET;
+
+	/* Init containers */
+	m_Containers.resize(1);
+	m_Containers[0].counter = 0;
+	m_Containers[0].pos.x = 8;
+	m_Containers[0].pos.y = 1;
+	m_pGameMap[level].map[8][1] |= GAME_MAP_CONTAINER;
 }
