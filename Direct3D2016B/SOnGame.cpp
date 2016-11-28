@@ -231,12 +231,12 @@ void CSOnGame::OnEntry(void)
 
 
 		m_nFlagsPainter = 0;
-		MiVariable.LoadMSHFile("torus.msh");
 
 		m_Scene[i].m_BVH = new BVH();
 		m_Scene[i].m_BVH->Preconstruction(m_Scene[i]);
 		m_Scene[i].m_BVH->Construction(m_Scene[i], 1, primitives);
 		m_Scene[i].m_BVH->Postconstruction(m_Scene[i]);
+
 		//m_Scene[i].m_BVH->Build(m_Scene[i], primitives);
 	}
 
@@ -660,17 +660,16 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				}
 			}
 
+			m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
 			/* Draw scene */
-			/*for (unsigned long i = 0; i < m_Scene.size(); i++)
+			for (unsigned long i = 0; i < m_Scene.size(); i++)
 			{
 				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
 				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
-			}*/
+			}
 
-			m_pDXPainter->m_Params.World = Identity();
-			m_pDXPainter->DrawIndexed(&MiVariable.m_Vertices[0], MiVariable.m_Vertices.size(), &MiVariable.m_Indices[0], MiVariable.m_Indices.size(), m_nFlagsPainter);
-
-
+			//m_pDXPainter->m_Params.World = Identity();
+			//m_pDXPainter->DrawIndexed(&MiVariable.m_Vertices[0], MiVariable.m_Vertices.size(), &MiVariable.m_Indices[0], MiVariable.m_Indices.size(), m_nFlagsPainter);
 
 
 			/* Draw surface */
