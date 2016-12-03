@@ -21,11 +21,11 @@ using namespace std;
 #define PLAYER_MOVE_MORE_Y 0x08
 
 /* Meshes */
-#define GM_CILINDRO_PATH	"..\\Assets\\Meshes\\cilindro.blend"
+#define GM_CILINDRO_PATH	"..\\Assets\\Meshes\\casa.blend"
 #define GM_CUBE_PATH		"..\\Assets\\Meshes\\cube.blend"
 #define GM_PLANE_PATH		"..\\Assets\\Meshes\\plane.blend"
-#define GM_SPHERE_PATH		"..\\Assets\\Meshes\\sphere.blend"
-#define GM_SUZZANE_PATH		"..\\Assets\\Meshes\\suzzane.blend"
+#define GM_SPHERE_PATH		"..\\Assets\\Meshes\\perro3.blend"
+#define GM_SUZZANE_PATH		"..\\Assets\\Meshes\\human.blend"
 
 enum
 {
@@ -35,6 +35,21 @@ enum
 	GAME_MAP_SPHERE,
 	GAME_MAP_SUZZANE,
 	GAME_MAP_MESHES_SIZE
+};
+
+/* Meshes hamburgesa */
+#define HAM_PARTE_ARRIBA_PATH	"..\\Assets\\Meshes\\partearriba.blend"
+#define HAM_PARTE_ABAJO_PATH	"..\\Assets\\Meshes\\parteabajo.blend"
+#define HAM_CARNE_PATH			"..\\Assets\\Meshes\\parteabajo.blend"
+#define HAM_QUESO_PATH			"..\\Assets\\Meshes\\queso.blend"
+
+enum
+{
+	HAM_PARTE_ARRIBA,
+	HAM_PARTE_ABAJO,
+	HAM_CARNE,
+	HAM_QUESO,
+	HAM_MESHES_SIZE
 };
 
 
@@ -59,7 +74,8 @@ struct Player
 	Position pos;
 	Position nextPos;
 	Position targetPos;
-	
+	Position dir;
+	Position nextDir;
 	int idTarget;
 	unsigned long state;
 	int step;
@@ -78,6 +94,7 @@ struct Target
 {
 	Position pos;
 	Position nextPos;
+	Position nextDir;
 	unsigned long state;
 	int step;
 };
@@ -97,12 +114,13 @@ public:
 	void LoadMeshes();
 	void DrawMap(CDXBasicPainter* m_pPainter);
 	bool MovePlayer(int id, int move);
-	void GetTarget(int id);
-	void DropTarget(int id);
+	bool GetTarget(int id);
+	bool DropTarget(int id);
 	int LookForTarget(Position pos);
 	bool PlayerHasTarget(int id) { return m_Players[id].idTarget != -1; }
 	bool stillAreTargetsInMap();
 	void setColorTo(int idMesh, VECTOR4D& Color);
+	void setColorToHam(int idMesh, VECTOR4D& Color);
 	Position GetPlayerPos(int id);
 	ViewMap m_pGameMap[GAME_MAP_LEVELS];
 
@@ -112,6 +130,7 @@ public:
 	bool HasMoreLevels() { return m_iLevel < (GAME_MAP_LEVELS - 1);  }
 private:
 	vector<CMesh>		m_Meshes;
+	vector<CMesh>		m_HamMeshes;
 	vector<Player>		m_Players;
 	vector<Target>		m_Targets;
 	vector<Container>	m_Containers;

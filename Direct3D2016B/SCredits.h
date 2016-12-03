@@ -8,7 +8,7 @@
 
 using namespace std;
 
-#define CLSID_CSCredits 0xa2c4a200
+#define CLSID_CSCredits 0xa2c4a201
 
 enum
 {

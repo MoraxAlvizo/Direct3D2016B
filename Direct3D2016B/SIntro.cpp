@@ -53,7 +53,7 @@ void CSIntro::OnEntry(void)
 	else
 		printf("Explosion load fail\n");
 
-	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\intro.wav", INTRO_SND_BACKGROUND);
+	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\intro2.wav", INTRO_SND_BACKGROUND);
 	if (m_pSndBackground)
 		m_pSndBackground->Play(false);
 	SetTimer(main->m_hWnd, 1, 3000, NULL);

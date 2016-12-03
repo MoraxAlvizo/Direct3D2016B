@@ -60,7 +60,9 @@ enum GameSounds
 {
 	ON_GAME_SOUNDS_BACKGROUND,
 	ON_GAME_SOUNDS_NOT_MOVE,
-	ON_GAME_SOUNDS_YOU_LOSE
+	ON_GAME_SOUNDS_YOU_LOSE,
+	ON_GAME_SOUNDS_DOG,
+	ON_GAME_SOUNDS_DOG_CRYING,
 };
 
 class CSOnGame :
@@ -91,6 +93,7 @@ public:
 
 	ID3D11Texture2D* m_pTexture;   //GPU
 	ID3D11Texture2D* m_pNormalMapTrue;
+	ID3D11Texture2D* m_pNormalMapTrueLadrillo;
 	ID3D11Texture2D* m_pNormalMap;
 	ID3D11Texture2D* m_pEmissiveMap;
 	ID3D11Texture2D* m_pCubeMap;
@@ -101,6 +104,7 @@ public:
 	ID3D11ShaderResourceView* m_pSRVEnvMap ;
 	ID3D11ShaderResourceView* m_pSRVEmissiveMap ;
 	ID3D11ShaderResourceView* m_pSRVNormalMapTrue;
+	ID3D11ShaderResourceView* m_pSRVNormalMapTrueLadrillo;
 	/* Matrix */
 	MATRIX4D m_World;
 	MATRIX4D m_View;

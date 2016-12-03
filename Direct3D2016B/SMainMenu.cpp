@@ -7,7 +7,7 @@
 #include "SMain.h"
 #include "Graphics\ImageBMP.h"
 #include "SOnGame.h"
-
+#include "SCredits.h"
 CSMainMenu::CSMainMenu()
 {
 	m_pSRVBackGround = NULL;
@@ -33,12 +33,15 @@ void CSMainMenu::OnEntry(void)
 	printf("Cargando recursos de fondo ... \n");
 
 	char* menuOption[MAIN_MENU_SIZE*BUTTON_STATE_SIZE] = {
-		"..\\Assets\\MMStartGameOptionUp.bmp" ,			//0
-		"..\\Assets\\MMStartGameOptionDown.bmp" ,		//0
-		"..\\Assets\\MMStartGameOptionOver.bmp" ,		//0
-		"..\\Assets\\MMUnirseGameUp.bmp" ,				//1
-		"..\\Assets\\MMUnirseGameDown.bmp" ,			//1
-		"..\\Assets\\MMUnirseGameOver.bmp" ,			//1
+		"..\\Assets\\MM1JugadorOptionUp.bmp" ,			//0
+		"..\\Assets\\MM1JugadorOptionDown.bmp" ,		//0
+		"..\\Assets\\MM1JugadorOptionOver.bmp" ,		//0
+		"..\\Assets\\MM2JugadorOptionUp.bmp" ,			//0
+		"..\\Assets\\MM2JugadorOptionDown.bmp" ,		//0
+		"..\\Assets\\MM2JugadorOptionOver.bmp" ,		//0
+		"..\\Assets\\MMCreditsOptionUp.bmp" ,			//0
+		"..\\Assets\\MMCreditsOptionDown.bmp" ,			//0
+		"..\\Assets\\MMCreditsOptionOver.bmp" ,			//0
 		"..\\Assets\\MMExitGameUp.bmp",					//2
 		"..\\Assets\\MMExitGameDown.bmp",				//2
 		"..\\Assets\\MMExitGameOver.bmp",				//2
@@ -78,56 +81,75 @@ void CSMainMenu::OnEntry(void)
 				m_vMenu[i].pSRV[j] = m_pSRV;
 			}
 		}
-		
 	}
 	
 	/* Set position and texcoord in start option */
-	m_vMenu[MAIN_MENU_START].frame[0].Position = { 0.2f, .75f, 0,1.0f };
-	m_vMenu[MAIN_MENU_START].frame[1].Position = { 0.8f, .75f ,0,1.0f };
-	m_vMenu[MAIN_MENU_START].frame[2].Position = { 0.2f, .5f  ,0,1.0f };
-	m_vMenu[MAIN_MENU_START].frame[3].Position = { 0.8f, .5f ,0,1.0f };
+	m_vMenu[MAIN_MENU_1_PLAYER].frame[0].Position = { 0.2f, .75f, 0,1.0f };
+	m_vMenu[MAIN_MENU_1_PLAYER].frame[1].Position = { 0.8f, .75f ,0,1.0f };
+	m_vMenu[MAIN_MENU_1_PLAYER].frame[2].Position = { 0.2f, .5f  ,0,1.0f };
+	m_vMenu[MAIN_MENU_1_PLAYER].frame[3].Position = { 0.8f, .5f ,0,1.0f };
 
-	m_vMenu[MAIN_MENU_START].frame[0].TexCoord = { 0,0,0,0 };
-	m_vMenu[MAIN_MENU_START].frame[1].TexCoord = { 1,0,0,0 };
-	m_vMenu[MAIN_MENU_START].frame[2].TexCoord = { 0,1,0,0 };
-	m_vMenu[MAIN_MENU_START].frame[3].TexCoord = { 1,1,0,0 };
+	m_vMenu[MAIN_MENU_1_PLAYER].frame[0].TexCoord = { 0,0,0,0 };
+	m_vMenu[MAIN_MENU_1_PLAYER].frame[1].TexCoord = { 1,0,0,0 };
+	m_vMenu[MAIN_MENU_1_PLAYER].frame[2].TexCoord = { 0,1,0,0 };
+	m_vMenu[MAIN_MENU_1_PLAYER].frame[3].TexCoord = { 1,1,0,0 };
 
-	m_vMenu[MAIN_MENU_START].indices[0] = 0;
-	m_vMenu[MAIN_MENU_START].indices[1] = 1;
-	m_vMenu[MAIN_MENU_START].indices[2] = 2;
-	m_vMenu[MAIN_MENU_START].indices[3] = 2;
-	m_vMenu[MAIN_MENU_START].indices[4] = 1;
-	m_vMenu[MAIN_MENU_START].indices[5] = 3;
+	m_vMenu[MAIN_MENU_1_PLAYER].indices[0] = 0;
+	m_vMenu[MAIN_MENU_1_PLAYER].indices[1] = 1;
+	m_vMenu[MAIN_MENU_1_PLAYER].indices[2] = 2;
+	m_vMenu[MAIN_MENU_1_PLAYER].indices[3] = 2;
+	m_vMenu[MAIN_MENU_1_PLAYER].indices[4] = 1;
+	m_vMenu[MAIN_MENU_1_PLAYER].indices[5] = 3;
 
-	m_vMenu[MAIN_MENU_START].stateButton = BUTTON_OVER;
+	m_vMenu[MAIN_MENU_1_PLAYER].stateButton = BUTTON_OVER;
 
-	m_lOptionSelected = MAIN_MENU_START;
+	m_lOptionSelected = MAIN_MENU_1_PLAYER;
 
 	/* Set position and texcoord in unirse option */
-	m_vMenu[MAIN_MENU_UNIRSE].frame[0].Position = { 0.2f, .5f, 0,1.0f };
-	m_vMenu[MAIN_MENU_UNIRSE].frame[1].Position = { 0.8f, .5f ,0,1.0f };
-	m_vMenu[MAIN_MENU_UNIRSE].frame[2].Position = { 0.2f, .25f  ,0,1.0f };
-	m_vMenu[MAIN_MENU_UNIRSE].frame[3].Position = { 0.8f, .25f ,0,1.0f };
+	m_vMenu[MAIN_MENU_2_PLAYERS].frame[0].Position = { 0.2f, .5f, 0,1.0f };
+	m_vMenu[MAIN_MENU_2_PLAYERS].frame[1].Position = { 0.8f, .5f ,0,1.0f };
+	m_vMenu[MAIN_MENU_2_PLAYERS].frame[2].Position = { 0.2f, .25f  ,0,1.0f };
+	m_vMenu[MAIN_MENU_2_PLAYERS].frame[3].Position = { 0.8f, .25f ,0,1.0f };
 
-	m_vMenu[MAIN_MENU_UNIRSE].frame[0].TexCoord = { 0,0,0,0 };
-	m_vMenu[MAIN_MENU_UNIRSE].frame[1].TexCoord = { 1,0,0,0 };
-	m_vMenu[MAIN_MENU_UNIRSE].frame[2].TexCoord = { 0,1,0,0 };
-	m_vMenu[MAIN_MENU_UNIRSE].frame[3].TexCoord = { 1,1,0,0 };
+	m_vMenu[MAIN_MENU_2_PLAYERS].frame[0].TexCoord = { 0,0,0,0 };
+	m_vMenu[MAIN_MENU_2_PLAYERS].frame[1].TexCoord = { 1,0,0,0 };
+	m_vMenu[MAIN_MENU_2_PLAYERS].frame[2].TexCoord = { 0,1,0,0 };
+	m_vMenu[MAIN_MENU_2_PLAYERS].frame[3].TexCoord = { 1,1,0,0 };
 
-	m_vMenu[MAIN_MENU_UNIRSE].indices[0] = 0;
-	m_vMenu[MAIN_MENU_UNIRSE].indices[1] = 1;
-	m_vMenu[MAIN_MENU_UNIRSE].indices[2] = 2;
-	m_vMenu[MAIN_MENU_UNIRSE].indices[3] = 2;
-	m_vMenu[MAIN_MENU_UNIRSE].indices[4] = 1;
-	m_vMenu[MAIN_MENU_UNIRSE].indices[5] = 3;
+	m_vMenu[MAIN_MENU_2_PLAYERS].indices[0] = 0;
+	m_vMenu[MAIN_MENU_2_PLAYERS].indices[1] = 1;
+	m_vMenu[MAIN_MENU_2_PLAYERS].indices[2] = 2;
+	m_vMenu[MAIN_MENU_2_PLAYERS].indices[3] = 2;
+	m_vMenu[MAIN_MENU_2_PLAYERS].indices[4] = 1;
+	m_vMenu[MAIN_MENU_2_PLAYERS].indices[5] = 3;
 
-	m_vMenu[MAIN_MENU_UNIRSE].stateButton = BUTTON_UP;
+	m_vMenu[MAIN_MENU_2_PLAYERS].stateButton = BUTTON_UP;
+
+	/* Set position and texcoord in unirse option */
+	m_vMenu[MAIN_MENU_CREDITS].frame[0].Position = { 0.2f, .25f, 0,1.0f };
+	m_vMenu[MAIN_MENU_CREDITS].frame[1].Position = { 0.8f, .25f ,0,1.0f };
+	m_vMenu[MAIN_MENU_CREDITS].frame[2].Position = { 0.2f, .0f  ,0,1.0f };
+	m_vMenu[MAIN_MENU_CREDITS].frame[3].Position = { 0.8f, .0f ,0,1.0f };
+
+	m_vMenu[MAIN_MENU_CREDITS].frame[0].TexCoord = { 0,0,0,0 };
+	m_vMenu[MAIN_MENU_CREDITS].frame[1].TexCoord = { 1,0,0,0 };
+	m_vMenu[MAIN_MENU_CREDITS].frame[2].TexCoord = { 0,1,0,0 };
+	m_vMenu[MAIN_MENU_CREDITS].frame[3].TexCoord = { 1,1,0,0 };
+
+	m_vMenu[MAIN_MENU_CREDITS].indices[0] = 0;
+	m_vMenu[MAIN_MENU_CREDITS].indices[1] = 1;
+	m_vMenu[MAIN_MENU_CREDITS].indices[2] = 2;
+	m_vMenu[MAIN_MENU_CREDITS].indices[3] = 2;
+	m_vMenu[MAIN_MENU_CREDITS].indices[4] = 1;
+	m_vMenu[MAIN_MENU_CREDITS].indices[5] = 3;
+
+	m_vMenu[MAIN_MENU_CREDITS].stateButton = BUTTON_UP;
 
 	/* Set position and texcoord in exit option */
-	m_vMenu[MAIN_MENU_EXIT].frame[0].Position = { 0.2f, .25f, 0,1.0f };
-	m_vMenu[MAIN_MENU_EXIT].frame[1].Position = { 0.8f, .25f ,0,1.0f };
-	m_vMenu[MAIN_MENU_EXIT].frame[2].Position = { 0.2f, 0.f  ,0,1.0f };
-	m_vMenu[MAIN_MENU_EXIT].frame[3].Position = { 0.8f, 0.f ,0,1.0f };
+	m_vMenu[MAIN_MENU_EXIT].frame[0].Position = { 0.2f, 0.f, 0,1.0f };
+	m_vMenu[MAIN_MENU_EXIT].frame[1].Position = { 0.8f, 0.f ,0,1.0f };
+	m_vMenu[MAIN_MENU_EXIT].frame[2].Position = { 0.2f, -0.25f  ,0,1.0f };
+	m_vMenu[MAIN_MENU_EXIT].frame[3].Position = { 0.8f, -0.25f ,0,1.0f };
 
 	m_vMenu[MAIN_MENU_EXIT].frame[0].TexCoord = { 0,0,0,0 };
 	m_vMenu[MAIN_MENU_EXIT].frame[1].TexCoord = { 1,0,0,0 };
@@ -171,17 +193,33 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			//m_pSMOwner->Transition(CLSID_CSOnGame);
 			switch (m_lOptionSelected)
 			{
-			case MAIN_MENU_START:
+			case MAIN_MENU_1_PLAYER:
 			{
+				MAIN->m_numPlayers = 1;
 				m_pSMOwner->Transition(CLSID_CSOnGame);
 				CSMain* main = (CSMain*)GetSuperState();
 				InvalidateRect(main->m_hWnd, NULL, false);
+				
+				return 0;
+			}
+			case MAIN_MENU_2_PLAYERS:
+			{
+				MAIN->m_numPlayers = 2;
+				m_pSMOwner->Transition(CLSID_CSOnGame);
+				CSMain* main = (CSMain*)GetSuperState();
+				InvalidateRect(main->m_hWnd, NULL, false);
+				
 				return 0;
 			}
 			case MAIN_MENU_EXIT:
 			{
 				m_pSMOwner->Transition(CLSID_CStateNull);
 				PostQuitMessage(0);
+				return 0;
+			}
+			case MAIN_MENU_CREDITS:
+			{
+				m_pSMOwner->Transition(CLSID_CSCredits);
 				return 0;
 			}
 			default:
@@ -194,7 +232,7 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 		{
 			m_fOffsetX = m_fOffsetX + (pAction->m_fAxis - m_fOffsetX) * 0.1;
 		}*/
-		if (JOY_AXIS_LY == pAction->m_iAction)
+		if (JOY_AXIS_LY == pAction->m_iAction && 0 == pAction->m_nSource)
 		{
 			static bool alreadyMove = false;
 
@@ -233,6 +271,45 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			}
 			return 0;
 		}
+		if (JOY_AXIS_LY == pAction->m_iAction && 1 == pAction->m_nSource)
+		{
+			static bool alreadyMove = false;
+
+			if (fabs(pAction->m_fAxis) < 0.2)
+			{
+				if (alreadyMove)
+					alreadyMove = false;
+				return 0;
+			}
+
+			if (!alreadyMove)
+			{
+				if (pAction->m_fAxis > 0.0f)
+				{
+					m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
+					m_lOptionSelected--;
+					if (m_lOptionSelected < 0)
+						m_lOptionSelected = MAIN_MENU_SIZE - 1;
+
+					m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+					alreadyMove = true;
+				}
+				else
+				{
+					m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
+					m_lOptionSelected++;
+					if (m_lOptionSelected >= MAIN_MENU_SIZE)
+						m_lOptionSelected = 0;
+
+					m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+
+					alreadyMove = true;
+				}
+			}
+			return 0;
+		}
 	}
 	if (APP_LOOP == pEvent->m_ulEventType)
 	{
@@ -240,13 +317,14 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 		{
 			ID3D11Texture2D* pBackBuffer = 0;
 			D3D11_TEXTURE2D_DESC dtd;
-			
+			VECTOR4D Black = { 0, 0, 0, 0 };
+			m_pDXManager->GetContext()->ClearRenderTargetView(m_pDXManager->GetMainRTV(), (float*)&Black);
 
 			m_pDXManager->GetSwapChain()->GetBuffer(0, IID_ID3D11Texture2D, (void**)&pBackBuffer);
 			pBackBuffer->GetDesc(&dtd);
 			m_pDXManager->GetContext()->PSSetShaderResources(0, 1, &m_pSRVBackGround);
 
-			m_FX->m_Params.WVP = Translation(m_fOffsetX, m_fOffsetY, 0);
+			m_FX->m_Params.WVP = Identity();
 			m_FX->SetRenderTarget(m_pDXManager->GetMainRTV());
 			m_FX->m_Params.Brightness = { 0,0,0,0 };
 			m_FX->SetInput(m_pSRVBackGround);
@@ -311,13 +389,13 @@ unsigned long CSMainMenu::OnEvent(CEventBase * pEvent)
 			case VK_RETURN:
 				switch (m_lOptionSelected)
 				{
-				case MAIN_MENU_START:
+				/*case MAIN_MENU_START:
 				{
 					m_pSMOwner->Transition(CLSID_CSOnGame);
 					CSMain* main = (CSMain*)GetSuperState();
 					InvalidateRect(main->m_hWnd, NULL, false);
 					return 0;
-				}
+				}*/
 				case MAIN_MENU_EXIT:
 				{
 					m_pSMOwner->Transition(CLSID_CStateNull);

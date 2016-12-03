@@ -27,6 +27,7 @@ Descrition:
 
 #include <iostream>
 #include "Cut/VMesh.h"
+
 /* assimp include files. */
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -68,7 +69,7 @@ void CSOnGame::OnEntry(void)
 	ret = wcstombs(buffer, main->m_Params.scene, sizeof(buffer));
 	LoadScene(buffer);
 	m_Map.LoadMeshes();
-	m_Map.LoadLevel(0, 2);
+	m_Map.LoadLevel(0, MAIN->m_numPlayers);
 
 	/* Load pointers */
 	m_pDXManager = main->m_pDXManager;
@@ -130,7 +131,7 @@ void CSOnGame::OnEntry(void)
 
 	CImageBMP::DestroyBitmap(pImage);
 
-	pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\Normal.bmp", NULL);
+	pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\pasto.bmp", NULL);
 
 	if (!pImage)
 	{
@@ -142,6 +143,26 @@ void CSOnGame::OnEntry(void)
 	m_pNormalMapTrue = pImage->CreateTexture(m_pDXManager);
 
 	if (!m_pNormalMapTrue)
+	{
+		MessageBox(NULL, L"No se pudo cargar textura al GPU",
+			L"Verificar recursos sombreadores", MB_ICONERROR);
+		return;
+	}
+
+	CImageBMP::DestroyBitmap(pImage);
+
+	pImage = CImageBMP::CreateBitmapFromFile("..\\Assets\\ladrillonm.bmp", NULL);
+
+	if (!pImage)
+	{
+		MessageBox(NULL, L"No se pudo cargar textura desde archivo",
+			L"Verificar recursos sombreadores", MB_ICONERROR);
+		return;
+	}
+
+	m_pNormalMapTrueLadrillo = pImage->CreateTexture(m_pDXManager);
+
+	if (!m_pNormalMapTrueLadrillo)
 	{
 		MessageBox(NULL, L"No se pudo cargar textura al GPU",
 			L"Verificar recursos sombreadores", MB_ICONERROR);
@@ -196,6 +217,7 @@ void CSOnGame::OnEntry(void)
 	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pNormalMap, NULL, &m_pSRVNormalMap);
 	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pEnvMap, NULL, &m_pSRVEnvMap);
 	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pNormalMapTrue, NULL, &m_pSRVNormalMapTrue);
+	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pNormalMapTrueLadrillo, NULL, &m_pSRVNormalMapTrueLadrillo);
 	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pEmissiveMap, NULL, &m_pSRVEmissiveMap);
 
 	/* Initialize camera options */
@@ -315,7 +337,8 @@ void CSOnGame::OnEntry(void)
 	MAIN->m_pSndManager->ClearEngine();
 	
 
-	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\ongame.wav", ON_GAME_SOUNDS_BACKGROUND);
+	m_pSndBackground = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\wltdo.wav", ON_GAME_SOUNDS_BACKGROUND);
+	m_pSndBackground->SetVolume(.8);
 	if (m_pSndBackground)
 		m_pSndBackground->Play(true);
 
@@ -328,6 +351,20 @@ void CSOnGame::OnEntry(void)
 
 
 	fx = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\youlose.wav", ON_GAME_SOUNDS_YOU_LOSE);
+
+	if (fx)
+		printf("Explosion load success \n");
+	else
+		printf("Explosion load fail\n");
+
+	fx = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\perro.wav", ON_GAME_SOUNDS_DOG);
+
+	if (fx)
+		printf("Explosion load success \n");
+	else
+		printf("Explosion load fail\n");
+
+	fx = main->m_pSndManager->LoadSoundFx(L"..\\Assets\\Sonidos\\perrollorando.wav", ON_GAME_SOUNDS_DOG_CRYING);
 
 	if (fx)
 		printf("Explosion load success \n");
@@ -463,10 +500,21 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			}
 			if (JOY_BUTTON_A_PRESSED == Action->m_iAction)
 			{
+				if (Action->m_nSource >= MAIN->m_numPlayers)
+					return 0;
 				if (!m_Map.PlayerHasTarget(Action->m_nSource))
-					m_Map.GetTarget(Action->m_nSource);
+				{
+					if(m_Map.GetTarget(Action->m_nSource))
+						MAIN->m_pSndManager->PlayFx(ON_GAME_SOUNDS_DOG);
+				}
 				else
-					m_Map.DropTarget(Action->m_nSource);
+				{
+					if (m_Map.DropTarget(Action->m_nSource))
+					{
+						MAIN->m_pSndManager->PlayFx(ON_GAME_SOUNDS_DOG_CRYING);
+					}
+				}
+					
 			}
 			
 		}
@@ -493,7 +541,46 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				return 0;
 				//MAIN->m_pSndManager->PlayFx(0);
 			}
-			if (JOY_AXIS_LY == Action->m_iAction)
+			if (JOY_AXIS_LY == Action->m_iAction && 0 == Action->m_nSource)
+			{
+				static bool alreadyMove = false;
+
+				if (fabs(Action->m_fAxis) < 0.2)
+				{
+					if (alreadyMove)
+						alreadyMove = false;
+					return 0;
+				}
+
+				if (!alreadyMove)
+				{
+					if (Action->m_fAxis > 0.0f)
+					{
+						m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
+						m_lOptionSelected--;
+						if (m_lOptionSelected < 0)
+							m_lOptionSelected = ON_GAME_MENU_SIZE - 1;
+
+						m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+						alreadyMove = true;
+					}
+					else
+					{
+						m_vMenu[m_lOptionSelected].stateButton = BUTTON_UP;
+
+						m_lOptionSelected++;
+						if (m_lOptionSelected >= ON_GAME_MENU_SIZE)
+							m_lOptionSelected = 0;
+
+						m_vMenu[m_lOptionSelected].stateButton = BUTTON_OVER;
+
+						alreadyMove = true;
+					}
+				}
+				return 0;
+			}
+			if (JOY_AXIS_LY == Action->m_iAction && 1 == Action->m_nSource)
 			{
 				static bool alreadyMove = false;
 
@@ -803,9 +890,9 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				else
 				{
 					if (m_lState == ON_GAME_STATE_WIN)
-						m_Map.LoadNextLevel(2);
+						m_Map.LoadNextLevel(MAIN->m_numPlayers);
 					else
-						m_Map.ResetLevel(2);
+						m_Map.ResetLevel(MAIN->m_numPlayers);
 					
 					m_lState = ON_GAME_STATE_GAMING;
 					m_lClock = 20;
@@ -889,32 +976,6 @@ void CSOnGame::LoadScene(char * filename)
 		maxX = maxY = maxZ = FLT_MIN;
 		minX = minY = minZ = FLT_MAX;
 
-		m_Scene[i].m_Vertices.resize(scene->mMeshes[i]->mNumVertices);
-		for (unsigned long j = 0; j < scene->mMeshes[i]->mNumVertices; j++)
-		{
-			m_Scene[i].m_Vertices[j].Position = {
-				scene->mMeshes[i]->mVertices[j].x,
-				scene->mMeshes[i]->mVertices[j].y,
-				scene->mMeshes[i]->mVertices[j].z,
-				1 };
-			if (scene->mMeshes[i]->mVertices[j].x > maxX)
-				maxX = scene->mMeshes[i]->mVertices[j].x;
-			if (scene->mMeshes[i]->mVertices[j].y > maxY)
-				maxY = scene->mMeshes[i]->mVertices[j].y;
-			if (scene->mMeshes[i]->mVertices[j].z > maxZ)
-				maxZ = scene->mMeshes[i]->mVertices[j].z;
-
-			if (scene->mMeshes[i]->mVertices[j].x < minX)
-				minX = scene->mMeshes[i]->mVertices[j].x;
-			if (scene->mMeshes[i]->mVertices[j].y < minY)
-				minY = scene->mMeshes[i]->mVertices[j].y;
-			if (scene->mMeshes[i]->mVertices[j].z < minZ)
-				minZ = scene->mMeshes[i]->mVertices[j].z;
-		}
-
-		m_Scene[i].m_Box.min = { minX, minY, minZ, 1 };
-		m_Scene[i].m_Box.max = { maxX, maxY, maxZ, 1 };
-
 		MATRIX4D t;
 		t.m00 = scene->mRootNode->mChildren[i]->mTransformation.a1;
 		t.m01 = scene->mRootNode->mChildren[i]->mTransformation.a2;
@@ -934,6 +995,36 @@ void CSOnGame::LoadScene(char * filename)
 		t.m33 = scene->mRootNode->mChildren[i]->mTransformation.d4;
 
 		m_Scene[i].m_World = Transpose(t);
+
+		m_Scene[i].m_Vertices.resize(scene->mMeshes[i]->mNumVertices);
+		for (unsigned long j = 0; j < scene->mMeshes[i]->mNumVertices; j++)
+		{
+			m_Scene[i].m_Vertices[j].Position = {
+				scene->mMeshes[i]->mVertices[j].x,
+				scene->mMeshes[i]->mVertices[j].y,
+				scene->mMeshes[i]->mVertices[j].z,
+				1 };
+
+			m_Scene[i].m_Vertices[j].Position = m_Scene[i].m_Vertices[j].Position * m_Scene[i].m_World;
+			if (scene->mMeshes[i]->mVertices[j].x > maxX)
+				maxX = scene->mMeshes[i]->mVertices[j].x;
+			if (scene->mMeshes[i]->mVertices[j].y > maxY)
+				maxY = scene->mMeshes[i]->mVertices[j].y;
+			if (scene->mMeshes[i]->mVertices[j].z > maxZ)
+				maxZ = scene->mMeshes[i]->mVertices[j].z;
+
+			if (scene->mMeshes[i]->mVertices[j].x < minX)
+				minX = scene->mMeshes[i]->mVertices[j].x;
+			if (scene->mMeshes[i]->mVertices[j].y < minY)
+				minY = scene->mMeshes[i]->mVertices[j].y;
+			if (scene->mMeshes[i]->mVertices[j].z < minZ)
+				minZ = scene->mMeshes[i]->mVertices[j].z;
+		}
+
+		m_Scene[i].m_Box.min = { minX, minY, minZ, 1 };
+		m_Scene[i].m_Box.max = { maxX, maxY, maxZ, 1 };
+
+		
 
 		m_Scene[i].m_Indices.resize(scene->mMeshes[i]->mNumFaces * scene->mMeshes[i]->mFaces[0].mNumIndices);
 		for (unsigned long j = 0; j < scene->mMeshes[i]->mNumFaces; j++)

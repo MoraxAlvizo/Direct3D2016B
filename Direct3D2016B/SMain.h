@@ -77,7 +77,7 @@ public:
 	CInputProcessor* m_pInputProcessor;
 	CNetProcessor* m_pNetProcessor;
 	CDXTextRender* m_pTextRender;
-
+	int m_numPlayers;
 	CFX* m_FX;
 	bool m_bInitCorrect;
 	unsigned long GetClassID() { return CLSID_CSMain; }
