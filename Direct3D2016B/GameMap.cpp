@@ -70,6 +70,7 @@ void CGameMap::LoadMeshes()
 		GM_PLANE_PATH,				//2
 		GM_SPHERE_PATH,				//3
 		GM_SUZZANE_PATH,			//4
+		GM_SUZZANE_PATH,			//5
 	};
 
 	m_Meshes.resize(GAME_MAP_MESHES_SIZE);
@@ -165,7 +166,8 @@ void CGameMap::LoadMeshes()
 	setColorTo(GAME_MAP_PLANE, green);
 	setColorTo(GAME_MAP_SPHERE, white);
 	setColorTo(GAME_MAP_CILINDRO, yellow);
-	setColorTo(GAME_MAP_SUZZANE, white);
+	setColorTo(GAME_MAP_SUZZANE, red);
+	setColorTo(GAME_MAP_SUZZANE_BLUE, blue);
 
 }
 
@@ -302,10 +304,10 @@ void CGameMap::DrawMap(CDXBasicPainter * m_pPainter)
 
 			m_pPainter->m_Params.World = sc* Translation(posPlayer.x * 2, posPlayer.y * 2, 0) * m_Meshes[GAME_MAP_SUZZANE].m_World;
 			m_pPainter->DrawIndexed(
-				&m_Meshes[GAME_MAP_SUZZANE].m_Vertices[0],
-				m_Meshes[GAME_MAP_SUZZANE].m_Vertices.size(),
-				&m_Meshes[GAME_MAP_SUZZANE].m_Indices[0],
-				m_Meshes[GAME_MAP_SUZZANE].m_Indices.size(),
+				&m_Meshes[i == 1?GAME_MAP_SUZZANE:GAME_MAP_SUZZANE_BLUE].m_Vertices[0],
+				m_Meshes[i == 1 ? GAME_MAP_SUZZANE : GAME_MAP_SUZZANE_BLUE].m_Vertices.size(),
+				&m_Meshes[i == 1 ? GAME_MAP_SUZZANE : GAME_MAP_SUZZANE_BLUE].m_Indices[0],
+				m_Meshes[i == 1 ? GAME_MAP_SUZZANE : GAME_MAP_SUZZANE_BLUE].m_Indices.size(),
 				PAINTER_DRAW);
 		}
 		else if (m_Players[i].state & PLAYER_STATE_MOVING)
@@ -335,10 +337,10 @@ void CGameMap::DrawMap(CDXBasicPainter * m_pPainter)
 					m_Meshes[GAME_MAP_SUZZANE].m_World;
 			}
 			m_pPainter->DrawIndexed(
-				&m_Meshes[GAME_MAP_SUZZANE].m_Vertices[0],
-				m_Meshes[GAME_MAP_SUZZANE].m_Vertices.size(),
-				&m_Meshes[GAME_MAP_SUZZANE].m_Indices[0],
-				m_Meshes[GAME_MAP_SUZZANE].m_Indices.size(),
+				&m_Meshes[i == 1 ? GAME_MAP_SUZZANE : GAME_MAP_SUZZANE_BLUE].m_Vertices[0],
+				m_Meshes[i == 1 ? GAME_MAP_SUZZANE : GAME_MAP_SUZZANE_BLUE].m_Vertices.size(),
+				&m_Meshes[i == 1 ? GAME_MAP_SUZZANE : GAME_MAP_SUZZANE_BLUE].m_Indices[0],
+				m_Meshes[i == 1 ? GAME_MAP_SUZZANE : GAME_MAP_SUZZANE_BLUE].m_Indices.size(),
 				PAINTER_DRAW);
 
 
