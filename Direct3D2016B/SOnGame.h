@@ -72,8 +72,8 @@ public:
 	/* Scene */
 	CMeshMathSurface m_Surface;
 	vector<CMeshCollision> m_Scene;
-
-	CVMesh MiVariable;
+	vector<CMeshCollision> m_SceneCollisions;
+	vector<CVMesh> m_ScenePhysics;
 	//vector<BVH> m_BVHs;
 
 	bool flag = true;

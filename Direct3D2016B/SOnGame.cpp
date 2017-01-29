@@ -22,6 +22,7 @@ Descrition:
 #include "Cut/Plane.h"
 #include "Collisions\BVH.h"
 #include "ActionEvent.h"
+#include <time.h>
 
 #include <iostream>
 #include "Cut/VMesh.h"
@@ -39,6 +40,16 @@ CSOnGame::~CSOnGame()
 {
 }
 
+VECTOR4D Sphere1(float u, float v)
+{
+	float r = 1.f;
+	VECTOR4D v1;
+	v1.x = r*cos(2 * 3.14159 *u)*sin(3.14159 *v);
+	v1.y = r*sin(2 * 3.14159*u)*sin(3.14159*v);
+	v1.z = r*cos(3.14159*v);
+	v1.w = 1;
+	return v1;
+}
 void CSOnGame::OnEntry(void)
 {
 	CSMain* main = (CSMain*)GetSuperState();
@@ -56,9 +67,12 @@ void CSOnGame::OnEntry(void)
 
 	/* Load surface */
 	m_Surface.LoadSuzanne();
+	//m_Surface.BuildParametricSurface(20, 20, 0, 0, 1.0f / (20 - 1), 1.0f / (20 - 1), Sphere1);
 	//m_Surface.Optimize();
 	m_Surface.BuildTangentSpaceFromTexCoordsIndexed(true);
 	m_Surface.SetColor(White, White, White, White);
+
+
 
 	/* Load Scene */
 	char buffer[BUF_SIZE];
@@ -219,9 +233,9 @@ void CSOnGame::OnEntry(void)
 	//int i = 1;
 	for (unsigned long i = 0; i < m_Scene.size(); i++)
 	{
-		m_pOctree->addObject(&m_Scene[i],
+		/*m_pOctree->addObject(&m_Scene[i],
 			m_Scene[i].m_Box.min * m_Scene[i].m_World,
-			m_Scene[i].m_Box.max * m_Scene[i].m_World);
+			m_Scene[i].m_Box.max * m_Scene[i].m_World);*/
 
 		vector<unsigned long> primitives;
 
@@ -233,13 +247,94 @@ void CSOnGame::OnEntry(void)
 		m_nFlagsPainter = 0;
 
 		m_Scene[i].m_BVH = new BVH();
+
+		double secs;
+		LARGE_INTEGER t_ini, t_fin;
+
+		QueryPerformanceCounter(&t_ini);   
 		m_Scene[i].m_BVH->Preconstruction(m_Scene[i]);
 		m_Scene[i].m_BVH->Construction(m_Scene[i], 1, primitives);
 		m_Scene[i].m_BVH->Postconstruction(m_Scene[i]);
+		QueryPerformanceCounter(&t_fin);
+
+		LARGE_INTEGER freq;
+		QueryPerformanceFrequency(&freq);
+		secs =  (double)(t_fin.QuadPart - t_ini.QuadPart) / (double)freq.QuadPart;
+		printf("mesh[%i] = Primitivas = %i , tiempo_construccion = %.16g ms\n",i, m_Scene[i].m_Centroides.size(), secs * 1000.0);
 
 		//m_Scene[i].m_BVH->Build(m_Scene[i], primitives);
 	}
 
+	vector<unsigned long> primitives;
+
+
+
+	m_ScenePhysics.resize(3);
+	m_ScenePhysics[0].LoadMSHFile("");
+	m_ScenePhysics[1].LoadMSHFile("");
+	m_ScenePhysics[2].LoadMSHFile("");
+
+	m_SceneCollisions.resize(3);
+
+	/***************** Cube 0 *******************************/
+	m_SceneCollisions[0].m_World = Identity();
+	m_SceneCollisions[0].CreateMeshCollisionFromVMesh(m_ScenePhysics[0]);
+	m_SceneCollisions[0].m_BVH = new BVH();
+
+	m_SceneCollisions[0].m_BVH->Preconstruction(m_SceneCollisions[0]);
+	primitives.resize(m_SceneCollisions[0].m_Centroides.size());
+	for (unsigned long j = 0; j < m_SceneCollisions[0].m_Centroides.size(); j++)
+		primitives[j] = j;
+
+	m_SceneCollisions[0].m_BVH->Construction(m_SceneCollisions[0], 1, primitives);
+	m_SceneCollisions[0].m_BVH->Postconstruction(m_SceneCollisions[0]);
+
+	m_pOctree->addObject(&m_SceneCollisions[0],
+		m_SceneCollisions[0].m_Box.min * m_SceneCollisions[0].m_World,
+		m_SceneCollisions[0].m_Box.max * m_SceneCollisions[0].m_World);
+
+	m_SceneCollisions[0].m_lID = 0;
+
+	/***************** Cube 1 *******************************/
+
+	m_SceneCollisions[1].m_World = Translation(.2,.2,.2);
+	m_SceneCollisions[1].CreateMeshCollisionFromVMesh(m_ScenePhysics[1]);
+	m_SceneCollisions[1].m_BVH = new BVH();
+
+	m_SceneCollisions[1].m_BVH->Preconstruction(m_SceneCollisions[1]);
+	primitives.resize(m_SceneCollisions[1].m_Centroides.size());
+	for (unsigned long j = 0; j < m_SceneCollisions[1].m_Centroides.size(); j++)
+		primitives[j] = j;
+
+	m_SceneCollisions[1].m_BVH->Construction(m_SceneCollisions[1], 1, primitives);
+	m_SceneCollisions[1].m_BVH->Postconstruction(m_SceneCollisions[1]);
+
+	m_pOctree->addObject(&m_SceneCollisions[1],
+		m_SceneCollisions[1].m_Box.min * m_SceneCollisions[1].m_World,
+		m_SceneCollisions[1].m_Box.max * m_SceneCollisions[1].m_World);
+
+	m_SceneCollisions[1].m_lID = 1;
+
+	/***************** Cube 2 *******************************/
+
+	m_SceneCollisions[2].m_World = Translation(.5, .5, .5); 
+	m_SceneCollisions[2].CreateMeshCollisionFromVMesh(m_ScenePhysics[2]);
+	m_SceneCollisions[2].m_BVH = new BVH();
+
+	m_SceneCollisions[2].m_BVH->Preconstruction(m_SceneCollisions[2]);
+
+	primitives.resize(m_SceneCollisions[2].m_Centroides.size());
+	for (unsigned long j = 0; j < m_SceneCollisions[2].m_Centroides.size(); j++)
+		primitives[j] = j;
+
+	m_SceneCollisions[2].m_BVH->Construction(m_SceneCollisions[2], 1, primitives);
+	m_SceneCollisions[2].m_BVH->Postconstruction(m_SceneCollisions[2]);
+
+	m_pOctree->addObject(&m_SceneCollisions[2],
+		m_SceneCollisions[2].m_Box.min * m_SceneCollisions[2].m_World,
+		m_SceneCollisions[2].m_Box.max * m_SceneCollisions[2].m_World);
+
+	m_SceneCollisions[2].m_lID = 2;
 
 }
 
@@ -651,7 +746,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				m_pDXPainter->m_Params.World = Identity();
 				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
 
-				//m_pOctree->DrawOctree(m_pDXPainter);
+				m_pOctree->DrawOctree(m_pDXPainter);
 
 				for (unsigned long i = 0; i < m_Scene.size(); i++)
 				{
@@ -662,15 +757,70 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 			m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
 			/* Draw scene */
-			for (unsigned long i = 0; i < m_Scene.size(); i++)
+			/*for (unsigned long i = 0; i < m_Scene.size(); i++)
 			{
 				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
 				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
+			}*/
+
+			set<unsigned long long> potencialCollisions;
+			m_pOctree->potentialCollsions(potencialCollisions);
+
+			for (set<unsigned long long>::iterator it2 = potencialCollisions.begin(); it2 != potencialCollisions.end(); it2++)
+			{
+				COctreeCube::MeshPair meshPair;
+				CMeshCollision *object1;
+				CMeshCollision *object2;
+				VECTOR4D min1, max1;
+				VECTOR4D min2, max2;
+
+				meshPair.m_idColision = *it2;
+				object1 = &m_SceneCollisions[meshPair.m_object1ID];
+				object2 = &m_SceneCollisions[meshPair.m_object2ID];
+
+				/* Max min object 1*/
+				min1 = object1->m_Box.min;
+				max1 = object1->m_Box.max;
+
+				/* Max min object 2*/
+				min2 = object2->m_Box.min;
+				max2 = object2->m_Box.max;
+
+				/* Check if boxes collision */
+				if (min1.x < max2.x &&
+					max1.x > min2.x &&
+					min1.y < max2.y &&
+					max1.y > min2.y &&
+					min1.z < max2.z &&
+					max1.z > min2.z)
+				{
+					//object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
+					object1->m_BVH->TraversalLBVH(object2->m_BVH, 1, 1, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
+					//object1->m_BVH->BitTrailTraversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
+				}
 			}
 
-			//m_pDXPainter->m_Params.World = Identity();
-			//m_pDXPainter->DrawIndexed(&MiVariable.m_Vertices[0], MiVariable.m_Vertices.size(), &MiVariable.m_Indices[0], MiVariable.m_Indices.size(), m_nFlagsPainter);
+			m_pDXPainter->m_Params.World = Identity();
+			m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
+			//m_pOctree->DrawOctree(m_pDXPainter);
 
+			/* Draw scene */
+			for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
+			{
+				m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
+				m_pDXPainter->m_Params.World = m_SceneCollisions[i].m_World;
+				m_pDXPainter->DrawIndexed(&m_SceneCollisions[i].m_Vertices[0], 
+					m_SceneCollisions[i].m_Vertices.size(), 
+					&m_SceneCollisions[i].m_Indices[0], 
+					m_SceneCollisions[i].m_Indices.size(), 
+					PAINTER_DRAW);
+
+				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
+				m_pDXPainter->m_Params.World = Identity();
+				//m_SceneCollisions[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_SceneCollisions[i].m_TranslationBVH);
+				
+			}
+	
 
 			/* Draw surface */
 			/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0],

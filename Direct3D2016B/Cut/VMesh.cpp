@@ -80,7 +80,6 @@ void CVMesh::LoadMSHFile(char * filename)
 		v2 = m_IndicesTetrahedros[i+2];
 		v3 = m_IndicesTetrahedros[i+3];
 
-
 		m_Indices[j] = v0;
 		m_Indices[j+1] = v2;
 		m_Indices[j + 2] = v1;

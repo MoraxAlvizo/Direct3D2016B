@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Graphics/Mesh.h"
-#define BVH_MAX_LEVEL 15
+#define BVH_MAX_LEVEL 21
 #define BVH_NUM_NODES (pow(2, BVH_MAX_LEVEL+1)-1)
 
 class BVH

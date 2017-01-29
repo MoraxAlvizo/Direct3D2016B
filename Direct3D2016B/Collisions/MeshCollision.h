@@ -1,5 +1,6 @@
 #pragma once
 #include "../Graphics/Mesh.h"
+#include "../Cut/VMesh.h"
 #include "BVH.h"
 #include "Octree.h"
 
@@ -25,5 +26,6 @@ public:
 	void ResetColors();
 	void createOctree();
 	void MoveVertex(MATRIX4D Translation);
+	void CreateMeshCollisionFromVMesh(CVMesh vMesh);
 };
 

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "BVH.h"
+#include "../Collisions/MeshCollision.h"
 
 #define BVH_BOXES_COLLISION(box1, box2) \
 	((box1.min.x < box2.max.x && \
@@ -134,9 +135,9 @@ void BVH::Draw(CDXBasicPainter * painter, int depth, MATRIX4D translation)
 	for (int i = 0; i < 8; i++)
 	{
 		if (!m_pLeft && !m_pRight)
-			cube[i].Color = m_Color;
+			cube[i].Color = { 0, 0, 0, 0 };
 		else
-			cube[i].Color = { 1, 1, 0, 0 };
+			cube[i].Color = { 0, 0, 0, 0 };
 	}
 
 	m_lIndicesFrame[0] = 0;
@@ -159,7 +160,7 @@ void BVH::Draw(CDXBasicPainter * painter, int depth, MATRIX4D translation)
 	if(!m_pLeft && !m_pRight)
 		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 
-	if (m_pLeft /*&& depth != 1*/)
+	if (m_pLeft)
 	{
 		m_pLeft->Draw(painter, depth+1, translation);
 	}
@@ -347,6 +348,13 @@ void BVH::Construction(CMesh & object, unsigned long node, vector<unsigned long>
 		min_box = MIN_VECTOR4D(min_box, object.m_Centroides[Primitives[i]].position);
 	}
 
+	if (node == 1)
+	{
+		CMeshCollision * col = (CMeshCollision*)&object;
+		col->m_Box.max = max_box;
+		col->m_Box.min = min_box;
+	}
+
 	/* 2. Check what axis is longer */
 	float size_x = max_box.x - min_box.x;
 	float size_y = max_box.y - min_box.y;
@@ -527,9 +535,10 @@ void BVH::DrawLBVH(CDXBasicPainter * painter, int node, MATRIX4D translation)
 	for (int i = 0; i < 8; i++)
 	{
 		/*if (!m_pLeft && !m_pRight)
-			cube[i].Color = m_Color;
+			cub
+			e[i].Color = m_Color;
 		else*/
-			cube[i].Color = { 1, 1, 0, 0 };
+		cube[i].Color = m_Color;// { 0, 0, 0, 0 };
 	}
 
 	m_lIndicesFrame[0] = 0;
@@ -553,7 +562,7 @@ void BVH::DrawLBVH(CDXBasicPainter * painter, int node, MATRIX4D translation)
 		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 
 	DrawLBVH(painter, node << 1, translation);
-	//DrawLBVH(painter, (node << 1)+1, translation);
+	DrawLBVH(painter, (node << 1)+1, translation);
 
 }
 
@@ -592,8 +601,8 @@ void BVH::TraversalLBVH(
 					unsigned long indicesThis = this->LBVH[nodeThis].idPrimitive * 3;
 					unsigned long indicesPTree = pTree->LBVH[nodeTree].idPrimitive * 3;
 
-					this->m_Color = { 1, 1, 0, 0 };
-					pTree->m_Color = { 1, 1, 0, 0 };
+					this->m_Color = { 0, 0, 1, 0 };
+					pTree->m_Color = { 0, 0, 1, 0 };
 					BVH_SET_COLOR(object1, indicesThis, m_Color);
 					BVH_SET_COLOR(object2, indicesPTree, m_Color);
 				}

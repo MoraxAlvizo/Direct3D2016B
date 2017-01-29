@@ -16,6 +16,7 @@ struct VolumeCutInfo
 	std::vector<unsigned int>	cutNodes;
 	unsigned int				type_cut;
 };
+
 class CVMesh :
 	public CMesh
 {
