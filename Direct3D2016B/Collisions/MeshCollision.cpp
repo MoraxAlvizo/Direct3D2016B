@@ -29,9 +29,7 @@ void CMeshCollision::createOctree()
 
 void CMeshCollision::MoveVertex(MATRIX4D Translation)
 {
-	for (unsigned long i = 0; i < m_Vertices.size(); i++)
-		if(i != 0)
-			m_Vertices[i].Position = m_Vertices[i].Position * Translation;
+	m_Vertices[m_Indices[0]].Position = { float(rand()%5), float(rand() % 5) ,float(rand() % 5),1 };
 }
 
 

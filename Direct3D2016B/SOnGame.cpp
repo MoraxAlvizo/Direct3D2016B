@@ -219,11 +219,11 @@ void CSOnGame::OnEntry(void)
 	m_bTurnUp =  m_bTurnDown = m_bTurnS =  m_bTurnS1 =false;
 
 	/* Init collisions structures */
-	for (unsigned long i = 0; i < m_Scene.size(); i++)
+	/*for (unsigned long i = 0; i < m_Scene.size(); i++)
 	{
 		m_Scene[i].m_octree = new COctree(m_Scene[i].m_Box.min, m_Scene[i].m_Box.max, 0, m_pDXPainter);
 		m_Scene[i].m_octree->m_Color = { i % 2 ? 1.f : 0.f , 1,i % 3 ? 1.f : 0.f,0 };
-	}
+	}*/
 
 
 	m_pOctree = new COctreeCube({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
@@ -231,73 +231,75 @@ void CSOnGame::OnEntry(void)
 
 	//Create objects
 	//int i = 1;
-	for (unsigned long i = 0; i < m_Scene.size(); i++)
-	{
-		/*m_pOctree->addObject(&m_Scene[i],
-			m_Scene[i].m_Box.min * m_Scene[i].m_World,
-			m_Scene[i].m_Box.max * m_Scene[i].m_World);*/
+	//for (unsigned long i = 0; i < m_Scene.size(); i++)
+	//{
+	//	/*m_pOctree->addObject(&m_Scene[i],
+	//		m_Scene[i].m_Box.min * m_Scene[i].m_World,
+	//		m_Scene[i].m_Box.max * m_Scene[i].m_World);*/
 
-		vector<unsigned long> primitives;
+	//	vector<unsigned long> primitives;
 
-		primitives.resize(m_Scene[i].m_Centroides.size());
-		for (unsigned long j = 0; j < m_Scene[i].m_Centroides.size(); j++)
-			primitives[j] = j;
+	//	primitives.resize(m_Scene[i].m_Centroides.size());
+	//	for (unsigned long j = 0; j < m_Scene[i].m_Centroides.size(); j++)
+	//		primitives[j] = j;
 
 
-		m_nFlagsPainter = 0;
+	//	m_nFlagsPainter = 0;
 
-		m_Scene[i].m_BVH = new BVH();
+	//	m_Scene[i].m_BVH = new BVH();
 
-		double secs;
-		LARGE_INTEGER t_ini, t_fin;
+	//	double secs;
+	//	LARGE_INTEGER t_ini, t_fin;
 
-		QueryPerformanceCounter(&t_ini);   
-		m_Scene[i].m_BVH->Preconstruction(m_Scene[i]);
-		m_Scene[i].m_BVH->Construction(m_Scene[i], 1, primitives);
-		m_Scene[i].m_BVH->Postconstruction(m_Scene[i]);
-		QueryPerformanceCounter(&t_fin);
+	//	QueryPerformanceCounter(&t_ini);   
+	//	m_Scene[i].m_BVH->Preconstruction(m_Scene[i]);
+	//	m_Scene[i].m_BVH->Construction(m_Scene[i], 1, primitives);
+	//	m_Scene[i].m_BVH->Postconstruction(m_Scene[i]);
+	//	QueryPerformanceCounter(&t_fin);
 
-		LARGE_INTEGER freq;
-		QueryPerformanceFrequency(&freq);
-		secs =  (double)(t_fin.QuadPart - t_ini.QuadPart) / (double)freq.QuadPart;
-		printf("mesh[%i] = Primitivas = %i , tiempo_construccion = %.16g ms\n",i, m_Scene[i].m_Centroides.size(), secs * 1000.0);
+	//	LARGE_INTEGER freq;
+	//	QueryPerformanceFrequency(&freq);
+	//	secs =  (double)(t_fin.QuadPart - t_ini.QuadPart) / (double)freq.QuadPart;
+	//	printf("mesh[%i] = Primitivas = %i , tiempo_construccion = %.16g ms\n",i, m_Scene[i].m_Centroides.size(), secs * 1000.0);
 
-		//m_Scene[i].m_BVH->Build(m_Scene[i], primitives);
-	}
+	//	//m_Scene[i].m_BVH->Build(m_Scene[i], primitives);
+	//}
 
 	vector<unsigned long> primitives;
-
-
 
 	m_ScenePhysics.resize(3);
 	m_ScenePhysics[0].LoadMSHFile("");
 	m_ScenePhysics[1].LoadMSHFile("");
 	m_ScenePhysics[2].LoadMSHFile("");
 
-	m_SceneCollisions.resize(3);
+	m_SceneCollisions.resize(2);
 
 	/***************** Cube 0 *******************************/
-	m_SceneCollisions[0].m_World = Identity();
+	m_SceneCollisions[0].m_World = Identity();//Translation(-9, -9, -9);
 	m_SceneCollisions[0].CreateMeshCollisionFromVMesh(m_ScenePhysics[0]);
 	m_SceneCollisions[0].m_BVH = new BVH();
 
 	m_SceneCollisions[0].m_BVH->Preconstruction(m_SceneCollisions[0]);
+
 	primitives.resize(m_SceneCollisions[0].m_Centroides.size());
 	for (unsigned long j = 0; j < m_SceneCollisions[0].m_Centroides.size(); j++)
 		primitives[j] = j;
 
 	m_SceneCollisions[0].m_BVH->Construction(m_SceneCollisions[0], 1, primitives);
 	m_SceneCollisions[0].m_BVH->Postconstruction(m_SceneCollisions[0]);
-
+ 
 	m_pOctree->addObject(&m_SceneCollisions[0],
 		m_SceneCollisions[0].m_Box.min * m_SceneCollisions[0].m_World,
-		m_SceneCollisions[0].m_Box.max * m_SceneCollisions[0].m_World);
+		m_SceneCollisions[0].m_Box.max  * m_SceneCollisions[0].m_World);
 
 	m_SceneCollisions[0].m_lID = 0;
+	m_SceneCollisions[0].m_World = 
+	m_SceneCollisions[0].m_TranslationBVH = Translation(.5,.5,.5);
+	strcpy(m_SceneCollisions[0].m_cName, "Cube 0");
 
 	/***************** Cube 1 *******************************/
 
-	m_SceneCollisions[1].m_World = Translation(.2,.2,.2);
+	m_SceneCollisions[1].m_World = Identity();
 	m_SceneCollisions[1].CreateMeshCollisionFromVMesh(m_ScenePhysics[1]);
 	m_SceneCollisions[1].m_BVH = new BVH();
 
@@ -314,27 +316,30 @@ void CSOnGame::OnEntry(void)
 		m_SceneCollisions[1].m_Box.max * m_SceneCollisions[1].m_World);
 
 	m_SceneCollisions[1].m_lID = 1;
+	//m_SceneCollisions[1].m_World = Translation(1, 1, 1);
+	m_SceneCollisions[1].m_TranslationBVH = Identity();
+	strcpy(m_SceneCollisions[1].m_cName, "Cube 1");
 
 	/***************** Cube 2 *******************************/
 
-	m_SceneCollisions[2].m_World = Translation(.5, .5, .5); 
-	m_SceneCollisions[2].CreateMeshCollisionFromVMesh(m_ScenePhysics[2]);
-	m_SceneCollisions[2].m_BVH = new BVH();
+	//m_SceneCollisions[2].m_World = Translation(.5, .5, .5); 
+	//m_SceneCollisions[2].CreateMeshCollisionFromVMesh(m_ScenePhysics[2]);
+	//m_SceneCollisions[2].m_BVH = new BVH();
 
-	m_SceneCollisions[2].m_BVH->Preconstruction(m_SceneCollisions[2]);
+	//m_SceneCollisions[2].m_BVH->Preconstruction(m_SceneCollisions[2]);
 
-	primitives.resize(m_SceneCollisions[2].m_Centroides.size());
-	for (unsigned long j = 0; j < m_SceneCollisions[2].m_Centroides.size(); j++)
-		primitives[j] = j;
+	//primitives.resize(m_SceneCollisions[2].m_Centroides.size());
+	//for (unsigned long j = 0; j < m_SceneCollisions[2].m_Centroides.size(); j++)
+	//	primitives[j] = j;
 
-	m_SceneCollisions[2].m_BVH->Construction(m_SceneCollisions[2], 1, primitives);
-	m_SceneCollisions[2].m_BVH->Postconstruction(m_SceneCollisions[2]);
+	//m_SceneCollisions[2].m_BVH->Construction(m_SceneCollisions[2], 1, primitives);
+	//m_SceneCollisions[2].m_BVH->Postconstruction(m_SceneCollisions[2]);
 
-	m_pOctree->addObject(&m_SceneCollisions[2],
-		m_SceneCollisions[2].m_Box.min * m_SceneCollisions[2].m_World,
-		m_SceneCollisions[2].m_Box.max * m_SceneCollisions[2].m_World);
+	//m_pOctree->addObject(&m_SceneCollisions[2],
+	//	m_SceneCollisions[2].m_Box.min * m_SceneCollisions[2].m_World,
+	//	m_SceneCollisions[2].m_Box.max * m_SceneCollisions[2].m_World);
 
-	m_SceneCollisions[2].m_lID = 2;
+	//m_SceneCollisions[2].m_lID = 2;
 
 }
 
@@ -389,6 +394,8 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 	{
 		if (m_pDXManager->GetSwapChain())
 		{
+			static int currentFrame = 0;
+			currentFrame++;
 			// Clear render targer and deph stencil
 			ID3D11Texture2D* pBackBuffer = 0;
 			MATRIX4D AC; /* Matriz de correction de aspecto */
@@ -406,23 +413,15 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				1.0f,
 				0);
 
-			if (m_lFlags & PHYSICS_PRINT_OCTREE)
-			{
-				printf("\n------------------- Octree scene ----------------------\n\n");
-				m_pOctree->printCHildren(0);
-				printf("\n-------------------------------------------------------\n\n");
-				m_lFlags ^= PHYSICS_PRINT_OCTREE;
-			}
-
 			if (m_lMoveSphere1 || m_lMoveSphere2)
 			{
 
-				for (unsigned long i = 0; i < m_Scene.size(); i++)
+				for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
 				{
-					m_Scene[i].ResetColors();
+					m_SceneCollisions[i].ResetColors();
 					unsigned long flags;
-					if ((strcmp(m_Scene[i].m_cName, "Sphere") == 0 && (flags = m_lMoveSphere1)) ||
-						(strcmp(m_Scene[i].m_cName, "Sphere.001") == 0 && (flags = m_lMoveSphere2)))
+					if ((m_SceneCollisions[i].m_lID == 0 && (flags = m_lMoveSphere1)) ||
+						(m_SceneCollisions[i].m_lID == 1 && (flags = m_lMoveSphere2)))
 					{
 						float direction = -1;
 
@@ -436,275 +435,36 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 								direction = 0;
 						}
 
-						m_pOctree->removeObject(&m_Scene[i],
-							m_Scene[i].m_Box.min * m_Scene[i].m_World,
-							m_Scene[i].m_Box.max * m_Scene[i].m_World);
+						/*m_pOctree->removeObject(&m_SceneCollisions[i],
+							m_SceneCollisions[i].m_World * m_SceneCollisions[i].m_Box.min ,
+							m_SceneCollisions[i].m_World * m_SceneCollisions[i].m_Box.max );*/
 
-						//m_Scene[i].MoveVertex(Translation(0, 0, direction*0.1));
-						m_Scene[i].m_World = m_Scene[i].m_World * Translation(0, 0, direction*0.1);
-						m_Scene[i].m_TranslationBVH = m_Scene[i].m_TranslationBVH * Translation(0, 0, direction*0.1);
+						m_SceneCollisions[i].MoveVertex(Translation(0, 0, direction*0.1));
+						m_SceneCollisions[i].m_World = m_SceneCollisions[i].m_World * Translation(0, 0, direction*0.1) ;
+						m_SceneCollisions[i].m_TranslationBVH = m_SceneCollisions[i].m_TranslationBVH * Translation(0, 0, direction*0.1);
 
-						m_pOctree->addObject(&m_Scene[i],
-							m_Scene[i].m_Box.min * m_Scene[i].m_World,
-							m_Scene[i].m_Box.max * m_Scene[i].m_World);
+
+
+						/*m_pOctree->addObject(&m_SceneCollisions[i],
+							m_SceneCollisions[i].m_World * m_SceneCollisions[i].m_Box.min,
+							m_SceneCollisions[i].m_World * m_SceneCollisions[i].m_Box.max);*/
 					}
 				}
-
-				set<unsigned long long> potencialCollisions;
-				m_pOctree->potentialCollsions(potencialCollisions);
-
-				for (set<unsigned long long>::iterator it2 = potencialCollisions.begin(); it2 != potencialCollisions.end(); it2++)
-				{
-					COctreeCube::MeshPair meshPair;
-					CMeshCollision *object1;
-					CMeshCollision *object2;
-					VECTOR4D min1, max1;
-					VECTOR4D min2, max2;
-
-					meshPair.m_idColision = *it2;
-					object1 = &m_Scene[meshPair.m_object1ID];
-					object2 = &m_Scene[meshPair.m_object2ID];
-
-					/* Max min object 1*/
-					min1 = object1->m_Box.min * object1->m_World;
-					max1 = object1->m_Box.max * object1->m_World;
-
-					/* Max min object 2*/
-					min2 = object2->m_Box.min * object2->m_World;
-					max2 = object2->m_Box.max * object2->m_World;
-
-					/* Check if boxes collision */
-					if (min1.x < max2.x &&
-						max1.x > min2.x &&
-						min1.y < max2.y &&
-						max1.y > min2.y &&
-						min1.z < max2.z &&
-						max1.z > min2.z)
-					{
-						//object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-						object1->m_BVH->TraversalLBVH(object2->m_BVH,1,1, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-						//object1->m_BVH->BitTrailTraversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-					}
-				}
-
-
 			}
 
+			m_pOctree = new COctreeCube({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
+			{ BOX_SIZE / 2, BOX_SIZE / 2, BOX_SIZE / 2 }, 0);
 
-
-
-			CDXBasicPainter::VERTEX plane[3];
-			unsigned long   m_lIndicesFrame[6];
-
-
-			plane[0].Position = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z + 1.1f,1 };
-			plane[1].Position = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z + 1.1f,1 };
-			plane[2].Position = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z + 1.1f,1 };
-
-			VECTOR4D pX = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z + 1.1f,1 };
-			VECTOR4D pY = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z + 1.1f,1 };
-			VECTOR4D pZ = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z + 1.1f,1 };
-
-			CPlane meshPlane(pX, pY, pZ);
-			/*
-			plane[0].Position = { m_Scene[0].m_Vertices[1].Position.x,m_Scene[0].m_Vertices[1].Position.y,m_Scene[0].m_Vertices[1].Position.z,1 };
-			plane[1].Position = { m_Scene[0].m_Vertices[2].Position.x,m_Scene[0].m_Vertices[2].Position.y,m_Scene[0].m_Vertices[2].Position.z,1 };
-			plane[2].Position = { m_Scene[0].m_Vertices[3].Position.x,m_Scene[0].m_Vertices[3].Position.y,m_Scene[0].m_Vertices[3].Position.z,1 };
-			*/
-			m_lIndicesFrame[0] = 0;
-			m_lIndicesFrame[1] = 1;
-			m_lIndicesFrame[2] = 2;
-			//m_lIndicesFrame[3] = 2;
-			//m_lIndicesFrame[4] = 0;
-			//m_lIndicesFrame[5] = 4;
-			//m_lIndicesFrame[6] = 5;
-			//m_lIndicesFrame[7] = 1;
-
-
-
-			//m_pDXPainter->DrawIndexed(plane, 3, m_lIndicesFrame, 6, PAINTER_DRAW);
-
-			while (flag)
+			for (unsigned int i = 0; i < m_SceneCollisions.size(); i++)
 			{
-				std::cout << "==================Obtenemos Vertices del Plano============" << std::endl;
-				std::cout << "Vertice: 1" << std::endl;
-				std::cout << plane[0].Position.x << std::endl;
-				std::cout << plane[0].Position.y << std::endl;
-				std::cout << plane[0].Position.z << std::endl;
+				
+				m_pOctree->addObject(&m_SceneCollisions[i],
+					m_SceneCollisions[i].m_Box.min * m_SceneCollisions[i].m_World,
+				   m_SceneCollisions[i].m_Box.max * m_SceneCollisions[i].m_World);
 
-
-				std::cout << "Vertice: 2" << std::endl;
-				std::cout << plane[1].Position.x << std::endl;
-				std::cout << plane[1].Position.y << std::endl;
-				std::cout << plane[1].Position.z << std::endl;
-
-
-				std::cout << "Vertice: 3" << std::endl;
-				std::cout << plane[2].Position.x << std::endl;
-				std::cout << plane[2].Position.y << std::endl;
-				std::cout << plane[2].Position.z << std::endl;
-				std::cout << "==================Obtenemos Vertices del Tetrahedro============" << std::endl;
-
-				std::cout << "Vertice: 1" << std::endl;
-				std::cout << m_Scene[0].m_Vertices[0].Position.x << std::endl;
-				std::cout << m_Scene[0].m_Vertices[0].Position.y << std::endl;
-				std::cout << m_Scene[0].m_Vertices[0].Position.z << std::endl;
-				std::cout << m_Scene[0].m_Vertices[0].Position.w << std::endl;
-
-				std::cout << "Vertice: 2" << std::endl;
-				std::cout << m_Scene[0].m_Vertices[1].Position.x << std::endl;
-				std::cout << m_Scene[0].m_Vertices[1].Position.y << std::endl;
-				std::cout << m_Scene[0].m_Vertices[1].Position.z << std::endl;
-				std::cout << m_Scene[0].m_Vertices[1].Position.w << std::endl;
-
-
-				std::cout << "Vertice: 3" << std::endl;
-				std::cout << m_Scene[0].m_Vertices[2].Position.x << std::endl;
-				std::cout << m_Scene[0].m_Vertices[2].Position.y << std::endl;
-				std::cout << m_Scene[0].m_Vertices[2].Position.z << std::endl;
-				std::cout << m_Scene[0].m_Vertices[2].Position.w << std::endl;
-
-				std::cout << "Vertice: 4" << std::endl;
-				std::cout << m_Scene[0].m_Vertices[3].Position.x << std::endl;
-				std::cout << m_Scene[0].m_Vertices[3].Position.y << std::endl;
-				std::cout << m_Scene[0].m_Vertices[3].Position.z << std::endl;
-				std::cout << m_Scene[0].m_Vertices[3].Position.w << std::endl;
-
-				std::cout << m_Scene[0].m_Indices.size() << std::endl;
-
-				std::cout << "==================Obtenemos Vertices del Tetrahedro============" << std::endl;
-				flag = false;
-
-				std::cout << "Se realizo un corte" << std::endl;
-
-				enum EdgeState { UNTESTED, CUT, UNCUT };
-
-				int cutEdgesCount = 0;
-				int cutNodesCount = 0;
-				int intersectionTestCount = 0;
-
-				// Test each node against the plane to detect if nodes are cut
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < m_Scene[0].m_Vertices.size(); j++)
-					{
-						if (plane[i].Position.x == m_Scene[0].m_Vertices[j].Position.x &&
-							plane[i].Position.y == m_Scene[0].m_Vertices[j].Position.y &&
-							plane[i].Position.z == m_Scene[0].m_Vertices[j].Position.z)
-						{
-							//Aqui se tendria que guardar ese nodo que se corto
-							cutNodesCount++;
-						}
-
-						VECTOR4D dp1 = m_Scene[0].m_Vertices[i].Position; //p[id1];
-						VECTOR4D dp2 = m_Scene[0].m_Vertices[j].Position; //p[id2];
-						VECTOR4D intersectionPoint;
-						if (plane[i].Intersection(dp1, dp2, intersectionPoint, plane[0].Position, plane[1].Position, plane[2].Position))
-						{
-							cutEdgesCount++;
-						}
-					}
-
-				}
-				cout << "Number of edges: " << cutEdgesCount << endl;
-				cutEdgesCount > 3 ? cutEdgesCount = cutEdgesCount / 2 : cutEdgesCount = cutEdgesCount;
-				string type;
-				switch (cutEdgesCount)
-				{
-				case 0:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "No cuts";
-						break;
-					case 1:
-						type = "Cut Node";
-						break;
-					case 2:
-						type = "Cut Node";
-						break;
-					case 3:
-						type = "Cut Z";
-						break;
-					default:
-						type = "Unkown";
-					}
-				}
-				break;
-				case 1:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "Cut C";
-						break;
-					case 1:
-						type = "Cut X";
-						break;
-					case 2:
-						type = "Cut Y";
-						break;
-					default:
-						type = "Unkown";
-					}
-
-				}
-				break;
-				case 2:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "Cut D";
-						break;
-					case 1:
-						type = "Cut X";
-						break;
-					default:
-						type = "Cut Z";
-					}
-
-				}
-				break;
-				case 3:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "Cut A";
-						break;
-					case 1:
-						type = "Cut E";
-						break;
-					default:
-						type = "Unkown";
-					}
-				}
-				break;
-				case 4:
-				{
-					switch (cutNodesCount)
-					{
-					case 0:
-						type = "Cut B";
-						break;
-					default:
-						type = "Unkown";
-					}
-
-				}
-				break;
-				}
-
-				std::cout << "Total Cut Nodes: " << cutNodesCount << std::endl;
-				std::cout << "Total Cut Edges: " << cutEdgesCount << std::endl;
-				std::cout << "Tipo de Corte: " << type << std::endl;
+				
 			}
 
-
-
-			// Draw
 			// Actualizar camara si fue movida
 			UpdateCamera();
 
@@ -740,6 +500,13 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			/* Render with Left Hand*/
 			m_pDXManager->GetContext()->RSSetState(m_pDXPainter->GetDrawLHRState());
 
+			/* Print OCtree*/
+			if (m_lFlags & PHYSICS_PRINT_OCTREE)
+			{
+				m_lFlags ^= PHYSICS_PRINT_OCTREE;
+				m_pOctree->printCHildren(0);
+
+			}
 			/* Check if the objects was moved */
 			if (m_lFlags & PHYSICS_DRAW_OCTREE)
 			{
@@ -748,20 +515,14 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 				m_pOctree->DrawOctree(m_pDXPainter);
 
-				for (unsigned long i = 0; i < m_Scene.size(); i++)
+				for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
 				{
 					m_pDXPainter->m_Params.World = Identity();
-					m_Scene[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_Scene[i].m_TranslationBVH);
+					m_SceneCollisions[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_SceneCollisions[i].m_TranslationBVH);
 				}
 			}
 
 			m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
-			/* Draw scene */
-			/*for (unsigned long i = 0; i < m_Scene.size(); i++)
-			{
-				m_pDXPainter->m_Params.World = m_Scene[i].m_World;
-				m_pDXPainter->DrawIndexed(&m_Scene[i].m_Vertices[0], m_Scene[i].m_Vertices.size(), &m_Scene[i].m_Indices[0], m_Scene[i].m_Indices.size(), PAINTER_DRAW);
-			}*/
 
 			set<unsigned long long> potencialCollisions;
 			m_pOctree->potentialCollsions(potencialCollisions);
@@ -815,9 +576,9 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					m_SceneCollisions[i].m_Indices.size(), 
 					PAINTER_DRAW);
 
-				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
+				/*m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
 				m_pDXPainter->m_Params.World = Identity();
-				//m_SceneCollisions[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_SceneCollisions[i].m_TranslationBVH);
+				m_SceneCollisions[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_SceneCollisions[i].m_TranslationBVH);*/
 				
 			}
 	
@@ -931,91 +692,91 @@ void CSOnGame::LoadScene(char * filename)
 	/* the global Assimp scene object */
 	const struct aiScene* scene = aiImportFile(filename, aiProcessPreset_TargetRealtime_Fast); //  aiProcessPreset_TargetRealtime_MaxQuality
 
-	m_Scene.resize(scene->mNumMeshes);
+	//m_Scene.resize(scene->mNumMeshes);
 
-	for (unsigned long i = 0; i < scene->mNumMeshes; i++)
-	{
-		float maxX, maxY, maxZ;
-		float minX, minY, minZ;
+	//for (unsigned long i = 0; i < scene->mNumMeshes; i++)
+	//{
+	//	float maxX, maxY, maxZ;
+	//	float minX, minY, minZ;
 
-		maxX = maxY = maxZ = FLT_MIN;
-		minX = minY = minZ = FLT_MAX;
+	//	maxX = maxY = maxZ = FLT_MIN;
+	//	minX = minY = minZ = FLT_MAX;
 
-		m_Scene[i].m_Vertices.resize(scene->mMeshes[i]->mNumVertices);
-		for (unsigned long j = 0; j < scene->mMeshes[i]->mNumVertices; j++)
-		{
-			m_Scene[i].m_Vertices[j].Position = {
-				scene->mMeshes[i]->mVertices[j].x,
-				scene->mMeshes[i]->mVertices[j].y,
-				scene->mMeshes[i]->mVertices[j].z,
-				1 };
-			if (scene->mMeshes[i]->mVertices[j].x > maxX)
-				maxX = scene->mMeshes[i]->mVertices[j].x;
-			if (scene->mMeshes[i]->mVertices[j].y > maxY)
-				maxY = scene->mMeshes[i]->mVertices[j].y;
-			if (scene->mMeshes[i]->mVertices[j].z > maxZ)
-				maxZ = scene->mMeshes[i]->mVertices[j].z;
+	//	m_Scene[i].m_Vertices.resize(scene->mMeshes[i]->mNumVertices);
+	//	for (unsigned long j = 0; j < scene->mMeshes[i]->mNumVertices; j++)
+	//	{
+	//		m_Scene[i].m_Vertices[j].Position = {
+	//			scene->mMeshes[i]->mVertices[j].x,
+	//			scene->mMeshes[i]->mVertices[j].y,
+	//			scene->mMeshes[i]->mVertices[j].z,
+	//			1 };
+	//		if (scene->mMeshes[i]->mVertices[j].x > maxX)
+	//			maxX = scene->mMeshes[i]->mVertices[j].x;
+	//		if (scene->mMeshes[i]->mVertices[j].y > maxY)
+	//			maxY = scene->mMeshes[i]->mVertices[j].y;
+	//		if (scene->mMeshes[i]->mVertices[j].z > maxZ)
+	//			maxZ = scene->mMeshes[i]->mVertices[j].z;
 
-			if (scene->mMeshes[i]->mVertices[j].x < minX)
-				minX = scene->mMeshes[i]->mVertices[j].x;
-			if (scene->mMeshes[i]->mVertices[j].y < minY)
-				minY = scene->mMeshes[i]->mVertices[j].y;
-			if (scene->mMeshes[i]->mVertices[j].z < minZ)
-				minZ = scene->mMeshes[i]->mVertices[j].z;
-		}
+	//		if (scene->mMeshes[i]->mVertices[j].x < minX)
+	//			minX = scene->mMeshes[i]->mVertices[j].x;
+	//		if (scene->mMeshes[i]->mVertices[j].y < minY)
+	//			minY = scene->mMeshes[i]->mVertices[j].y;
+	//		if (scene->mMeshes[i]->mVertices[j].z < minZ)
+	//			minZ = scene->mMeshes[i]->mVertices[j].z;
+	//	}
 
-		m_Scene[i].m_Box.min = { minX, minY, minZ, 1 };
-		m_Scene[i].m_Box.max = { maxX, maxY, maxZ, 1 };
+	//	m_Scene[i].m_Box.min = { minX, minY, minZ, 1 };
+	//	m_Scene[i].m_Box.max = { maxX, maxY, maxZ, 1 };
 
-		MATRIX4D t;
-		t.m00 = scene->mRootNode->mChildren[i]->mTransformation.a1;
-		t.m01 = scene->mRootNode->mChildren[i]->mTransformation.a2;
-		t.m02 = scene->mRootNode->mChildren[i]->mTransformation.a3;
-		t.m03 = scene->mRootNode->mChildren[i]->mTransformation.a4;
-		t.m10 = scene->mRootNode->mChildren[i]->mTransformation.b1;
-		t.m11 = scene->mRootNode->mChildren[i]->mTransformation.b2;
-		t.m12 = scene->mRootNode->mChildren[i]->mTransformation.b3;
-		t.m13 = scene->mRootNode->mChildren[i]->mTransformation.b4;
-		t.m20 = scene->mRootNode->mChildren[i]->mTransformation.c1;
-		t.m21 = scene->mRootNode->mChildren[i]->mTransformation.c2;
-		t.m22 = scene->mRootNode->mChildren[i]->mTransformation.c3;
-		t.m23 = scene->mRootNode->mChildren[i]->mTransformation.c4;
-		t.m30 = scene->mRootNode->mChildren[i]->mTransformation.d1;
-		t.m31 = scene->mRootNode->mChildren[i]->mTransformation.d2;
-		t.m32 = scene->mRootNode->mChildren[i]->mTransformation.d3;
-		t.m33 = scene->mRootNode->mChildren[i]->mTransformation.d4;
+	//	MATRIX4D t;
+	//	t.m00 = scene->mRootNode->mChildren[i]->mTransformation.a1;
+	//	t.m01 = scene->mRootNode->mChildren[i]->mTransformation.a2;
+	//	t.m02 = scene->mRootNode->mChildren[i]->mTransformation.a3;
+	//	t.m03 = scene->mRootNode->mChildren[i]->mTransformation.a4;
+	//	t.m10 = scene->mRootNode->mChildren[i]->mTransformation.b1;
+	//	t.m11 = scene->mRootNode->mChildren[i]->mTransformation.b2;
+	//	t.m12 = scene->mRootNode->mChildren[i]->mTransformation.b3;
+	//	t.m13 = scene->mRootNode->mChildren[i]->mTransformation.b4;
+	//	t.m20 = scene->mRootNode->mChildren[i]->mTransformation.c1;
+	//	t.m21 = scene->mRootNode->mChildren[i]->mTransformation.c2;
+	//	t.m22 = scene->mRootNode->mChildren[i]->mTransformation.c3;
+	//	t.m23 = scene->mRootNode->mChildren[i]->mTransformation.c4;
+	//	t.m30 = scene->mRootNode->mChildren[i]->mTransformation.d1;
+	//	t.m31 = scene->mRootNode->mChildren[i]->mTransformation.d2;
+	//	t.m32 = scene->mRootNode->mChildren[i]->mTransformation.d3;
+	//	t.m33 = scene->mRootNode->mChildren[i]->mTransformation.d4;
 
-		m_Scene[i].m_World = Transpose(t);
+	//	m_Scene[i].m_World = Transpose(t);
 
-		m_Scene[i].m_Indices.resize(scene->mMeshes[i]->mNumFaces * scene->mMeshes[i]->mFaces[0].mNumIndices);
-		for (unsigned long j = 0; j < scene->mMeshes[i]->mNumFaces; j++)
-		{
-			for (unsigned long k = 0; k < scene->mMeshes[i]->mFaces[j].mNumIndices; k++)
-			{
-				m_Scene[i].m_Indices[j*scene->mMeshes[i]->mFaces[j].mNumIndices + k] = scene->mMeshes[i]->mFaces[j].mIndices[k];
-			}
-		}
+	//	m_Scene[i].m_Indices.resize(scene->mMeshes[i]->mNumFaces * scene->mMeshes[i]->mFaces[0].mNumIndices);
+	//	for (unsigned long j = 0; j < scene->mMeshes[i]->mNumFaces; j++)
+	//	{
+	//		for (unsigned long k = 0; k < scene->mMeshes[i]->mFaces[j].mNumIndices; k++)
+	//		{
+	//			m_Scene[i].m_Indices[j*scene->mMeshes[i]->mFaces[j].mNumIndices + k] = scene->mMeshes[i]->mFaces[j].mIndices[k];
+	//		}
+	//	}
 
-		for (unsigned long j = 0; j < m_Scene[i].m_Vertices.size(); j++)
-		{
-			VECTOR4D TexCoord = { 0,0,0,0 };
-			TexCoord.x = m_Scene[i].m_Vertices[j].Position.x;
-			TexCoord.y = m_Scene[i].m_Vertices[j].Position.z;
-			TexCoord.z = m_Scene[i].m_Vertices[j].Position.y;
-			TexCoord = Normalize(TexCoord);
-			TexCoord.x = TexCoord.x * 0.5 + 0.5;
-			TexCoord.y = TexCoord.y * 0.5 + 0.5;
+	//	for (unsigned long j = 0; j < m_Scene[i].m_Vertices.size(); j++)
+	//	{
+	//		VECTOR4D TexCoord = { 0,0,0,0 };
+	//		TexCoord.x = m_Scene[i].m_Vertices[j].Position.x;
+	//		TexCoord.y = m_Scene[i].m_Vertices[j].Position.z;
+	//		TexCoord.z = m_Scene[i].m_Vertices[j].Position.y;
+	//		TexCoord = Normalize(TexCoord);
+	//		TexCoord.x = TexCoord.x * 0.5 + 0.5;
+	//		TexCoord.y = TexCoord.y * 0.5 + 0.5;
 
-			m_Scene[i].m_Vertices[j].TexCoord = TexCoord;
-		}
-		//g_Scene[i].Optimize();
-		m_Scene[i].BuildTangentSpaceFromTexCoordsIndexed(true);
-		m_Scene[i].GenerarCentroides();
+	//		m_Scene[i].m_Vertices[j].TexCoord = TexCoord;
+	//	}
+	//	//g_Scene[i].Optimize();
+	//	m_Scene[i].BuildTangentSpaceFromTexCoordsIndexed(true);
+	//	m_Scene[i].GenerarCentroides();
 
-		/* Set id */
-		m_Scene[i].m_lID = i;
-		strcpy(m_Scene[i].m_cName, scene->mMeshes[i]->mName.C_Str());
-	}
+	//	/* Set id */
+	//	m_Scene[i].m_lID = i;
+	//	strcpy(m_Scene[i].m_cName, scene->mMeshes[i]->mName.C_Str());
+	//}
 }
 
 void CSOnGame::UpdateCamera()

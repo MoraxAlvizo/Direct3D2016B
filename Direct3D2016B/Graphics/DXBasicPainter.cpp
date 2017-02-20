@@ -247,6 +247,14 @@ bool CDXBasicPainter::Initialize()
 	m_pManager->GetDevice()->CreateRenderTargetView(pMemory, NULL, &m_pRTVShadowMap);
 
 	SAFE_RELEASE(pMemory);
+
+	m_pCS = m_pManager->CompileComputeShader(L"..\\Shaders\\Default.hlsl", "main");
+	
+	if (m_pCS)
+	{
+		m_pManager->GetContext()->CSSetShader(m_pCS,0,0);
+		m_pManager->GetContext()->Dispatch(10, 10, 10);
+	}
 	return true;
 }
 CDXBasicPainter::~CDXBasicPainter()

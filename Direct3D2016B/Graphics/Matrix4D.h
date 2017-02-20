@@ -110,3 +110,5 @@ void BuildRayFromPerspective(MATRIX4D& PV,
 	VECTOR4D& RayDir);
 
 MATRIX4D ReflectionMatrix(VECTOR4D& Plane);
+void PrintMatrix(MATRIX4D& M);
+void PrintVector(VECTOR4D& V);

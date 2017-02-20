@@ -25,6 +25,7 @@ protected:
 	ID3D11RenderTargetView*   m_pRTVShadowMap;   // Para producir mapa de sombras
 	ID3D11VertexShader*		  m_pVSShadow;
 	ID3D11PixelShader*		  m_pPSShadow;
+	ID3D11ComputeShader*      m_pCS;
 
 #define PAINTER_DRAW_MARK			0x01
 #define PAINTER_DRAW_ON_MARK		0x02

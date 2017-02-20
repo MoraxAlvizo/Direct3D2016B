@@ -71,7 +71,7 @@ public:
 
 	/* Scene */
 	CMeshMathSurface m_Surface;
-	vector<CMeshCollision> m_Scene;
+	//vector<CMeshCollision> m_Scene;
 	vector<CMeshCollision> m_SceneCollisions;
 	vector<CVMesh> m_ScenePhysics;
 	//vector<BVH> m_BVHs;

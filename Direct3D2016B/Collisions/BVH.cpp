@@ -561,8 +561,8 @@ void BVH::DrawLBVH(CDXBasicPainter * painter, int node, MATRIX4D translation)
 	//if (LBVH[node].isLeaf)
 		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 
-	DrawLBVH(painter, node << 1, translation);
-	DrawLBVH(painter, (node << 1)+1, translation);
+	//DrawLBVH(painter, node << 1, translation);
+	//DrawLBVH(painter, (node << 1)+1, translation);
 
 }
 

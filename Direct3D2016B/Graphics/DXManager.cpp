@@ -240,3 +240,42 @@ ID3D11PixelShader* CDXManager::CompilePixelShader(
 	return NULL;
 }
 
+ID3D11ComputeShader * CDXManager::CompileComputeShader(
+	wchar_t * pszFileName, char * pszEntryPoint)
+{
+	ID3DBlob* pDXIL = 0; // DirectX intermediate Language
+	ID3DBlob* pErrors = 0; //
+
+	HRESULT hr = D3DCompileFromFile(pszFileName, NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, pszEntryPoint,
+		"cs_5_0",
+#ifdef _DEBUG
+		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 
+#else 
+		D3DCOMPILE_OPTIMIZATION_LEVEL3 ,
+#endif // _DEBUG
+		0, &pDXIL, &pErrors);
+
+	if (pErrors)
+	{
+		MessageBoxA(NULL,
+			(char*)pErrors->GetBufferPointer(),
+			"Se han encontrado errores o advertencias",
+			MB_ICONEXCLAMATION);
+		pErrors->Release();
+	}
+
+	if (pDXIL)
+	{
+		ID3D11ComputeShader* pCS = 0;
+		HRESULT hr = m_pDevice->CreateComputeShader(pDXIL->GetBufferPointer(), pDXIL->GetBufferSize()
+			, NULL, &pCS);
+		SAFE_RELEASE(pDXIL);
+		if (FAILED(hr))
+			return NULL;
+		else
+			return pCS;
+
+	}
+	return NULL;
+}
+

@@ -27,5 +27,6 @@ public:
 	void createOctree();
 	void MoveVertex(MATRIX4D Translation);
 	void CreateMeshCollisionFromVMesh(CVMesh vMesh);
+
 };
 

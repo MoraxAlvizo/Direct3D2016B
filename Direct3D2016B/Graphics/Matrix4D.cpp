@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Matrix4D.h"
 #include <math.h>
+#include <stdio.h>
 
 VECTOR4D operator*(VECTOR4D& A, long B)
 {
@@ -522,4 +523,26 @@ MATRIX4D ReflectionMatrix(VECTOR4D& Plane)
 		-2 *Plane.w *Plane.x	 ,  -2 *Plane.w*Plane.y		, -2 *Plane.w*Plane.z		, 1 ,
 	};
 	return R;
+}
+
+void PrintMatrix(MATRIX4D & M)
+{
+	printf("\n");
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			printf("%.2f\t", M.m[i][j]);
+		}
+		printf("\n");
+	}
+}
+
+void PrintVector(VECTOR4D & V)
+{
+	for (int j = 0; j < 4; j++)
+	{
+		printf("%.2f\t",V.v[j]);
+	}
+	printf("\n");
 }

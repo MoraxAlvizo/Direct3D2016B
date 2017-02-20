@@ -22,6 +22,7 @@ public:
 	ID3D11DeviceContext* GetContext(){ return m_pContext; }
 	ID3D11RenderTargetView *&GetMainRTV() { return m_pRTV; }
 	ID3D11DepthStencilView*& GetMainDSV() { return m_pDSV; }
+
 	ID3D10Blob* CompileShader(
 		wchar_t* pszFileName, char* pszTarget,
 		char* pszEntryPoint); //DXIL
@@ -30,6 +31,8 @@ public:
 		ID3D10Blob** ppOutDXIL);
 	ID3D11PixelShader* CompilePixelShader(
 		wchar_t* pszFileName, char*pszEntryPoint);
+	ID3D11ComputeShader* CompileComputeShader(
+		wchar_t* pszFileName, char* pszEntryPoint);
 	CDXManager();
 	~CDXManager();
 };
