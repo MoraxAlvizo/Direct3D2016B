@@ -28,6 +28,6 @@ public:
 	~CVMesh();
 	void LoadMSHFile(char * filename);
 	vector<EdgeCutInfo>& GetEdges() { return m_EdgeCutInfo; }
-	vector<CDXBasicPainter::VERTEX>& GetVertices() { return m_Vertices; }
+	vector<CDXPainter::VERTEX>& GetVertices() { return m_Vertices; }
 };
 

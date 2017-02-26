@@ -5,7 +5,7 @@
 #include "VolumeMeshGenericID.h"
 #include "..\Graphics\DXBasicPainter.h"
 
-typedef CDXBasicPainter::VERTEX Vertex;
+typedef CDXPainter::VERTEX Vertex;
 using namespace std;
 class CVolumeMesh : public CMesh
 {
@@ -18,7 +18,7 @@ public:
 	VCL_MESH_VOLUMEMESH_CREATEID(VolumeId);		// Size: n3
 
 public: /* Temporary. To be removed */
-	vector<CDXBasicPainter::VERTEX>& Vertices() { return mVertices; }
+	vector<CDXPainter::VERTEX>& Vertices() { return mVertices; }
 	vector<Edge>& Edges() { return mEdges; }
 	vector<Volume>& Volumes() { return mVolumes; }
 	VECTOR4D& getPoint(VertexId id);

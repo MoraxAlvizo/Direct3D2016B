@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "DXBasicPainter.h"
+#include "DXPainter.h"
 
 
-CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
+CDXPainter::CDXPainter(CDXManager* pOwner)
 {
 	m_pManager = pOwner;
 	m_pIL = NULL;
@@ -92,7 +92,7 @@ CDXBasicPainter::CDXBasicPainter(CDXManager* pOwner)
 	m_Params.lights[4] = LightDef5;
 }
 
-void CDXBasicPainter::Uninitialize()
+void CDXPainter::Uninitialize()
 {
 	SAFE_RELEASE(m_pIL);
 	SAFE_RELEASE(m_pVS);
@@ -102,7 +102,20 @@ void CDXBasicPainter::Uninitialize()
 	SAFE_RELEASE(m_pDrawRH);
 }
 
-D3D11_INPUT_ELEMENT_DESC CDXBasicPainter::VERTEX::InputLayout[] =
+void CDXPainter::SetTranformationCBMesh(MATRIX4D & t)
+{
+	D3D11_MAPPED_SUBRESOURCE ms;
+	
+	m_pManager->GetContext()->Map(m_pCBMesh, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
+	PARAMS_MESH_CB Temp = m_Params_Mesh_CB;
+
+	Temp.Transformation = Transpose(t);
+
+	memcpy(ms.pData, &Temp, sizeof(PARAMS_MESH_CB));
+	m_pManager->GetContext()->Unmap(m_pCBMesh, 0);
+}
+
+D3D11_INPUT_ELEMENT_DESC CDXPainter::VERTEX::InputLayout[] =
 {
 	{"POSITION",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,0,D3D11_INPUT_PER_VERTEX_DATA,0 },
 	{"NORMAL",0,DXGI_FORMAT_R32G32B32A32_FLOAT,0,16,D3D11_INPUT_PER_VERTEX_DATA,0},
@@ -112,7 +125,7 @@ D3D11_INPUT_ELEMENT_DESC CDXBasicPainter::VERTEX::InputLayout[] =
 	{"TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 80, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 };
 
-bool CDXBasicPainter::Initialize()
+bool CDXPainter::Initialize()
 {
 	Uninitialize();
 	ID3D10Blob* pVSCode = NULL;
@@ -148,6 +161,7 @@ bool CDXBasicPainter::Initialize()
 	SAFE_RELEASE(pVSCode);
 	m_pPSShadow = m_pManager->CompilePixelShader(
 		L"..\\Shaders\\BasicShader.hlsl", "PSShadow");
+
 	D3D11_BUFFER_DESC dbd;
 	memset(&dbd, 0, sizeof(dbd));
 	dbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -249,6 +263,15 @@ bool CDXBasicPainter::Initialize()
 	SAFE_RELEASE(pMemory);
 
 	m_pCS = m_pManager->CompileComputeShader(L"..\\Shaders\\Default.hlsl", "main");
+	m_pCSApplyTrans = m_pManager->CompileComputeShader(L"..\\Shaders\\Mesh.hlsl", "main");
+
+	// Create constant buffer Mesh.hlsl
+	memset(&dbd, 0, sizeof(dbd));
+	dbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	dbd.ByteWidth = 16 * ((sizeof(PARAMS_MESH_CB) + 15) / 16);
+	dbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	dbd.Usage = D3D11_USAGE_DYNAMIC;
+	m_pManager->GetDevice()->CreateBuffer(&dbd, 0, &m_pCBMesh);
 	
 	if (m_pCS)
 	{
@@ -257,19 +280,19 @@ bool CDXBasicPainter::Initialize()
 	}
 	return true;
 }
-CDXBasicPainter::~CDXBasicPainter()
+CDXPainter::~CDXPainter()
 {
 	Uninitialize();
 }
 
-void CDXBasicPainter::ClearShadow()
+void CDXPainter::ClearShadow()
 {
 	m_pManager->GetContext()->ClearDepthStencilView(m_pDSVShadowMap, D3D11_CLEAR_DEPTH, 1.0f, 0);
 	VECTOR4D One = { 1,1,1,1 };
 	m_pManager->GetContext()->ClearRenderTargetView(m_pRTVShadowMap, (float*)&One);
 }
 
-void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
+void CDXPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	unsigned long* pIndices, unsigned long nIndices, unsigned long flags, bool bShadow )
 {
 	//1.- Crear los buffer de vértices e indices en el GPU.
@@ -292,6 +315,7 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	dsd.SysMemSlicePitch = 0;
 	m_pManager->GetDevice()->CreateBuffer(
 		&dbd, &dsd, &pVB);
+
 	dsd.pSysMem = pIndices;
 	dbd.BindFlags = D3D11_BIND_INDEX_BUFFER;
 	dbd.ByteWidth = sizeof(unsigned long)*nIndices;
@@ -376,4 +400,87 @@ void CDXBasicPainter::DrawIndexed(VERTEX* pVertices, unsigned long nVertices,
 	m_pManager->GetContext()->DrawIndexed(nIndices, 0, 0);
 	SAFE_RELEASE(pIB);
 	SAFE_RELEASE(pVB);
+}
+
+void CDXPainter::DrawIndexed2(ID3D11Buffer * pBufferVertex, 
+	ID3D11Buffer * pBufferIndex, 
+	unsigned long nIndices,
+	unsigned long flags)
+{
+	
+	if (flags & PAINTER_DRAW_WIREFRAME)
+		m_pManager->GetContext()->RSSetState(m_pDrawWireFrame);
+	else
+		m_pManager->GetContext()->RSSetState(m_pDrawLH);
+	//2.- Instalar el VS , PS , IL
+	m_pManager->GetContext()->IASetInputLayout(m_pIL);
+
+	m_pManager->GetContext()->VSSetShader( m_pVS, 0, 0);
+	m_pManager->GetContext()->PSSetShader( m_pPS, 0, 0);
+	//3.- Definir el puerto de visión y la topologia
+	// a dibujar
+	D3D11_VIEWPORT ViewPort;
+	ID3D11Texture2D* pBackBuffer = NULL;
+	D3D11_TEXTURE2D_DESC dtd;
+	m_pManager->GetSwapChain()->GetBuffer(0
+		, IID_ID3D11Texture2D, (void**)&pBackBuffer);
+	pBackBuffer->GetDesc(&dtd);
+	ViewPort.Width =  (float)dtd.Width ;
+	ViewPort.Height =  (float)dtd.Height ;
+	ViewPort.TopLeftX = 0;
+	ViewPort.TopLeftY = 0;
+	ViewPort.MaxDepth = 1.0f;
+	ViewPort.MinDepth = 0.0f;
+	m_pManager->GetContext()->RSSetViewports(1, &ViewPort);
+
+	m_pManager->GetContext()->IASetPrimitiveTopology(
+		flags & PAINTER_WITH_LINESTRIP ? D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP : D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+
+	//4.- Configurar la salida
+	if (flags & PAINTER_DRAW_MARK)
+		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSMask, 0x01);
+	else if (flags & PAINTER_DRAW_ON_MARK)
+		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDrawOnMask, 0x01);
+	else if (flags & PAINTER_DRAW_ON_NOT_MARK)
+		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDrawOnNoMask, 0x01);
+	else
+		m_pManager->GetContext()->OMSetDepthStencilState(m_pDSSDraw, 0x01);
+
+
+	m_pManager->GetContext()->OMSetRenderTargets(1,
+		&m_pRTV,
+		m_pManager->GetMainDSV());
+
+	SAFE_RELEASE(pBackBuffer);
+
+	//5.- Dibujar
+	unsigned int Offset = 0;
+	unsigned int Stride = sizeof(VERTEX);
+	m_pManager->GetContext()->IASetVertexBuffers(0, 1, &pBufferVertex, &Stride, &Offset);
+	m_pManager->GetContext()->IASetIndexBuffer(pBufferIndex, DXGI_FORMAT_R32_UINT, 0);
+	D3D11_MAPPED_SUBRESOURCE ms;
+
+
+	m_pManager->GetContext()->Map(m_pCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
+	PARAMS Temp = m_Params;
+
+	Temp.World = Transpose(m_Params.World);
+	Temp.View = Transpose(m_Params.View);
+	Temp.Projection = Transpose(m_Params.Projection);
+	Temp.LightProjection = Transpose(m_Params.LightProjection);
+	Temp.LightView = Transpose(m_Params.LightView);
+	for (int i = 0; i < 8; i++)
+	{
+		Temp.lights[i].Position = m_Params.lights[i].Position*m_Params.View;
+		Temp.lights[i].Direction = m_Params.lights[i].Direction*m_Params.View;
+	}
+
+	memcpy(ms.pData, &Temp, sizeof(PARAMS));
+	m_pManager->GetContext()->Unmap(m_pCB, 0);
+
+	m_pManager->GetContext()->VSSetConstantBuffers(0, 1, &m_pCB);
+	m_pManager->GetContext()->PSSetConstantBuffers(0, 1, &m_pCB);
+	m_pManager->GetContext()->DrawIndexed(nIndices, 0, 0);
+
 }

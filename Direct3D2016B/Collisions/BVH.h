@@ -24,11 +24,16 @@ public:
 
 	vector<Box> LBVH;
 
+	/* Compute shaders */
+	ID3D11ComputeShader*      m_pCSPreconstruction;
+	ID3D11ComputeShader*      m_pCSConstruction;
+	ID3D11ComputeShader*      m_pCSPostconstruction;
+
 	/* Methods*/
 	BVH();
 	~BVH();
 	void Build(CMesh& object, vector<unsigned long> Primitives);
-	void Draw(CDXBasicPainter* painter, int depth, MATRIX4D translation);
+	void Draw(CDXPainter* painter, int depth, MATRIX4D translation);
 	void Traversal(BVH* pTree, 
 		MATRIX4D& thisTranslation,
 		MATRIX4D& translationTree, 
@@ -55,7 +60,7 @@ public:
 		CMesh& object1,
 		CMesh& object2);
 
-	void DrawLBVH(CDXBasicPainter* painter, int depth);
+	void DrawLBVH(CDXPainter* painter, int depth);
 	void TraversalLBVH(BVH* pTree,
 		unsigned long nodeThis,
 		unsigned long nodeTree,

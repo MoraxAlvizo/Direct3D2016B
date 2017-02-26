@@ -2,7 +2,7 @@
 #include "../Graphics/Matrix4D.h"
 #include <set>
 #include <vector>
-#include "../Graphics/DXBasicPainter.h"
+#include "../Graphics/DXPainter.h"
 #include "../Graphics/Mesh.h"
 using namespace std;
 
@@ -61,7 +61,7 @@ private:
 	// El nivel por el que nos encontramos en el Octree.
 	int depth;
 
-	CDXBasicPainter *m_pPainter;
+	CDXPainter *m_pPainter;
 
 public:
 	// El numero total de pelotas que contiene el nodo.Tambien incluye aquellas guardadas
@@ -112,7 +112,7 @@ private:
 		Wall w, char coord, int dir);
 public:
 	// Constructor
-	COctree(VECTOR4D c1, VECTOR4D c2, int d, CDXBasicPainter* pPainter );
+	COctree(VECTOR4D c1, VECTOR4D c2, int d, CDXPainter* pPainter );
 
 	// Destructor
 	~COctree();

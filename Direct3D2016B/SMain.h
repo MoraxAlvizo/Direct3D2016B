@@ -7,7 +7,7 @@
 
 #include "HSM/StateBase.h"
 #include "Graphics\DXManager.h"
-#include "Graphics\DXBasicPainter.h"
+#include "Graphics\DXPainter.h"
 #include "Graphics\FX.h"
 
 
@@ -46,7 +46,7 @@ public:
 
 	/* Engines */
 	CDXManager* m_pDXManager;
-	CDXBasicPainter* m_pDXPainter;
+	CDXPainter* m_pDXPainter;
 
 
 	CFX* m_FX;

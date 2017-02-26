@@ -2,7 +2,7 @@
 #include "DXManager.h"
 #include "Matrix4D.h"
 #include <math.h>
-class CDXBasicPainter
+class CDXPainter
 {
 protected:
 	CDXManager* m_pManager;
@@ -27,6 +27,7 @@ protected:
 	ID3D11PixelShader*		  m_pPSShadow;
 	ID3D11ComputeShader*      m_pCS;
 
+
 #define PAINTER_DRAW_MARK			0x01
 #define PAINTER_DRAW_ON_MARK		0x02
 #define PAINTER_DRAW_ON_NOT_MARK	0x04
@@ -35,6 +36,9 @@ protected:
 #define PAINTER_DRAW_WIREFRAME		0x20
 
 public:
+	ID3D11ComputeShader*      m_pCSApplyTrans;
+	ID3D11Buffer*      m_pCBMesh; // Constan buffer Mesh.hlsl
+
 	void ClearShadow();
 	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTV = pRTV; }
 	ID3D11RasterizerState* GetDrawRHRState() { return m_pDrawRH; }
@@ -73,6 +77,12 @@ public:
 		VECTOR4D Factors; // x: Power Spotlight
 
 	};
+
+	struct PARAMS_MESH_CB
+	{
+		MATRIX4D Transformation;
+	}m_Params_Mesh_CB;
+
 	struct PARAMS
 	{
 		struct
@@ -153,9 +163,11 @@ public:
 				return true; //WARNING: I have changed this to true
 		}
 	};
-	CDXBasicPainter(CDXManager* pOwner);
+	CDXPainter(CDXManager* pOwner);
 	bool Initialize();
 	void Uninitialize();
+
+	void SetTranformationCBMesh(MATRIX4D& t);
 
 	void DrawIndexed(VERTEX* pVertices,
 		unsigned long nVertices,
@@ -164,7 +176,11 @@ public:
 		unsigned long flags, 
 		bool bShadow = false);
 
-	
-	~CDXBasicPainter();
+	void DrawIndexed2(ID3D11Buffer* pBufferVertex,
+		ID3D11Buffer* pBufferIndex,
+		unsigned long nIndices,
+		unsigned long flags);
+
+	~CDXPainter();
 };
 

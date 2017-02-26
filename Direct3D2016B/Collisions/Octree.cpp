@@ -5,7 +5,7 @@
 //@param	c1	Esquina inferior.
 //@param	c2	Esquina superior.
 //@param	d 	La profundidad del nodo.
-COctree::COctree(VECTOR4D c1, VECTOR4D c2, int d, CDXBasicPainter* pPainter) {
+COctree::COctree(VECTOR4D c1, VECTOR4D c2, int d, CDXPainter* pPainter) {
 	m_pPainter = pPainter;
 	corner1 = c1;
 	corner2 = c2;
@@ -317,7 +317,7 @@ void COctree::DrawOctree()
 	VECTOR4D c1 = corner1;
 	VECTOR4D c2 = corner2;
 
-	CDXBasicPainter::VERTEX cube[8];
+	CDXPainter::VERTEX cube[8];
 	unsigned long   m_lIndicesFrame[16];
 	cube[0].Position = { c1.x,c1.y,c1.z,1 };
 	cube[1].Position = { c1.x,c2.y,c1.z,1 };

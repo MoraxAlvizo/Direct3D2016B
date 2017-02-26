@@ -2,7 +2,7 @@
 #include "Matrix4D.h"
 #include <vector>
 #include <map>
-#include "DXBasicPainter.h"
+#include "DXPainter.h"
 #include <assimp/scene.h>
 #include "../Cut/VolumeMeshGenericID.h"
 #include "../Collisions/Octree.h"
@@ -30,13 +30,21 @@ public:
 		int Face;
 		VECTOR4D LocalPosition;
 	};
-	vector<CDXBasicPainter::VERTEX> m_Vertices;
+	vector<CDXPainter::VERTEX> m_Vertices;
 	vector<unsigned long> m_Indices;
 	//MATRIX4D m_World; //
 	vector<centroid> m_Centroides;
 
 	char m_cName[128];
-public:
+	// DirectX buffers
+	ID3D11Buffer* m_pVertexBuffer;
+	ID3D11Buffer* m_pIndexBuffer;
+	// UAV For vertex buffer 
+	ID3D11UnorderedAccessView* m_pUAVVertexBuffer;
+
+	void CreateVertexAndIndexBuffer(CDXManager* m_pManager);
+	void Draw(CDXPainter* m_pPainter);
+
 	CMesh();
 	bool RayCast(VECTOR4D& RayOrigin,
 		VECTOR4D & RayDir,
@@ -45,7 +53,7 @@ public:
 	bool RayCast(VECTOR4D& RayOrigin,
 		VECTOR4D& RayDir,
 		multimap<float, unsigned long>& Vertices,float radius);
-	void VertexShade(CDXBasicPainter::VERTEX(*pVS)(CDXBasicPainter::VERTEX V));
+	void VertexShade(CDXPainter::VERTEX(*pVS)(CDXPainter::VERTEX V));
 	void LoadSuzanne();
 	void BuildTangentSpaceFromTexCoordsIndexed(void);
 	void BuildTangentSpaceFromTexCoordsIndexed(bool bGenerateNormal);

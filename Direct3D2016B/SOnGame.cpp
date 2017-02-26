@@ -260,6 +260,7 @@ void CSOnGame::OnEntry(void)
 	/***************** Cube 0 *******************************/
 	//m_SceneCollisions[0].m_World = Identity();//Translation(-9, -9, -9);
 	m_SceneCollisions[0].CreateMeshCollisionFromVMesh(m_ScenePhysics[0]);
+	m_SceneCollisions[0].CreateVertexAndIndexBuffer(m_pDXManager);
 	m_SceneCollisions[0].m_BVH = new BVH();
 
 	m_SceneCollisions[0].m_BVH->Preconstruction(m_SceneCollisions[0]);
@@ -284,6 +285,7 @@ void CSOnGame::OnEntry(void)
 
 	/*m_SceneCollisions[1].m_World = Identity();*/
 	m_SceneCollisions[1].CreateMeshCollisionFromVMesh(m_ScenePhysics[1]);
+	m_SceneCollisions[1].CreateVertexAndIndexBuffer(m_pDXManager);
 	m_SceneCollisions[1].m_BVH = new BVH();
 
 	m_SceneCollisions[1].ApplyTransformation(Translation(.2, .2, .2));
@@ -382,8 +384,20 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 						m_SceneCollisions[i].MoveVertex(Translation(0, 0, direction*0.1));
 						m_SceneCollisions[i].ApplyTransformation(Translation(0, 0, direction*0.1));
 
-						m_SceneCollisions[i].m_BVH->Preconstruction(m_SceneCollisions[i]);
+						/***************  Move with Compute shader ***************/
+						m_pDXPainter->SetTranformationCBMesh(Translation(0, 0, direction*0.1));
+						m_pDXManager->GetContext()->CSSetShader(m_pDXPainter->m_pCSApplyTrans, NULL, NULL);
+						m_pDXManager->GetContext()->CSSetConstantBuffers(0, 1, &m_pDXPainter->m_pCBMesh);
+						m_pDXManager->GetContext()->CSSetUnorderedAccessViews(0, 1, &m_SceneCollisions[i].m_pUAVVertexBuffer, NULL);
 
+						int numGroups = (m_SceneCollisions[i].m_Vertices.size() / 1024) + 1;
+						m_pDXManager->GetContext()->Dispatch(numGroups, 1, 1);
+
+						m_pDXManager->GetContext()->ClearState();
+						/*******************************************************/
+
+						m_SceneCollisions[i].m_BVH->Preconstruction(m_SceneCollisions[i]);
+							
 
 						vector<unsigned long> primitives;
 
@@ -397,7 +411,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 						// Update max -min in object
 						m_SceneCollisions[i].m_Box.max = m_SceneCollisions[i].m_BVH->LBVH[1].max;
 						m_SceneCollisions[i].m_Box.min = m_SceneCollisions[i].m_BVH->LBVH[1].min;
-						////m_SceneCollisions[i].m_BVH->ApplyTransformation(Translation(0, 0, direction*0.1),1);
+						//m_SceneCollisions[i].m_BVH->ApplyTransformation(Translation(0, 0, direction*0.1),1);
 
 
 						m_pOctree->addObject(&m_SceneCollisions[i],
@@ -517,6 +531,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					&m_SceneCollisions[i].m_Indices[0], 
 					m_SceneCollisions[i].m_Indices.size(), 
 					PAINTER_DRAW);
+				//m_SceneCollisions[i].Draw(m_pDXPainter);
 				
 			}
 

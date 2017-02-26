@@ -1,5 +1,5 @@
 #pragma once
-#include"..\Graphics\DXBasicPainter.h"
+#include"..\Graphics\DXPainter.h"
 class CPlane
 {
 

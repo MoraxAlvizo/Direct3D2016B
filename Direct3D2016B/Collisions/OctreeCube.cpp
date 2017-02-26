@@ -223,7 +223,7 @@ void COctreeCube::fileObject(CMeshCollision* object, VECTOR4D bmin, VECTOR4D bma
 	}
 }
 
-void COctreeCube::DrawOctree(CDXBasicPainter * painter)
+void COctreeCube::DrawOctree(CDXPainter * painter)
 {
 	VECTOR4D c1 = m_Box.min;
 	VECTOR4D c2 = m_Box.max;
@@ -236,7 +236,7 @@ void COctreeCube::DrawOctree(CDXBasicPainter * painter)
 	c2.y -= 0.01;
 	c2.z -= 0.01;
 
-	CDXBasicPainter::VERTEX cube[8];
+	CDXPainter::VERTEX cube[8];
 	unsigned long   m_lIndicesFrame[16];
 	cube[0].Position = { c1.x,c1.y,c1.z,1 };
 	cube[1].Position = { c1.x,c2.y,c1.z,1 };

@@ -16,7 +16,7 @@ Descrition:
 #pragma once
 #include "HSM\StateBase.h"
 #include "Graphics\DXManager.h"
-#include "Graphics\DXBasicPainter.h"
+#include "Graphics\DXPainter.h"
 #include "Graphics\MeshMathSurface.h"
 #include "Collisions\MeshCollision.h"
 #include "Collisions\OctreeCube.h"
@@ -33,7 +33,7 @@ public:
 
 	/* Members */
 	CDXManager* m_pDXManager;
-	CDXBasicPainter* m_pDXPainter;
+	CDXPainter* m_pDXPainter;
 	HWND m_hWnd;
 	unsigned long m_lPainterFlags;
 
@@ -70,10 +70,8 @@ public:
 	MATRIX4D m_Projection;
 
 	/* Scene */
-	//vector<CMeshCollision> m_Scene;
 	vector<CMeshCollision> m_SceneCollisions;
 	vector<CVMesh> m_ScenePhysics;
-	//vector<BVH> m_BVHs;
 
 	bool flag = true;
 

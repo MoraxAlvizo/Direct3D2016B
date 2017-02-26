@@ -33,6 +33,19 @@ public:
 		wchar_t* pszFileName, char*pszEntryPoint);
 	ID3D11ComputeShader* CompileComputeShader(
 		wchar_t* pszFileName, char* pszEntryPoint);
+
+	// CPU -> GPU
+	ID3D11Buffer* CreateLoadBuffer(
+		void *pData,
+		unsigned long ulElementSize,
+		unsigned long ulElements);
+	// GPU -> CPU
+	void CreateStoreBuffer(
+		ID3D11Buffer* pISB,
+		unsigned long ulElementSize,
+		unsigned long ulElements,
+		void* pOutData);
+
 	CDXManager();
 	~CDXManager();
 };

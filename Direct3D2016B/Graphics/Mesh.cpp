@@ -1,9 +1,66 @@
 ﻿#include "stdafx.h"
 #include "Mesh.h"
+#include "DXPainter.h"
+
+void CMesh::CreateVertexAndIndexBuffer(CDXManager * m_pManager)
+{
+	//1.- Crear los buffer de vértices e indices en el GPU.
+	
+	D3D11_BUFFER_DESC dbd;
+	memset(&dbd, 0, sizeof(dbd));
+	dbd.BindFlags = D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_UNORDERED_ACCESS;
+	dbd.ByteWidth = sizeof(CDXPainter::VERTEX)*(this->m_Vertices.size());
+	dbd.CPUAccessFlags = 0;
+	/*
+	D3D11_USAGE_DEFAULT GPU:R/W CPU:None
+	D3D11_USAGE_DYNAMIC GPU:R   CPU:W
+	D3D11_USAGE_IMMUTABLE GPU:R CPU:W once
+	D3D11_USAGE_STAGING   GPU:None CPU:W/R
+	*/
+	dbd.Usage = D3D11_USAGE_DEFAULT;
+	dbd.StructureByteStride = sizeof(CDXPainter::VERTEX);
+	dbd.MiscFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA dsd;
+	dsd.pSysMem = &(this->m_Vertices[0]);
+	dsd.SysMemPitch = 0;
+	dsd.SysMemSlicePitch = 0;
+	m_pManager->GetDevice()->CreateBuffer(
+		&dbd, &dsd, &m_pVertexBuffer);
+
+	
+	D3D11_UNORDERED_ACCESS_VIEW_DESC uavd;
+
+	memset(&uavd, 0, sizeof(uavd));
+	uavd.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	uavd.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+	// Revisar esto con conrnejo 
+	uavd.Buffer.NumElements = (this->m_Vertices.size()* sizeof(CDXPainter::VERTEX)) / sizeof(VECTOR4D);
+	m_pManager->GetDevice()->CreateUnorderedAccessView(m_pVertexBuffer, &uavd, &m_pUAVVertexBuffer);
+
+	// Create index buffer 
+	dsd.pSysMem = &(this->m_Indices[0]);
+	dbd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	dbd.ByteWidth = sizeof(unsigned long)*m_Indices.size();
+	m_pManager->GetDevice()->CreateBuffer(
+		&dbd, &dsd, &m_pIndexBuffer);
+}
+
+void CMesh::Draw(CDXPainter * m_pPainter)
+{
+	m_pPainter->DrawIndexed2(this->m_pVertexBuffer,
+		this->m_pIndexBuffer,
+		this->m_Indices.size(),
+		PAINTER_DRAW);
+
+}
 
 CMesh::CMesh()
 {
 	//m_World = Identity();
+
+	this->m_pIndexBuffer = NULL;
+	this->m_pVertexBuffer = NULL;
 }
 
 CMesh::~CMesh()
@@ -38,7 +95,7 @@ bool CMesh::RayCast(VECTOR4D& RayOrigin,
 	return nIntersectedFaces!=0;
 }
 
-void CMesh::VertexShade(CDXBasicPainter::VERTEX(*pVS)(CDXBasicPainter::VERTEX V))
+void CMesh::VertexShade(CDXPainter::VERTEX(*pVS)(CDXPainter::VERTEX V))
 {
 	for (unsigned long int i = 0; i < m_Vertices.size(); i++)
 		m_Vertices[i] = pVS(m_Vertices[i]);
@@ -148,15 +205,15 @@ void CMesh::LoadSuzanne()
 void CMesh::BuildTangentSpaceFromTexCoordsIndexed(void)
 {
 	vector<int> Histogram;
-	vector<CDXBasicPainter::VERTEX> Accum;
+	vector<CDXPainter::VERTEX> Accum;
 
 
 	Accum.resize(m_Vertices.size());
-	memset(&Accum[0], 0, sizeof(CDXBasicPainter::VERTEX)*Accum.size());
+	memset(&Accum[0], 0, sizeof(CDXPainter::VERTEX)*Accum.size());
 
 	Histogram.resize(m_Vertices.size());
 	memset(&Histogram[0], 0, sizeof(int)*Histogram.size());
-	CDXBasicPainter::VERTEX* pVertices = &m_Vertices[0];
+	CDXPainter::VERTEX* pVertices = &m_Vertices[0];
 	unsigned long* pIndices = &m_Indices[0];
 	int* pHistogram = &Histogram[0];
 	for (unsigned int i = 0; i<m_Indices.size(); i += 3)
@@ -215,12 +272,12 @@ void CMesh::BuildTangentSpaceFromTexCoordsIndexed(void)
 void CMesh::BuildTangentSpaceFromTexCoordsIndexed(bool bGenerateNormal)
 {
 	vector<int> Histogram;
-	vector<CDXBasicPainter::VERTEX> Accum;
+	vector<CDXPainter::VERTEX> Accum;
 	Accum.resize(m_Vertices.size());
-	memset(&Accum[0], 0, sizeof(CDXBasicPainter::VERTEX)*Accum.size());
+	memset(&Accum[0], 0, sizeof(CDXPainter::VERTEX)*Accum.size());
 	Histogram.resize(m_Vertices.size());
 	memset(&Histogram[0], 0, sizeof(int)*Histogram.size());
-	CDXBasicPainter::VERTEX* pVertices = &m_Vertices[0];
+	CDXPainter::VERTEX* pVertices = &m_Vertices[0];
 	unsigned long* pIndices = &m_Indices[0];
 	int* pHistogram = &Histogram[0];
 	for (unsigned int i = 0; i<m_Indices.size(); i += 3)
@@ -271,7 +328,7 @@ void CMesh::Optimize()
 {
 	//Remover vertices duplicados, Complejidad temporal O(N^2)
 	vector<int> VertexRemoved;
-	vector<CDXBasicPainter::VERTEX> VertexOut;
+	vector<CDXPainter::VERTEX> VertexOut;
 	vector<int> VertexReplacedBy;
 	int nVertexOut = 0;
 	VertexOut.resize(m_Vertices.size());

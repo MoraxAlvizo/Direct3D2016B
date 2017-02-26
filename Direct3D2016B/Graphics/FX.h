@@ -4,7 +4,7 @@
 #include "Matrix4D.h"
 #include "DXManager.h"
 #include "MeshMathSurface.h"
-#include "DXBasicPainter.h"
+#include "DXPainter.h"
 #include <vector>
 
 using namespace std;

@@ -20,7 +20,7 @@ CSMain::~CSMain()
 void CSMain::OnEntry(void)
 { 
 	m_pDXManager = new CDXManager();
-	m_pDXPainter = new CDXBasicPainter(m_pDXManager);
+	m_pDXPainter = new CDXPainter(m_pDXManager);
 	m_FX = new CFX(m_pDXManager);
 	
 

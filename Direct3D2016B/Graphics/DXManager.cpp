@@ -279,3 +279,60 @@ ID3D11ComputeShader * CDXManager::CompileComputeShader(
 	return NULL;
 }
 
+ID3D11Buffer * CDXManager::CreateLoadBuffer(
+	void * pData,
+	unsigned long ulElementSize,
+	unsigned long ulElements)
+{
+	D3D11_BUFFER_DESC dbd;
+	memset(&dbd, 0, sizeof(dbd));
+	// Input/Output el mismo buffer
+	dbd.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS;
+	// Tamaño en bytes del recurso en el GPU
+	dbd.ByteWidth = ulElements*ulElementSize;
+	/*							GPU		CPU
+	D3D11_USAGE_DEFAULT			W/R		 -
+	D3D11_USAGE_INMUTABLE        R       W Once
+	D3D11_USAGE_DYNAMIC          R       W
+	D3D11_USAGE_STAGING			 -       W/R
+	*/
+	dbd.Usage = D3D11_USAGE_DEFAULT;
+	dbd.StructureByteStride = ulElementSize;
+	dbd.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+	dbd.CPUAccessFlags = 0;
+
+	D3D11_SUBRESOURCE_DATA dsd;
+	dsd.pSysMem = pData;
+	dsd.SysMemPitch = 0;
+	dsd.SysMemSlicePitch = 0;
+
+	ID3D11Buffer* pNewBuffer;
+	m_pDevice->CreateBuffer(&dbd, pData ? &dsd : NULL, &pNewBuffer);
+	return pNewBuffer;
+}
+
+void CDXManager::CreateStoreBuffer(
+	ID3D11Buffer * pISB,
+	unsigned long ulElementSize,
+	unsigned long ulElements,
+	void * pOutData)
+{
+	ID3D11Buffer* pStage = 0;
+	D3D11_BUFFER_DESC dbd;
+	dbd.BindFlags = 0;
+	dbd.ByteWidth = ulElements*ulElementSize;
+	dbd.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+	dbd.Usage = D3D11_USAGE_STAGING;
+	dbd.StructureByteStride = ulElementSize;
+	dbd.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+
+	m_pDevice->CreateBuffer(&dbd, NULL, &pStage);
+	m_pContext->CopyResource(pStage, pISB);
+
+	D3D11_MAPPED_SUBRESOURCE ms;
+
+	m_pContext->Map(pStage, 0, D3D11_MAP_READ, 0, &ms);
+	memcpy(pOutData, ms.pData, ulElements*ulElementSize);
+	m_pContext->Unmap(pStage, 0);
+	pStage->Release();
+}

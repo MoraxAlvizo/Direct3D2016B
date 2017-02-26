@@ -1,7 +1,7 @@
 #pragma once
 #include "../Graphics/Matrix4D.h"
 #include "../Collisions/MeshCollision.h"
-#include "../Graphics/DXBasicPainter.h"
+#include "../Graphics/DXPainter.h"
 
 #define OCTREECUBE_MAX_OBJECTS_PER_BOX 1
 
@@ -47,7 +47,7 @@ public:
 	void addObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D bmax);
 	void removeObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D bmax);
 	void fileObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D bmax, bool addBall);
-	void DrawOctree(CDXBasicPainter* painter);
+	void DrawOctree(CDXPainter* painter);
 	void destroyChildren();
 	void collectObjects(set<CMeshCollision*> &objects);
 	void potentialCollsions(set<unsigned long long> &collisions);

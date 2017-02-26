@@ -108,7 +108,7 @@ void BVH::Build(CMesh & object, vector<unsigned long> Primitives)
 
 }
 
-void BVH::Draw(CDXBasicPainter * painter, int depth, MATRIX4D translation)
+void BVH::Draw(CDXPainter * painter, int depth, MATRIX4D translation)
 {
 	VECTOR4D c1 = m_Box.min * translation ;
 	VECTOR4D c2 = m_Box.max * translation ;
@@ -121,7 +121,7 @@ void BVH::Draw(CDXBasicPainter * painter, int depth, MATRIX4D translation)
 	c2.y -= 0.01;
 	c2.z -= 0.01;*/
 
-	CDXBasicPainter::VERTEX cube[8];
+	CDXPainter::VERTEX cube[8];
 	unsigned long   m_lIndicesFrame[16];
 	cube[0].Position = { c1.x,c1.y,c1.z,1 };
 	cube[1].Position = { c1.x,c2.y,c1.z,1 };
@@ -517,7 +517,7 @@ bool BVH::CheckIfPrimitivesCollision(BVH * pTree,
 	return false;
 }
 
-void BVH::DrawLBVH(CDXBasicPainter * painter, int node)
+void BVH::DrawLBVH(CDXPainter * painter, int node)
 {
 	/* Caso base */
 	if (LBVH[node].numPrimitives <= 0)
@@ -534,7 +534,7 @@ void BVH::DrawLBVH(CDXBasicPainter * painter, int node)
 	c2.y -= 0.01;
 	c2.z -= 0.01;*/
 
-	CDXBasicPainter::VERTEX cube[8];
+	CDXPainter::VERTEX cube[8];
 	unsigned long   m_lIndicesFrame[16];
 	cube[0].Position = { c1.x,c1.y,c1.z,1 };
 	cube[1].Position = { c1.x,c2.y,c1.z,1 };
