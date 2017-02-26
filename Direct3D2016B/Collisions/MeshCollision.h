@@ -20,13 +20,13 @@ public:
 	BoundingBox m_Box;
 	COctree* m_octree;
 	BVH* m_BVH;
-	MATRIX4D m_TranslationBVH;
 	unsigned long m_lID;
 
 	void ResetColors();
 	void createOctree();
 	void MoveVertex(MATRIX4D Translation);
 	void CreateMeshCollisionFromVMesh(CVMesh vMesh);
+	void ApplyTransformation(MATRIX4D & m);
 
 };
 

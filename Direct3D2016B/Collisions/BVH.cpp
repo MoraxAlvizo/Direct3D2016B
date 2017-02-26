@@ -203,15 +203,15 @@ void BVH::Traversal(BVH * pTree, MATRIX4D& thisTranslation,MATRIX4D& translation
 
 				unsigned long indicesThis = m_Box.idPrimitive * 3;
 
-				VECTOR4D object1_V0 = object1.m_Vertices[object1.m_Indices[indicesThis]].Position * object1.m_World;
-				VECTOR4D object1_V1 = object1.m_Vertices[object1.m_Indices[indicesThis +1]].Position* object1.m_World;
-				VECTOR4D object1_V2 = object1.m_Vertices[object1.m_Indices[indicesThis +2]].Position* object1.m_World;
+				VECTOR4D object1_V0 = object1.m_Vertices[object1.m_Indices[indicesThis]].Position;// *object1.m_World;
+				VECTOR4D object1_V1 = object1.m_Vertices[object1.m_Indices[indicesThis + 1]].Position;// *object1.m_World;
+				VECTOR4D object1_V2 = object1.m_Vertices[object1.m_Indices[indicesThis + 2]].Position;// *object1.m_World;
 
 				unsigned long indicesPTree = pTree->m_Box.idPrimitive * 3;
 
-				VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position* object2.m_World;
-				VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position* object2.m_World;
-				VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position* object2.m_World;
+				VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position;// *object2.m_World;
+				VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position;// *object2.m_World;
+				VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position;// *object2.m_World;
 
 				VECTOR4D Intersection;
 				VECTOR4D RayOrigin;
@@ -318,6 +318,19 @@ void BVH::Traversal(BVH * pTree, MATRIX4D& thisTranslation,MATRIX4D& translation
 				this->m_pRight->Traversal(pTree->m_pRight, thisTranslation, translationTree, object1, object2);
 		}
 	}
+}
+
+void BVH::ApplyTransformation(MATRIX4D & m, unsigned long currentNode)
+{
+	if (this->LBVH[currentNode].numPrimitives <= 0)
+		return;
+
+	this->LBVH[currentNode].max = this->LBVH[currentNode].max * m;
+	this->LBVH[currentNode].min = this->LBVH[currentNode].min * m;
+
+	ApplyTransformation(m,currentNode << 1);
+	ApplyTransformation(m, (currentNode << 1) + 1);
+
 }
 
 void BVH::Preconstruction(CMesh & object)
@@ -448,15 +461,15 @@ bool BVH::CheckIfPrimitivesCollision(BVH * pTree,
 
 	unsigned long indicesThis = this->LBVH[nodeThis].idPrimitive * 3;
 
-	VECTOR4D object1_V0 = object1.m_Vertices[object1.m_Indices[indicesThis]].Position * object1.m_World;
-	VECTOR4D object1_V1 = object1.m_Vertices[object1.m_Indices[indicesThis + 1]].Position* object1.m_World;
-	VECTOR4D object1_V2 = object1.m_Vertices[object1.m_Indices[indicesThis + 2]].Position* object1.m_World;
+	VECTOR4D object1_V0 = object1.m_Vertices[object1.m_Indices[indicesThis]].Position;// *object1.m_World;
+	VECTOR4D object1_V1 = object1.m_Vertices[object1.m_Indices[indicesThis + 1]].Position;// *object1.m_World;
+	VECTOR4D object1_V2 = object1.m_Vertices[object1.m_Indices[indicesThis + 2]].Position;// *object1.m_World;
 
 	unsigned long indicesPTree = pTree->LBVH[nodeTree].idPrimitive * 3;
 
-	VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position* object2.m_World;
-	VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position* object2.m_World;
-	VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position* object2.m_World;
+	VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position;// *object2.m_World;
+	VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position;// *object2.m_World;
+	VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position;// *object2.m_World;
 
 	VECTOR4D Intersection;
 	VECTOR4D RayOrigin;
@@ -504,14 +517,14 @@ bool BVH::CheckIfPrimitivesCollision(BVH * pTree,
 	return false;
 }
 
-void BVH::DrawLBVH(CDXBasicPainter * painter, int node, MATRIX4D translation)
+void BVH::DrawLBVH(CDXBasicPainter * painter, int node)
 {
 	/* Caso base */
 	if (LBVH[node].numPrimitives <= 0)
 		return;
 
-	VECTOR4D c1 = LBVH[node].min * translation;
-	VECTOR4D c2 = LBVH[node].max * translation;
+	VECTOR4D c1 = LBVH[node].min;
+	VECTOR4D c2 = LBVH[node].max;
 
 	/*c1.x += 0.01;
 	c1.y += 0.01;
@@ -558,11 +571,11 @@ void BVH::DrawLBVH(CDXBasicPainter * painter, int node, MATRIX4D translation)
 	m_lIndicesFrame[14] = 6;
 	m_lIndicesFrame[15] = 4;
 
-	//if (LBVH[node].isLeaf)
+	if (LBVH[node].isLeaf)
 		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 
-	//DrawLBVH(painter, node << 1, translation);
-	//DrawLBVH(painter, (node << 1)+1, translation);
+	DrawLBVH(painter, node << 1);
+	DrawLBVH(painter, (node << 1)+1);
 
 }
 
@@ -570,19 +583,17 @@ void BVH::TraversalLBVH(
 	BVH * pTree,
 	unsigned long nodeThis,
 	unsigned long nodeTree,
-	MATRIX4D & thisTranslation,
-	MATRIX4D & translationTree,
 	CMesh & object1,
 	CMesh & object2)
 {
 	Box thisBox;
 	Box treeBox;
 
-	thisBox.max = this->LBVH[nodeThis].max * thisTranslation;
-	thisBox.min = this->LBVH[nodeThis].min * thisTranslation;
+	thisBox.max = this->LBVH[nodeThis].max;
+	thisBox.min = this->LBVH[nodeThis].min;
 
-	treeBox.max = pTree->LBVH[nodeTree].max * translationTree;
-	treeBox.min = pTree->LBVH[nodeTree].min * translationTree;
+	treeBox.max = pTree->LBVH[nodeTree].max;
+	treeBox.min = pTree->LBVH[nodeTree].min;
 
 	if (pTree->LBVH[nodeTree].numPrimitives <= 0 ||
 		this->LBVH[nodeThis].numPrimitives <= 0)
@@ -610,8 +621,8 @@ void BVH::TraversalLBVH(
 			else
 			{
 				/* Sino es nodo hoja el pTree entonces revisar si sus hijos collision con este nodo hoja */
-				TraversalLBVH(pTree, nodeThis, nodeTree << 1, thisTranslation, translationTree, object1, object2);
-				TraversalLBVH(pTree, nodeThis, (nodeTree << 1) + 1, thisTranslation, translationTree, object1, object2);
+				TraversalLBVH(pTree, nodeThis, nodeTree << 1,  object1, object2);
+				TraversalLBVH(pTree, nodeThis, (nodeTree << 1) + 1, object1, object2);
 			}
 		}
 		/*
@@ -623,10 +634,10 @@ void BVH::TraversalLBVH(
 		4. this->right vs pTree->right
 		*/
 
-		TraversalLBVH(pTree, nodeThis << 1, nodeTree << 1, thisTranslation, translationTree, object1, object2);
-		TraversalLBVH(pTree, nodeThis << 1, (nodeTree << 1) + 1, thisTranslation, translationTree, object1, object2);
-		TraversalLBVH(pTree, (nodeThis << 1) + 1, nodeTree << 1, thisTranslation, translationTree, object1, object2);
-		TraversalLBVH(pTree, (nodeThis << 1) + 1, (nodeTree << 1) + 1, thisTranslation, translationTree, object1, object2);
+		TraversalLBVH(pTree, nodeThis << 1, nodeTree << 1, object1, object2);
+		TraversalLBVH(pTree, nodeThis << 1, (nodeTree << 1) + 1, object1, object2);
+		TraversalLBVH(pTree, (nodeThis << 1) + 1, nodeTree << 1,  object1, object2);
+		TraversalLBVH(pTree, (nodeThis << 1) + 1, (nodeTree << 1) + 1,  object1, object2);
 	}
 }
 

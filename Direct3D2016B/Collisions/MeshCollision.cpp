@@ -6,7 +6,7 @@ CMeshCollision::CMeshCollision()
 {
 	m_octree = NULL;
 	m_BVH = NULL;
-	m_TranslationBVH = Identity();
+
 }
 
 
@@ -98,4 +98,15 @@ void CMeshCollision::CreateMeshCollisionFromVMesh(CVMesh vMesh)
 	}
 
 	m_Vertices = vMesh.m_Vertices;
+}
+
+void CMeshCollision::ApplyTransformation(MATRIX4D & m)
+{
+	this->m_Box.max = this->m_Box.max * m;
+	this->m_Box.min = this->m_Box.min * m;
+
+	for (unsigned int i = 0; i < m_Vertices.size(); i++)
+	{
+		m_Vertices[i].Position = m_Vertices[i].Position * m;
+	}
 }

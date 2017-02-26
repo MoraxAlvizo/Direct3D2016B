@@ -16,12 +16,10 @@ Descrition:
 #include "SOnGame.h"
 #include "HSM\EventWin32.h"
 #include "HSM\StateMachineManager.h"
-#include "SIntro.h"
 #include "Graphics\ImageBMP.h"
 #include "SMain.h"
 #include "Cut/Plane.h"
 #include "Collisions\BVH.h"
-#include "ActionEvent.h"
 #include <time.h>
 
 #include <iostream>
@@ -275,7 +273,7 @@ void CSOnGame::OnEntry(void)
 	m_SceneCollisions.resize(2);
 
 	/***************** Cube 0 *******************************/
-	m_SceneCollisions[0].m_World = Identity();//Translation(-9, -9, -9);
+	//m_SceneCollisions[0].m_World = Identity();//Translation(-9, -9, -9);
 	m_SceneCollisions[0].CreateMeshCollisionFromVMesh(m_ScenePhysics[0]);
 	m_SceneCollisions[0].m_BVH = new BVH();
 
@@ -289,19 +287,21 @@ void CSOnGame::OnEntry(void)
 	m_SceneCollisions[0].m_BVH->Postconstruction(m_SceneCollisions[0]);
  
 	m_pOctree->addObject(&m_SceneCollisions[0],
-		m_SceneCollisions[0].m_Box.min * m_SceneCollisions[0].m_World,
-		m_SceneCollisions[0].m_Box.max  * m_SceneCollisions[0].m_World);
+		m_SceneCollisions[0].m_Box.min /* m_SceneCollisions[0].m_World*/,
+		m_SceneCollisions[0].m_Box.max  /* m_SceneCollisions[0].m_World*/);
 
 	m_SceneCollisions[0].m_lID = 0;
-	m_SceneCollisions[0].m_World = 
-	m_SceneCollisions[0].m_TranslationBVH = Translation(.5,.5,.5);
+	/*m_SceneCollisions[0].m_World = 
+	m_SceneCollisions[0].m_TranslationBVH = Translation(.5,.5,.5);*/
 	strcpy(m_SceneCollisions[0].m_cName, "Cube 0");
 
 	/***************** Cube 1 *******************************/
 
-	m_SceneCollisions[1].m_World = Identity();
+	/*m_SceneCollisions[1].m_World = Identity();*/
 	m_SceneCollisions[1].CreateMeshCollisionFromVMesh(m_ScenePhysics[1]);
 	m_SceneCollisions[1].m_BVH = new BVH();
+
+	m_SceneCollisions[1].ApplyTransformation(Translation(.2, .2, .2));
 
 	m_SceneCollisions[1].m_BVH->Preconstruction(m_SceneCollisions[1]);
 	primitives.resize(m_SceneCollisions[1].m_Centroides.size());
@@ -312,12 +312,12 @@ void CSOnGame::OnEntry(void)
 	m_SceneCollisions[1].m_BVH->Postconstruction(m_SceneCollisions[1]);
 
 	m_pOctree->addObject(&m_SceneCollisions[1],
-		m_SceneCollisions[1].m_Box.min * m_SceneCollisions[1].m_World,
-		m_SceneCollisions[1].m_Box.max * m_SceneCollisions[1].m_World);
+		m_SceneCollisions[1].m_Box.min /* m_SceneCollisions[1].m_World*/,
+		m_SceneCollisions[1].m_Box.max /* m_SceneCollisions[1].m_World*/);
 
 	m_SceneCollisions[1].m_lID = 1;
 	//m_SceneCollisions[1].m_World = Translation(1, 1, 1);
-	m_SceneCollisions[1].m_TranslationBVH = Identity();
+	//m_SceneCollisions[1].m_TranslationBVH = Identity();
 	strcpy(m_SceneCollisions[1].m_cName, "Cube 1");
 
 	/***************** Cube 2 *******************************/
@@ -345,51 +345,6 @@ void CSOnGame::OnEntry(void)
 
 unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 {
-	if (ACTION_EVENT == pEvent->m_ulEventType)
-	{
-		CActionEvent *Action = (CActionEvent*)pEvent;
-		MATRIX4D Camera = FastInverse(m_View);
-		MATRIX4D Orientation = Camera;
-		VECTOR4D Pos = Camera.vec[3];
-
-		Orientation.vec[3] = { 0,0,0,1 };
-
-		if (JOY_AXIS_LY == Action->m_iAction)
-		{
-			// Dead Zone
-			VECTOR4D Dir = Camera.vec[2];
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
-			Pos = Pos + Dir*Stimulus*0.1;
-		}
-		if (JOY_AXIS_LX == Action->m_iAction)
-		{
-			// Dead Zone
-			VECTOR4D Dir = Camera.vec[0];
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
-			Pos = Pos + Dir*Stimulus*0.1;
-		}
-		if (JOY_AXIS_RX == Action->m_iAction)
-		{
-			// Dead Zone
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
-			Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[1]);
-		}
-		if (JOY_AXIS_RY == Action->m_iAction)
-		{
-			// Dead Zone
-			float Stimulus = fabs(Action->m_fAxis) < 0.2 ? 0.0f : Action->m_fAxis;
-			Orientation = Orientation * RotationAxis(Stimulus*0.01, Camera.vec[0]);
-		}
-
-
-		Camera.vec[0] = Orientation.vec[0];
-		Camera.vec[1] = Orientation.vec[1];
-		Camera.vec[2] = Orientation.vec[2];
-		Camera.vec[3] = Pos;
-
-		m_View = Orthogonalize(FastInverse(Camera));
-
-	}
 	if (APP_LOOP == pEvent->m_ulEventType)
 	{
 		if (m_pDXManager->GetSwapChain())
@@ -435,35 +390,22 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 								direction = 0;
 						}
 
-						/*m_pOctree->removeObject(&m_SceneCollisions[i],
-							m_SceneCollisions[i].m_World * m_SceneCollisions[i].m_Box.min ,
-							m_SceneCollisions[i].m_World * m_SceneCollisions[i].m_Box.max );*/
+						m_pOctree->removeObject(&m_SceneCollisions[i],
+							m_SceneCollisions[i].m_Box.min ,
+							m_SceneCollisions[i].m_Box.max );
 
 						m_SceneCollisions[i].MoveVertex(Translation(0, 0, direction*0.1));
-						m_SceneCollisions[i].m_World = m_SceneCollisions[i].m_World * Translation(0, 0, direction*0.1) ;
-						m_SceneCollisions[i].m_TranslationBVH = m_SceneCollisions[i].m_TranslationBVH * Translation(0, 0, direction*0.1);
+						m_SceneCollisions[i].ApplyTransformation(Translation(0, 0, direction*0.1));
+						m_SceneCollisions[i].m_BVH->ApplyTransformation(Translation(0, 0, direction*0.1),1);
 
 
-
-						/*m_pOctree->addObject(&m_SceneCollisions[i],
-							m_SceneCollisions[i].m_World * m_SceneCollisions[i].m_Box.min,
-							m_SceneCollisions[i].m_World * m_SceneCollisions[i].m_Box.max);*/
+						m_pOctree->addObject(&m_SceneCollisions[i],
+							m_SceneCollisions[i].m_Box.min,
+							m_SceneCollisions[i].m_Box.max);
 					}
 				}
 			}
 
-			m_pOctree = new COctreeCube({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
-			{ BOX_SIZE / 2, BOX_SIZE / 2, BOX_SIZE / 2 }, 0);
-
-			for (unsigned int i = 0; i < m_SceneCollisions.size(); i++)
-			{
-				
-				m_pOctree->addObject(&m_SceneCollisions[i],
-					m_SceneCollisions[i].m_Box.min * m_SceneCollisions[i].m_World,
-				   m_SceneCollisions[i].m_Box.max * m_SceneCollisions[i].m_World);
-
-				
-			}
 
 			// Actualizar camara si fue movida
 			UpdateCamera();
@@ -518,7 +460,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
 				{
 					m_pDXPainter->m_Params.World = Identity();
-					m_SceneCollisions[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_SceneCollisions[i].m_TranslationBVH);
+					m_SceneCollisions[i].m_BVH->DrawLBVH(m_pDXPainter, 1);
 				}
 			}
 
@@ -556,39 +498,26 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					max1.z > min2.z)
 				{
 					//object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-					object1->m_BVH->TraversalLBVH(object2->m_BVH, 1, 1, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
+					object1->m_BVH->TraversalLBVH(object2->m_BVH, 1, 1, *object1, *object2);
 					//object1->m_BVH->BitTrailTraversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
 				}
 			}
 
 			m_pDXPainter->m_Params.World = Identity();
 			m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
-			//m_pOctree->DrawOctree(m_pDXPainter);
 
 			/* Draw scene */
 			for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
 			{
 				m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
-				m_pDXPainter->m_Params.World = m_SceneCollisions[i].m_World;
+				m_pDXPainter->m_Params.World = Identity();// m_SceneCollisions[i].m_World;
 				m_pDXPainter->DrawIndexed(&m_SceneCollisions[i].m_Vertices[0], 
 					m_SceneCollisions[i].m_Vertices.size(), 
 					&m_SceneCollisions[i].m_Indices[0], 
 					m_SceneCollisions[i].m_Indices.size(), 
 					PAINTER_DRAW);
-
-				/*m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
-				m_pDXPainter->m_Params.World = Identity();
-				m_SceneCollisions[i].m_BVH->DrawLBVH(m_pDXPainter, 1, m_SceneCollisions[i].m_TranslationBVH);*/
 				
 			}
-	
-
-			/* Draw surface */
-			/*m_pDXPainter->DrawIndexed(&m_Surface.m_Vertices[0],
-			m_Surface.m_Vertices.size(),
-			&m_Surface.m_Indices[0],
-			m_Surface.m_Indices.size(),
-			PAINTER_DRAW);*/
 
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 
@@ -601,13 +530,13 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 		switch (pWin32->m_msg)
 		{
 		case WM_CHAR:
-			if (pWin32->m_wParam == '8')
+			/*if (pWin32->m_wParam == '8')
 			{
 				m_pSMOwner->Transition(CLSID_CSIntro);
 				CSMain* main = (CSMain*)GetSuperState();
 				InvalidateRect(main->m_hWnd, NULL, false);
 				return 0;
-			}
+			}*/
 			if (pWin32->m_wParam == 'p')
 			{
 				m_lFlags ^= PHYSICS_PRINT_OCTREE;
@@ -869,43 +798,6 @@ void CSOnGame::UpdateCamera()
 		MATRIX4D R = RotationAxis(-speed, ZDir);
 		O = O*R;
 	}
-
-
-
-	//if (g_onFirstMouseMove)
-	//{
-	//	lastX = g_iWidth / 2;
-	//	lastY = g_iHeight / 2;
-
-	//	g_onFirstMouseMove = false;
-	//}
-	//else
-	//{
-
-	//	if (mouseX - lastX != 0)
-	//	{
-	//		float diffX = (float)(mouseX)-(lastX);
-	//		diffX /= g_iWidth / 2;
-
-	//		MATRIX4D R = RotationAxis(-speed*(diffX > 0 ? 1 : -1), YDir);
-	//		//O = O*R;
-
-	//	}
-
-	//	if (mouseY - lastY != 0)
-	//	{
-	//		float diffY = (float)mouseY - lastY;
-	//		diffY /= g_iHeight / 2;
-
-	//		MATRIX4D R = RotationAxis(-speed*(diffY > 0 ? 1 : 0), XDir);
-	//		//O = O*R;
-	//	}
-
-	//	lastX = mouseX;
-	//	lastY = mouseY;
-
-	//}
-
 
 	InvV = O;
 

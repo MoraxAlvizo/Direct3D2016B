@@ -32,7 +32,7 @@ public:
 	};
 	vector<CDXBasicPainter::VERTEX> m_Vertices;
 	vector<unsigned long> m_Indices;
-	MATRIX4D m_World; //
+	//MATRIX4D m_World; //
 	vector<centroid> m_Centroides;
 
 	char m_cName[128];
@@ -51,6 +51,7 @@ public:
 	void BuildTangentSpaceFromTexCoordsIndexed(bool bGenerateNormal);
 	void Optimize();
 	void GenerarCentroides();
+	
 	vector<centroid>& getCentroides() { return m_Centroides; }
 
 

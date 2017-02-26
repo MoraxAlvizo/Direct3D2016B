@@ -84,7 +84,7 @@ void COctreeCube::createChildren()
 	for (set<CMeshCollision*>::iterator it = m_Objects.begin(); it != m_Objects.end();
 		it++) {
 		CMeshCollision* object = *it;
-		fileObject(object, object->m_Box.min * object->m_World, object->m_Box.max* object->m_World, true);
+		fileObject(object, object->m_Box.min /* object->m_World*/, object->m_Box.max /* object->m_World*/, true);
 	}
 
 	m_Objects.clear();
@@ -341,8 +341,8 @@ void COctreeCube::printCHildren(int tab)
 		for (int i = 0; i < tab + 2; i++)printf(" ");
 		printf("Object name %s \n", cube->m_cName);
 		for (int i = 0; i < tab+4; i++)printf(" ");
-		VECTOR4D max = cube->m_Box.max * cube->m_World;
-		VECTOR4D min = cube->m_Box.min * cube->m_World;
+		VECTOR4D max = cube->m_Box.max;// *cube->m_World;
+		VECTOR4D min = cube->m_Box.min;// *cube->m_World;
 
 		printf("Object[%i] min: [%.2f][%.2f][%.2f]\n", counter, min.x, min.y, min.z);
 		for (int i = 0; i < tab+4; i++)printf(" ");

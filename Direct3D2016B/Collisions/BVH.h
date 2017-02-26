@@ -35,6 +35,8 @@ public:
 		CMesh& object1,
 		CMesh& object2);
 
+	void ApplyTransformation(MATRIX4D& m, unsigned long currentNode);
+
 	/* Parallel construction will be divided into 3 steps 
 		
 		1. Preconstruction  - Init centroids
@@ -53,12 +55,10 @@ public:
 		CMesh& object1,
 		CMesh& object2);
 
-	void DrawLBVH(CDXBasicPainter* painter, int depth, MATRIX4D translation);
+	void DrawLBVH(CDXBasicPainter* painter, int depth);
 	void TraversalLBVH(BVH* pTree,
 		unsigned long nodeThis,
 		unsigned long nodeTree,
-		MATRIX4D& thisTranslation,
-		MATRIX4D& translationTree,
 		CMesh& object1,
 		CMesh& object2);
 

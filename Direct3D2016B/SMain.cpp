@@ -1,6 +1,5 @@
 #include "stdafx.h"
 #include "SMain.h"
-#include "InputProcessor.h"
 #include "HSM\EventWin32.h"
 #include "HSM\StateMachineManager.h"
 
@@ -16,10 +15,6 @@ CSMain::~CSMain()
 	m_pDXPainter = NULL;
 	m_bInitCorrect = TRUE;
 	m_FX = NULL;
-	m_pSndManager = NULL;
-	m_pInputManager = NULL;
-	m_pInputProcessor = NULL;
-	m_pNetProcessor = NULL;
 }
 
 void CSMain::OnEntry(void)
@@ -56,44 +51,6 @@ void CSMain::OnEntry(void)
 			L"Error fatal", MB_ICONERROR);
 		return;
 	}
-
-	printf("Sound init \n");
-	CSndFactory* pFactory = new CSndFactory();
-	m_pSndManager =  (CSndManager*) pFactory->CreateObject(L"CSndManager");
-
-	if (!m_pSndManager->InitSoundEngine(m_hWnd))
-	{
-		MessageBox(NULL,
-			L"No se ha podido inicializar Sound",
-			L"Error fatal", MB_ICONERROR);
-		return;
-	}
-
-	printf("Input Init \n");
-	m_pInputManager = new CInputManager();
-	if (!m_pInputManager->InitializeDirectInputSession(m_hInstance))
-	{
-		MessageBox(NULL,
-			L"No se ha podido inicializar Input Manager",
-			L"Error fatal", MB_ICONERROR);
-		return;
-	}
-	if (!m_pInputManager->ConfigureDevices(m_hWnd))
-	{
-		MessageBox(NULL,
-			L"Unable to aquire input devices",
-			L"Error fatal", MB_ICONERROR);
-		return;
-	}
-
-	m_pInputProcessor = new CInputProcessor(this->m_pSMOwner);
-
-	m_pNetProcessor = new CNetProcessor(m_pSMOwner);
-	printf("Init NetProcessor . . .");
-	if (!m_pNetProcessor->InitNetwork())
-		printf("No se pudo inicializar NetProcessor\n");
-	else
-		printf("NetProcessor inicializado correctamente\n");
 		
 }
 
@@ -101,19 +58,6 @@ unsigned long CSMain::OnEvent(CEventBase * pEvent)
 {
 	if (APP_LOOP == pEvent->m_ulEventType)
 	{
-		if (m_pSndManager)
-			m_pSndManager->RemoveAllSndFxStopped();
-
-		for (long iSource = 0; iSource < m_pInputManager->GetDeviceCount(); iSource++)
-		{
-			DIJOYSTATE2 js2;
-			if (m_pInputManager->ReadState(js2, iSource))
-			{
-				CInputEvent *pInput = new CInputEvent(iSource, 0, js2);
-				m_pSMOwner->PostEvent(pInput);
-				m_pInputProcessor->OnEvent(pInput);
-			}
-		}
 
 	}
 	else if (EVENT_WIN32 == pEvent->m_ulEventType)
@@ -133,10 +77,7 @@ unsigned long CSMain::OnEvent(CEventBase * pEvent)
 		case WM_CHAR:
 			switch (pWin32->m_lParam)
 			{
-				//
-				//
-			case '2':
-				MAIN->m_pNetProcessor->Connect(L"127.0.0.1");
+			
 			default:
 				break;
 			}
@@ -153,20 +94,11 @@ void CSMain::OnExit(void)
 	printf("[HCM] %s:OnExit\n", GetClassString());
 	m_pDXPainter->Uninitialize();
 	m_pDXManager->Uninitialize();
-	m_pSndManager->UnitializeSoundEngine();
 	m_FX->Uninitialize();
-	m_pInputManager->FinalizeDirectInputSession();
 	SAFE_DELETE(m_pDXPainter);
 	SAFE_DELETE(m_pDXManager);
 	SAFE_DELETE(m_FX);
 	
-	CSndFactory Factory;
-	Factory.DestroyObject(m_pSndManager);
-
-	SAFE_DELETE(m_pInputManager);
-
-	delete m_pInputProcessor;
-
 }
 
 

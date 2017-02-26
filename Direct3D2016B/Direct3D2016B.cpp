@@ -6,9 +6,7 @@
 #include <fcntl.h>
 #include "Direct3D2016B.h"
 #include "SMain.h"
-#include "SIntro.h"
 #include "SOnGame.h"
-#include "SMainMenu.h"
 #include "HSM\StateMachineManager.h"
 #include "HSM\EventWin32.h"
 
@@ -143,18 +141,12 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 	// Application Map Desing
 	CSMain* pSMain = new CSMain();
-	CSIntro* psIntro = new CSIntro();
 	CSOnGame* psOnGame = new CSOnGame();
-	CSMainMenu* psMainMenu = new CSMainMenu();
 
-	g_Game.RegisterState(psIntro, CLSID_CSIntro, 0);
-	g_Game.RegisterState(psMainMenu, CLSID_CSMainMenu, 0);
 	g_Game.RegisterState(psOnGame, CLSID_CSOnGame, 0);
 	g_Game.RegisterState(pSMain, CLSID_CSMain, CLSID_CSOnGame); // CLSID_CSIntro
 
-	g_Game.LinkToSuperState(CLSID_CSIntro, CLSID_CSMain);
 	g_Game.LinkToSuperState(CLSID_CSOnGame, CLSID_CSMain);
-	g_Game.LinkToSuperState(CLSID_CSMainMenu, CLSID_CSMain);
 
 	g_Game.SetInitialState(CLSID_CSMain);
 
