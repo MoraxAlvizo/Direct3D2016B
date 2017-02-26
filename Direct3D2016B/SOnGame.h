@@ -70,7 +70,6 @@ public:
 	MATRIX4D m_Projection;
 
 	/* Scene */
-	CMeshMathSurface m_Surface;
 	//vector<CMeshCollision> m_Scene;
 	vector<CMeshCollision> m_SceneCollisions;
 	vector<CVMesh> m_ScenePhysics;

@@ -63,15 +63,6 @@ void CSOnGame::OnEntry(void)
 	m_Projection = PerspectiveWidthHeightLH(0.05, 0.05, 0.1, 100);
 	m_World = Identity();
 
-	/* Load surface */
-	m_Surface.LoadSuzanne();
-	//m_Surface.BuildParametricSurface(20, 20, 0, 0, 1.0f / (20 - 1), 1.0f / (20 - 1), Sphere1);
-	//m_Surface.Optimize();
-	m_Surface.BuildTangentSpaceFromTexCoordsIndexed(true);
-	m_Surface.SetColor(White, White, White, White);
-
-
-
 	/* Load Scene */
 	char buffer[BUF_SIZE];
 	int ret;
@@ -217,12 +208,6 @@ void CSOnGame::OnEntry(void)
 	m_bTurnUp =  m_bTurnDown = m_bTurnS =  m_bTurnS1 =false;
 
 	/* Init collisions structures */
-	/*for (unsigned long i = 0; i < m_Scene.size(); i++)
-	{
-		m_Scene[i].m_octree = new COctree(m_Scene[i].m_Box.min, m_Scene[i].m_Box.max, 0, m_pDXPainter);
-		m_Scene[i].m_octree->m_Color = { i % 2 ? 1.f : 0.f , 1,i % 3 ? 1.f : 0.f,0 };
-	}*/
-
 
 	m_pOctree = new COctreeCube({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
 	{ BOX_SIZE / 2, BOX_SIZE / 2, BOX_SIZE / 2 }, 0);
@@ -396,7 +381,23 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 						m_SceneCollisions[i].MoveVertex(Translation(0, 0, direction*0.1));
 						m_SceneCollisions[i].ApplyTransformation(Translation(0, 0, direction*0.1));
-						m_SceneCollisions[i].m_BVH->ApplyTransformation(Translation(0, 0, direction*0.1),1);
+
+						m_SceneCollisions[i].m_BVH->Preconstruction(m_SceneCollisions[i]);
+
+
+						vector<unsigned long> primitives;
+
+						primitives.resize(m_SceneCollisions[i].m_Centroides.size());
+						for (unsigned long j = 0; j < m_SceneCollisions[i].m_Centroides.size(); j++)
+							primitives[j] = j;
+
+						m_SceneCollisions[i].m_BVH->Construction(m_SceneCollisions[i], 1, primitives);
+						m_SceneCollisions[i].m_BVH->Postconstruction(m_SceneCollisions[i]);
+
+						// Update max -min in object
+						m_SceneCollisions[i].m_Box.max = m_SceneCollisions[i].m_BVH->LBVH[1].max;
+						m_SceneCollisions[i].m_Box.min = m_SceneCollisions[i].m_BVH->LBVH[1].min;
+						////m_SceneCollisions[i].m_BVH->ApplyTransformation(Translation(0, 0, direction*0.1),1);
 
 
 						m_pOctree->addObject(&m_SceneCollisions[i],
