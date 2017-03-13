@@ -12,9 +12,7 @@ using namespace std;
 struct centroid
 {
 	int id;
-	int code;
 	VECTOR4D position;
-	VECTOR4D normal;
 	VECTOR4D max;
 	VECTOR4D min;
 };
@@ -39,8 +37,14 @@ public:
 	// DirectX buffers
 	ID3D11Buffer* m_pVertexBuffer;
 	ID3D11Buffer* m_pIndexBuffer;
-	// UAV For vertex buffer 
+	ID3D11Buffer* m_pPrimitivesBuffer;
+	// UAV For vertex buffer  and primbuffer
 	ID3D11UnorderedAccessView* m_pUAVVertexBuffer;
+	ID3D11UnorderedAccessView* m_pUAVPrimitiveBuffer;
+
+	// SRV For vertex buffer and index buffer
+	ID3D11ShaderResourceView* m_pSRVVertexBuffer;
+	ID3D11ShaderResourceView* m_pSRVIndexBuffer;
 
 	void CreateVertexAndIndexBuffer(CDXManager* m_pManager);
 	void Draw(CDXPainter* m_pPainter);
@@ -61,8 +65,6 @@ public:
 	void GenerarCentroides();
 	
 	vector<centroid>& getCentroides() { return m_Centroides; }
-
-
 	~CMesh();
 };
 

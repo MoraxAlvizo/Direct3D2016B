@@ -248,11 +248,11 @@ ID3D11ComputeShader * CDXManager::CompileComputeShader(
 
 	HRESULT hr = D3DCompileFromFile(pszFileName, NULL, D3D_COMPILE_STANDARD_FILE_INCLUDE, pszEntryPoint,
 		"cs_5_0",
-#ifdef _DEBUG
+/*#ifdef _DEBUG
 		D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 
-#else 
+#else */
 		D3DCOMPILE_OPTIMIZATION_LEVEL3 ,
-#endif // _DEBUG
+//#endif // _DEBUG
 		0, &pDXIL, &pErrors);
 
 	if (pErrors)
@@ -335,4 +335,26 @@ void CDXManager::CreateStoreBuffer(
 	memcpy(pOutData, ms.pData, ulElements*ulElementSize);
 	m_pContext->Unmap(pStage, 0);
 	pStage->Release();
+}
+
+ID3D11Buffer * CDXManager::CreateConstantBuffer(unsigned long ulBytes)
+{
+	ID3D11Buffer* pCB;
+	D3D11_BUFFER_DESC dbd;
+	memset(&dbd, 0, sizeof(dbd));
+	dbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	dbd.ByteWidth = 16 * ((ulBytes + 15) / 16);
+	dbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	dbd.Usage = D3D11_USAGE_DYNAMIC;
+
+	m_pDevice->CreateBuffer(&dbd, 0, &pCB);
+	return pCB;
+}
+
+void CDXManager::UpdateConstantBuffer(ID3D11Buffer * pCB, void * pSource, unsigned long ulBytes)
+{
+	D3D11_MAPPED_SUBRESOURCE ms;
+	m_pContext->Map(pCB, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
+	memcpy(ms.pData, pSource, ulBytes);
+	m_pContext->Unmap(pCB, 0);
 }

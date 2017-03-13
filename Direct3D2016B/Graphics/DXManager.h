@@ -46,6 +46,9 @@ public:
 		unsigned long ulElements,
 		void* pOutData);
 
+	ID3D11Buffer * CreateConstantBuffer(unsigned long ulBytes);
+	void UpdateConstantBuffer(ID3D11Buffer * pCB, void * pSource, unsigned long ulBytes);
+
 	CDXManager();
 	~CDXManager();
 };

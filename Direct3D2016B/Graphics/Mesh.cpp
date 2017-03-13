@@ -8,7 +8,7 @@ void CMesh::CreateVertexAndIndexBuffer(CDXManager * m_pManager)
 	
 	D3D11_BUFFER_DESC dbd;
 	memset(&dbd, 0, sizeof(dbd));
-	dbd.BindFlags = D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_UNORDERED_ACCESS;
+	dbd.BindFlags = D3D11_BIND_VERTEX_BUFFER | D3D11_BIND_UNORDERED_ACCESS | D3D11_BIND_SHADER_RESOURCE;
 	dbd.ByteWidth = sizeof(CDXPainter::VERTEX)*(this->m_Vertices.size());
 	dbd.CPUAccessFlags = 0;
 	/*
@@ -18,6 +18,7 @@ void CMesh::CreateVertexAndIndexBuffer(CDXManager * m_pManager)
 	D3D11_USAGE_STAGING   GPU:None CPU:W/R
 	*/
 	dbd.Usage = D3D11_USAGE_DEFAULT;
+	dbd.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 	dbd.StructureByteStride = sizeof(CDXPainter::VERTEX);
 	dbd.MiscFlags = 0;
 
@@ -34,16 +35,34 @@ void CMesh::CreateVertexAndIndexBuffer(CDXManager * m_pManager)
 	memset(&uavd, 0, sizeof(uavd));
 	uavd.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
 	uavd.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-	// Revisar esto con conrnejo 
 	uavd.Buffer.NumElements = (this->m_Vertices.size()* sizeof(CDXPainter::VERTEX)) / sizeof(VECTOR4D);
 	m_pManager->GetDevice()->CreateUnorderedAccessView(m_pVertexBuffer, &uavd, &m_pUAVVertexBuffer);
 
+	// Create SRV for vertex buffer
+	D3D11_SHADER_RESOURCE_VIEW_DESC srvd;
+	memset(&srvd, 0, sizeof(srvd));
+	srvd.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+	srvd.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	srvd.Buffer.NumElements = (this->m_Vertices.size() * sizeof(CDXPainter::VERTEX)) / sizeof(VECTOR4D);
+
+	m_pManager->GetDevice()->CreateShaderResourceView(m_pVertexBuffer, &srvd, &m_pSRVVertexBuffer);
+
 	// Create index buffer 
 	dsd.pSysMem = &(this->m_Indices[0]);
-	dbd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+	dbd.BindFlags = D3D11_BIND_INDEX_BUFFER | D3D11_BIND_SHADER_RESOURCE;
 	dbd.ByteWidth = sizeof(unsigned long)*m_Indices.size();
 	m_pManager->GetDevice()->CreateBuffer(
 		&dbd, &dsd, &m_pIndexBuffer);
+
+	memset(&srvd, 0, sizeof(srvd));
+	srvd.Format = DXGI_FORMAT_R32_UINT;
+	srvd.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+	srvd.Buffer.NumElements = m_Indices.size();
+	m_pManager->GetDevice()->CreateShaderResourceView(m_pIndexBuffer, &srvd, &m_pSRVIndexBuffer);
+
+	m_pPrimitivesBuffer = m_pManager->CreateLoadBuffer(NULL, sizeof(centroid), m_Indices.size() / 3);
+	m_pManager->GetDevice()->CreateUnorderedAccessView(m_pPrimitivesBuffer, NULL, &m_pUAVPrimitiveBuffer);
+
 }
 
 void CMesh::Draw(CDXPainter * m_pPainter)
@@ -398,10 +417,10 @@ void CMesh::GenerarCentroides()
 		VECTOR4D B = m_Vertices[m_Indices[i + 1]].Position;// *m_World;
 		VECTOR4D C = m_Vertices[m_Indices[i + 2]].Position;// *m_World;
 
-		m_Centroides[i / 3].id = i / 3;
-		m_Centroides[i / 3].code = 0;
+		//m_Centroides[i / 3].id = i / 3;
+		//m_Centroides[i / 3].code = 0;
 		m_Centroides[i / 3].position = (A + B + C) / 3;
-		m_Centroides[i / 3].normal = Normalize(m_Centroides[i / 3].position);
+		//m_Centroides[i / 3].normal = Normalize(m_Centroides[i / 3].position);
 
 		/* Get Max */
 		m_Centroides[i / 3].max = MAX_VECTOR4D(A, B);

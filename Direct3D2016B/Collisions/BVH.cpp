@@ -12,8 +12,13 @@
 
 #define BVH_IS_LEFT(pBVH) (!(pBVH)->m_pLeft && !(pBVH)->m_pRight)
 
+ID3D11ComputeShader*     BVH::s_pCSPrebuild = NULL;
+ID3D11ComputeShader*     BVH::s_pCSBuild = NULL;
+ID3D11ComputeShader*     BVH::s_pCSPostbuild = NULL;
+
 BVH::BVH()
 {
+	//m_pCSBuild = m_pCSPostbuild = m_pCSPrebuild = NULL;
 	m_pLeft = m_pRight = NULL;
 	m_Color = { 0, 1, 1, 0 };
 	LBVH.resize(BVH_NUM_NODES);
@@ -22,6 +27,14 @@ BVH::BVH()
 
 BVH::~BVH()
 {
+
+}
+
+void BVH::CreateGPUBuffer(CDXManager * pManager)
+{
+	m_pGPU_BVH = pManager->CreateLoadBuffer(NULL, sizeof(BVH::Box), BVH_NUM_NODES);
+	pManager->GetDevice()->CreateUnorderedAccessView(m_pGPU_BVH, NULL, &m_pUAV_GPU_BVH);
+	m_pCB_BVH = pManager->CreateConstantBuffer(sizeof(BVH::CB_BVH));
 }
 
 void BVH::Build(CMesh & object, vector<unsigned long> Primitives)
@@ -333,6 +346,12 @@ void BVH::ApplyTransformation(MATRIX4D & m, unsigned long currentNode)
 
 }
 
+void BVH::CompileCSShaders(CDXManager *pManager)
+{
+	s_pCSPrebuild = pManager->CompileComputeShader(L"..\\Shaders\\BVH.hlsl", "Prebuild");
+	s_pCSBuild = pManager->CompileComputeShader(L"..\\Shaders\\BVH.hlsl", "Build");
+}
+
 void BVH::Preconstruction(CMesh & object)
 {
 	object.GenerarCentroides();
@@ -449,6 +468,57 @@ void BVH::Postconstruction(CMesh & object)
 			}
 		}
 	}
+}
+
+
+void BVH::BuildGPU(CDXManager * pManager, CMesh* mesh)
+{
+	auto pCtx = pManager->GetContext(); 
+	
+	/* Set Compute Shader */
+	pCtx->CSSetShader(BVH::s_pCSPrebuild, 0, 0);
+
+	/* Update constant buffer */
+	m_CB_BVH.numPrimitives = mesh->m_Indices.size() / 3;
+	pManager->UpdateConstantBuffer(m_pCB_BVH, &m_CB_BVH, sizeof(BVH::CB_BVH));
+
+	/* Set Constant buffer */
+	pCtx->CSSetConstantBuffers(0, 1, &m_pCB_BVH);
+
+	/* Set UAV */
+	pCtx->CSSetUnorderedAccessViews(0, 1, &(mesh->m_pUAVPrimitiveBuffer), NULL);
+	pCtx->CSSetUnorderedAccessViews(1, 1, &(this->m_pUAV_GPU_BVH), NULL);
+
+	/* Set SRV */
+	pCtx->CSSetShaderResources(0, 1, &(mesh->m_pSRVVertexBuffer));
+	pCtx->CSSetShaderResources(1, 1, &(mesh->m_pSRVIndexBuffer));
+	pCtx->Dispatch(1, 1, 1);
+
+	/* Set Compute Shader */
+	pCtx->CSSetShader(BVH::s_pCSBuild, 0, 0);
+
+	for (long i = 0; i < BVH_MAX_LEVEL; i++)
+	{
+		/* Update constant buffer */
+		m_CB_BVH.level = i;
+		m_CB_BVH.suma = 0;
+		pManager->UpdateConstantBuffer(m_pCB_BVH, &m_CB_BVH, sizeof(BVH::CB_BVH));
+
+		/* Set Constant buffer */
+		pCtx->CSSetConstantBuffers(0, 1, &m_pCB_BVH);
+
+		/* Dispatch */
+		pCtx->Dispatch(1 << i, 1, 1);
+	}
+
+	this->LBVH.clear();
+	LBVH.resize(BVH_NUM_NODES);
+	pManager->CreateStoreBuffer(this->m_pGPU_BVH, sizeof(BVH::Box), BVH_NUM_NODES, &LBVH[0]);
+
+	vector<centroid> buffer;
+	buffer.resize(mesh->m_Indices.size() / 3);
+	pManager->CreateStoreBuffer(mesh->m_pPrimitivesBuffer, sizeof(centroid), mesh->m_Indices.size() / 3, &buffer[0]);
+
 }
 
 bool BVH::CheckIfPrimitivesCollision(BVH * pTree,
@@ -571,11 +641,14 @@ void BVH::DrawLBVH(CDXPainter * painter, int node)
 	m_lIndicesFrame[14] = 6;
 	m_lIndicesFrame[15] = 4;
 
-	if (LBVH[node].isLeaf)
-		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 
-	DrawLBVH(painter, node << 1);
-	DrawLBVH(painter, (node << 1)+1);
+	painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
+	if (!LBVH[node].isLeaf)
+	{
+		DrawLBVH(painter, node << 1);
+		DrawLBVH(painter, (node << 1) + 1);
+	}
+	
 
 }
 

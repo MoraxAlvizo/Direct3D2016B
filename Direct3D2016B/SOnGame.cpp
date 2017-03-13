@@ -257,11 +257,15 @@ void CSOnGame::OnEntry(void)
 
 	m_SceneCollisions.resize(2);
 
+	/* Compile BVH CS shaders */
+	BVH::CompileCSShaders(m_pDXManager);
+
 	/***************** Cube 0 *******************************/
 	//m_SceneCollisions[0].m_World = Identity();//Translation(-9, -9, -9);
 	m_SceneCollisions[0].CreateMeshCollisionFromVMesh(m_ScenePhysics[0]);
 	m_SceneCollisions[0].CreateVertexAndIndexBuffer(m_pDXManager);
 	m_SceneCollisions[0].m_BVH = new BVH();
+	m_SceneCollisions[0].m_BVH->CreateGPUBuffer(m_pDXManager);
 
 	m_SceneCollisions[0].m_BVH->Preconstruction(m_SceneCollisions[0]);
 
@@ -280,6 +284,9 @@ void CSOnGame::OnEntry(void)
 	/*m_SceneCollisions[0].m_World = 
 	m_SceneCollisions[0].m_TranslationBVH = Translation(.5,.5,.5);*/
 	strcpy(m_SceneCollisions[0].m_cName, "Cube 0");
+
+	/* Build with GPU */
+	m_SceneCollisions[0].m_BVH->BuildGPU(m_pDXManager, &m_SceneCollisions[0]);
 
 	/***************** Cube 1 *******************************/
 
@@ -362,8 +369,9 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				{
 					m_SceneCollisions[i].ResetColors();
 					unsigned long flags;
-					if ((m_SceneCollisions[i].m_lID == 0 && (flags = m_lMoveSphere1)) ||
-						(m_SceneCollisions[i].m_lID == 1 && (flags = m_lMoveSphere2)))
+					if (/*(m_SceneCollisions[i].m_lID == 0 && (flags = m_lMoveSphere1)) ||
+						(m_SceneCollisions[i].m_lID == 1 && (flags = m_lMoveSphere2))*/
+						false)
 					{
 						float direction = -1;
 
@@ -470,9 +478,10 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				m_pDXPainter->m_Params.World = Identity();
 				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
 
-				m_pOctree->DrawOctree(m_pDXPainter);
+				//m_pOctree->DrawOctree(m_pDXPainter);
 
-				for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
+				unsigned long i = 0;
+				//for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
 				{
 					m_pDXPainter->m_Params.World = Identity();
 					m_SceneCollisions[i].m_BVH->DrawLBVH(m_pDXPainter, 1);
@@ -522,18 +531,19 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
 
 			/* Draw scene */
-			for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
-			{
-				m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
-				m_pDXPainter->m_Params.World = Identity();// m_SceneCollisions[i].m_World;
-				m_pDXPainter->DrawIndexed(&m_SceneCollisions[i].m_Vertices[0], 
-					m_SceneCollisions[i].m_Vertices.size(), 
-					&m_SceneCollisions[i].m_Indices[0], 
-					m_SceneCollisions[i].m_Indices.size(), 
-					PAINTER_DRAW);
-				//m_SceneCollisions[i].Draw(m_pDXPainter);
+			//if (!(m_lFlags & PHYSICS_DRAW_OCTREE))
+				for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
+				{
+					m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
+					m_pDXPainter->m_Params.World = Identity();// m_SceneCollisions[i].m_World;
+					m_pDXPainter->DrawIndexed(&m_SceneCollisions[i].m_Vertices[0], 
+						m_SceneCollisions[i].m_Vertices.size(), 
+						&m_SceneCollisions[i].m_Indices[0], 
+						m_SceneCollisions[i].m_Indices.size(), 
+						PAINTER_DRAW);
+					/*m_SceneCollisions[i].Draw(m_pDXPainter);*/
 				
-			}
+				}
 
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 
