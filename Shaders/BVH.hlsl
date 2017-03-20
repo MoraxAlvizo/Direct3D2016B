@@ -221,13 +221,45 @@ void Build(uint3 id:SV_DispatchThreadID,
 	if (lid.x == 0)
 	{
 		if (falseTotal == 1)
+		{
 			g_BVH[num_box << 1].isLeaf = true;
+		}
+			
 		g_BVH[num_box << 1].numPrimitives = falseTotal;
 		g_BVH[num_box << 1].offset = offet_prim;
 
-		if((num_primitives - falseTotal) == 1)
+		if ((num_primitives - falseTotal) == 1)
+		{
 			g_BVH[(num_box << 1) + 1].isLeaf = true;
+		}
+			
 		g_BVH[(num_box << 1) + 1].numPrimitives = num_primitives - falseTotal;
 		g_BVH[(num_box << 1) + 1].offset = offet_prim + falseTotal;
 	}
+}
+
+
+[numthreads(NUM_THREAS_PER_GROUP, 1, 1)]
+void Postbuild(uint3 id:SV_DispatchThreadID)
+{
+	int index = (1 << level) + id.x;
+	/* if it is invalid, skip */
+	if (g_BVH[index].numPrimitives <= 0)
+		return;
+
+	if (id.x < (1 << level))
+	{
+		if (g_BVH[index].isLeaf)
+		{
+			g_BVH[index].idPrimitive = g_Primitives[g_BVH[index].offset].id;
+			g_BVH[index].max = g_Primitives[g_BVH[index].offset].max;
+			g_BVH[index].min = g_Primitives[g_BVH[index].offset].min;
+		}
+		else
+		{
+			g_BVH[index].max = max(g_BVH[index << 1].max, g_BVH[(index << 1) + 1].max);
+			g_BVH[index].min = min(g_BVH[index << 1].min, g_BVH[(index << 1) + 1].min);
+		}
+	}
+	
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Graphics/Mesh.h"
-#define BVH_MAX_LEVEL 21
+#define BVH_MAX_LEVEL 10
 #define BVH_NUM_NODES (pow(2, BVH_MAX_LEVEL+1)-1)
 
 class BVH
@@ -78,8 +78,10 @@ public:
 		unsigned long nodeTree,
 		CMesh& object1,
 		CMesh& object2);
+	
+	void PrintLBVH(int node, int depth);
 
-	void DrawLBVH(CDXPainter* painter, int depth);
+	void DrawLBVH(CDXPainter* painter, int node);
 	void TraversalLBVH(BVH* pTree,
 		unsigned long nodeThis,
 		unsigned long nodeTree,

@@ -102,18 +102,7 @@ void CDXPainter::Uninitialize()
 	SAFE_RELEASE(m_pDrawRH);
 }
 
-void CDXPainter::SetTranformationCBMesh(MATRIX4D & t)
-{
-	D3D11_MAPPED_SUBRESOURCE ms;
-	
-	m_pManager->GetContext()->Map(m_pCBMesh, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
-	PARAMS_MESH_CB Temp = m_Params_Mesh_CB;
 
-	Temp.Transformation = Transpose(t);
-
-	memcpy(ms.pData, &Temp, sizeof(PARAMS_MESH_CB));
-	m_pManager->GetContext()->Unmap(m_pCBMesh, 0);
-}
 
 D3D11_INPUT_ELEMENT_DESC CDXPainter::VERTEX::InputLayout[] =
 {
@@ -263,15 +252,7 @@ bool CDXPainter::Initialize()
 	SAFE_RELEASE(pMemory);
 
 	m_pCS = m_pManager->CompileComputeShader(L"..\\Shaders\\Default.hlsl", "main");
-	m_pCSApplyTrans = m_pManager->CompileComputeShader(L"..\\Shaders\\Mesh.hlsl", "main");
-
-	// Create constant buffer Mesh.hlsl
-	memset(&dbd, 0, sizeof(dbd));
-	dbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-	dbd.ByteWidth = 16 * ((sizeof(PARAMS_MESH_CB) + 15) / 16);
-	dbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-	dbd.Usage = D3D11_USAGE_DYNAMIC;
-	m_pManager->GetDevice()->CreateBuffer(&dbd, 0, &m_pCBMesh);
+	
 	
 	if (m_pCS)
 	{

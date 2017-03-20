@@ -22,6 +22,17 @@ struct centroid
 class CMesh
 {
 public:
+	/* Compute shaders */
+	static ID3D11ComputeShader*     s_pCSApplyTransform;
+	static ID3D11Buffer*			s_pCBMesh; // Constan buffer Mesh.hlsl
+	static void CompileCSShaders(CDXManager* pManager);
+
+	struct PARAMS_MESH_CB
+	{
+		MATRIX4D Transformation;
+	}m_Params_Mesh_CB;
+	
+public:
 
 	struct INTERSECTIONINFO
 	{
@@ -48,6 +59,7 @@ public:
 
 	void CreateVertexAndIndexBuffer(CDXManager* m_pManager);
 	void Draw(CDXPainter* m_pPainter);
+	void CSApplyTranformation(MATRIX4D & t, CDXManager* pManager);
 
 	CMesh();
 	bool RayCast(VECTOR4D& RayOrigin,

@@ -350,6 +350,7 @@ void BVH::CompileCSShaders(CDXManager *pManager)
 {
 	s_pCSPrebuild = pManager->CompileComputeShader(L"..\\Shaders\\BVH.hlsl", "Prebuild");
 	s_pCSBuild = pManager->CompileComputeShader(L"..\\Shaders\\BVH.hlsl", "Build");
+	s_pCSPostbuild = pManager->CompileComputeShader(L"..\\Shaders\\BVH.hlsl", "Postbuild");
 }
 
 void BVH::Preconstruction(CMesh & object)
@@ -511,13 +512,39 @@ void BVH::BuildGPU(CDXManager * pManager, CMesh* mesh)
 		pCtx->Dispatch(1 << i, 1, 1);
 	}
 
+	/* Set Compute Shader */
+	pCtx->CSSetShader(BVH::s_pCSPostbuild, 0, 0);
+
+	for (long i = BVH_MAX_LEVEL; i >= 0; i--)
+	{
+		/* Update constant buffer */
+		m_CB_BVH.level = i;
+		pManager->UpdateConstantBuffer(m_pCB_BVH, &m_CB_BVH, sizeof(BVH::CB_BVH));
+
+		/* Set Constant buffer */
+		pCtx->CSSetConstantBuffers(0, 1, &m_pCB_BVH);
+
+		/* Dispatch */
+		int numGruoups = ((1 << i) + 511) / 512;
+		pCtx->Dispatch(numGruoups, 1, 1);
+
+	}
+
+	
+
 	this->LBVH.clear();
 	LBVH.resize(BVH_NUM_NODES);
 	pManager->CreateStoreBuffer(this->m_pGPU_BVH, sizeof(BVH::Box), BVH_NUM_NODES, &LBVH[0]);
 
-	vector<centroid> buffer;
+
+	CMeshCollision * col = (CMeshCollision*)mesh;
+	col->m_Box.max = LBVH[1].max;
+	col->m_Box.min = LBVH[1].min;
+	
+
+	/*vector<centroid> buffer;
 	buffer.resize(mesh->m_Indices.size() / 3);
-	pManager->CreateStoreBuffer(mesh->m_pPrimitivesBuffer, sizeof(centroid), mesh->m_Indices.size() / 3, &buffer[0]);
+	pManager->CreateStoreBuffer(mesh->m_pPrimitivesBuffer, sizeof(centroid), mesh->m_Indices.size() / 3, &buffer[0]);*/
 
 }
 
@@ -587,6 +614,27 @@ bool BVH::CheckIfPrimitivesCollision(BVH * pTree,
 	return false;
 }
 
+void BVH::PrintLBVH(int node, int depth)
+{
+	for (int i = 0; i < (depth); i++)
+		printf("  ");
+	printf("Level[%i] Node[%i] max[%f, %f, %f] min[%f, %f, %f] NP[%i] A[%i] IL[%c] ID[%i]\n", 
+		depth, node, 
+		LBVH[node].max.x,
+		LBVH[node].max.y,
+		LBVH[node].max.z,
+		LBVH[node].min.x,
+		LBVH[node].min.y,
+		LBVH[node].min.z,
+		LBVH[node].numPrimitives, LBVH[node].axis, LBVH[node].isLeaf?'T':'F', LBVH[node].idPrimitive);
+
+	if (!LBVH[node].isLeaf)
+	{
+		PrintLBVH( node << 1, depth + 1);
+		PrintLBVH( (node << 1) + 1, depth + 1);
+	}
+}
+
 void BVH::DrawLBVH(CDXPainter * painter, int node)
 {
 	/* Caso base */
@@ -621,7 +669,10 @@ void BVH::DrawLBVH(CDXPainter * painter, int node)
 			cub
 			e[i].Color = m_Color;
 		else*/
-		cube[i].Color = m_Color;// { 0, 0, 0, 0 };
+		VECTOR4D Rojo = { 1,0,0,0 };
+		VECTOR4D Verde = { 0,1,0,0 };
+		VECTOR4D Azul = { 0,0,1,0 };
+		cube[i].Color = LBVH[node].axis == 2 ? Rojo : LBVH[node].axis == 1 ? Verde : Azul;//  m_Color;// { 0, 0, 0, 0 };
 	}
 
 	m_lIndicesFrame[0] = 0;
@@ -641,15 +692,13 @@ void BVH::DrawLBVH(CDXPainter * painter, int node)
 	m_lIndicesFrame[14] = 6;
 	m_lIndicesFrame[15] = 4;
 
-
-	painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
+	//if(LBVH[node].isLeaf)
+		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 	if (!LBVH[node].isLeaf)
 	{
 		DrawLBVH(painter, node << 1);
 		DrawLBVH(painter, (node << 1) + 1);
 	}
-	
-
 }
 
 void BVH::TraversalLBVH(
@@ -697,6 +746,7 @@ void BVH::TraversalLBVH(
 				TraversalLBVH(pTree, nodeThis, nodeTree << 1,  object1, object2);
 				TraversalLBVH(pTree, nodeThis, (nodeTree << 1) + 1, object1, object2);
 			}
+			return;
 		}
 		/*
 

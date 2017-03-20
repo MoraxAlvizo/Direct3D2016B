@@ -36,8 +36,7 @@ protected:
 #define PAINTER_DRAW_WIREFRAME		0x20
 
 public:
-	ID3D11ComputeShader*      m_pCSApplyTrans;
-	ID3D11Buffer*      m_pCBMesh; // Constan buffer Mesh.hlsl
+
 
 	void ClearShadow();
 	void SetRenderTarget(ID3D11RenderTargetView* pRTV) { m_pRTV = pRTV; }
@@ -77,11 +76,6 @@ public:
 		VECTOR4D Factors; // x: Power Spotlight
 
 	};
-
-	struct PARAMS_MESH_CB
-	{
-		MATRIX4D Transformation;
-	}m_Params_Mesh_CB;
 
 	struct PARAMS
 	{

@@ -2,6 +2,23 @@
 #include "Mesh.h"
 #include "DXPainter.h"
 
+ID3D11ComputeShader*     CMesh::s_pCSApplyTransform = NULL;
+ID3D11Buffer*			 CMesh::s_pCBMesh= NULL;
+
+void CMesh::CompileCSShaders(CDXManager * pManager)
+{
+	s_pCSApplyTransform = pManager->CompileComputeShader(L"..\\Shaders\\Mesh.hlsl", "main");
+
+	// Create constant buffer Mesh.hlsl
+	D3D11_BUFFER_DESC dbd;
+	memset(&dbd, 0, sizeof(dbd));
+	dbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	dbd.ByteWidth = 16 * ((sizeof(PARAMS_MESH_CB) + 15) / 16);
+	dbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	dbd.Usage = D3D11_USAGE_DYNAMIC;
+	pManager->GetDevice()->CreateBuffer(&dbd, 0, &s_pCBMesh);
+}
+
 void CMesh::CreateVertexAndIndexBuffer(CDXManager * m_pManager)
 {
 	//1.- Crear los buffer de vértices e indices en el GPU.
@@ -406,6 +423,29 @@ void CMesh::Optimize()
 	m_Indices = Indices;
 	m_Indices.shrink_to_fit();
 
+}
+
+void CMesh::CSApplyTranformation(MATRIX4D & t, CDXManager* pManager)
+{
+	D3D11_MAPPED_SUBRESOURCE ms;
+
+	pManager->GetContext()->Map(s_pCBMesh, 0, D3D11_MAP_WRITE_DISCARD, 0, &ms);
+	PARAMS_MESH_CB Temp = m_Params_Mesh_CB;
+
+	Temp.Transformation = Transpose(t);
+
+	memcpy(ms.pData, &Temp, sizeof(PARAMS_MESH_CB));
+	pManager->GetContext()->Unmap(s_pCBMesh, 0);
+
+	pManager->GetContext()->CSSetShader(s_pCSApplyTransform, NULL, NULL);
+	pManager->GetContext()->CSSetConstantBuffers(0, 1, &s_pCBMesh);
+	pManager->GetContext()->CSSetUnorderedAccessViews(0, 1, &this->m_pUAVVertexBuffer, NULL);
+
+	int numGroups = (this->m_Vertices.size() / 1024) + 1;
+	pManager->GetContext()->Dispatch(numGroups, 1, 1);
+
+	/* Save result */
+	pManager->CreateStoreBuffer(this->m_pVertexBuffer, sizeof(CDXPainter::VERTEX), this->m_Vertices.size() , &m_Vertices[0]);
 }
 
 void CMesh::GenerarCentroides()

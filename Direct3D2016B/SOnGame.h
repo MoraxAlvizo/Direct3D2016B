@@ -51,6 +51,7 @@ public:
 	/* Flags physics state */
 #define PHYSICS_DRAW_OCTREE		0x01
 #define PHYSICS_PRINT_OCTREE	0x02
+#define PHYSICS_PRINT_BVH		0x04
 
 	ID3D11Texture2D* m_pTexture;   //GPU
 	ID3D11Texture2D* m_pNormalMapTrue;
