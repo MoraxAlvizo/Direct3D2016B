@@ -195,10 +195,7 @@ void Build(uint3 id:SV_DispatchThreadID,
 		axis = (size_x > size_y) ? ((size_x > size_z) ? 0 : 2) : ((size_y > size_z) ? 1 : 2);
 
 		g_BVH[num_box].axis = axis;
-		g_BVH[num_box].max = float4( MaxBuf[0],0);
-		g_BVH[num_box].min = float4( MinBuf[0],0);
-		middle = (g_BVH[num_box].max[axis] + g_BVH[num_box].min[axis]) / 2;
-
+		middle = (MaxBuf[0][axis] + MinBuf[0][axis]) / 2;
 	}
 	GroupMemoryBarrierWithGroupSync();
 	/* Split box */
