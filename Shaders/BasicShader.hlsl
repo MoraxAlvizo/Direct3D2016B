@@ -12,28 +12,7 @@
 
 // Firma de entrada: Establece el formato de vértice que ingresad
 // y coincide con el InputLayout que definimos en C.
-
-struct VERTEX_INPUT
-{
-	float4 Position:POSITION;
-	float4 Normal:NORMAL;
-    float4 Tanget : TANGENT;
-    float4 Binormal : BINORMAL;
-	float4 Color:COLOR;
-    float4 TexCoord : TEXCOORD;
-};
-struct VERTEX_OUTPUT
-{
-    float4 Position : SV_Position;
-	float4 PositionNonProjected:POSITION;
-	float4 Normal:NORMAL;
-	float4 Color:COLOR;
-    float4 A:NORMAL1, B:NORMAL2, C:NORMAL3;
-    float4 TexCoord : TEXCOORD;
-    float4 LightPosition : POSITION1;
-    float4 ReflectionVector : TEXCOORD1;
-    float4 FogAmount : TEXCOORD2;
-};
+#include "Structures.hlsl"
 
 struct MATERIAL
 {

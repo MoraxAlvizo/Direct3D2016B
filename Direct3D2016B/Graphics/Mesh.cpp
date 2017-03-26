@@ -99,6 +99,7 @@ CMesh::CMesh()
 	this->m_pVertexBuffer = NULL;
 }
 
+
 CMesh::~CMesh()
 {
 }

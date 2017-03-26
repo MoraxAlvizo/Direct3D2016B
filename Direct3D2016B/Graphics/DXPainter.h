@@ -120,6 +120,7 @@ public:
 		VECTOR4D Binormal;
 		VECTOR4D Color;
 		VECTOR4D TexCoord;
+
 		static D3D11_INPUT_ELEMENT_DESC InputLayout[];
 
 		bool Intersection(VECTOR4D &s1, VECTOR4D &s2, VECTOR4D &point, VECTOR4D p1, VECTOR4D p2, VECTOR4D p3)

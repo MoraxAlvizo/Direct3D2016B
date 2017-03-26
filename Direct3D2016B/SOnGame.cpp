@@ -252,6 +252,7 @@ void CSOnGame::OnEntry(void)
 
 	m_ScenePhysics.resize(3);
 	m_ScenePhysics[0].LoadMSHFile("");
+	m_ScenePhysics[0].InitializaMassSpring();
 	m_ScenePhysics[1].LoadMSHFile("");
 	m_ScenePhysics[2].LoadMSHFile("");
 
@@ -532,20 +533,33 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			m_pDXPainter->m_Params.World = Identity();
 			m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
 
+
+			/* Aplicar fuerzas */
+			m_ScenePhysics[0].ApplyForces({0,0,-0.98f,0});
 			/* Draw scene */
 			//if (!(m_lFlags & PHYSICS_DRAW_OCTREE))
-				for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
+				//for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
+				for (unsigned long i = 0; i <1; i++)
 				{
 					m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
 					m_pDXPainter->m_Params.World = Identity();// m_SceneCollisions[i].m_World;
-					m_pDXPainter->DrawIndexed(&m_SceneCollisions[i].m_Vertices[0], 
+
+					m_pDXPainter->DrawIndexed(&m_ScenePhysics[i].m_Vertices[0],
+						m_ScenePhysics[i].m_Vertices.size(),
+						&m_ScenePhysics[i].m_Indices[0],
+						m_ScenePhysics[i].m_Indices.size(),
+						PAINTER_DRAW);
+
+					/*m_pDXPainter->DrawIndexed(&m_SceneCollisions[i].m_Vertices[0], 
 						m_SceneCollisions[i].m_Vertices.size(), 
 						&m_SceneCollisions[i].m_Indices[0], 
 						m_SceneCollisions[i].m_Indices.size(), 
-						PAINTER_DRAW);
+						PAINTER_DRAW);*/
 					//m_SceneCollisions[i].Draw(m_pDXPainter);
 				
 				}
+
+				
 
 			m_pDXManager->GetSwapChain()->Present(1, 0);
 

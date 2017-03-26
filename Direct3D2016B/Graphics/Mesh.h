@@ -17,8 +17,6 @@ struct centroid
 	VECTOR4D min;
 };
 
-
-
 class CMesh
 {
 public:
@@ -77,6 +75,7 @@ public:
 	void GenerarCentroides();
 	
 	vector<centroid>& getCentroides() { return m_Centroides; }
+
 	~CMesh();
 };
 

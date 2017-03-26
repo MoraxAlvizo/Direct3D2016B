@@ -4,6 +4,30 @@
 #include <string>
 #include <iostream>
 
+#define GET_KEY(id1, id2, key) \
+{\
+	union\
+	{\
+	struct {\
+		long _id1;\
+		long _id2;\
+	};\
+	long long _key;\
+	};\
+	\
+	_id1 = id1;\
+	_id2 = id2;\
+	\
+	if (_id1 > _id2)\
+	{\
+		long _aux = _id1;\
+		_id1 = _id2;\
+		_id2 = _aux;\
+	}\
+	\
+	key = _key;\
+}
+
 CVMesh::CVMesh()
 {
 }
@@ -113,4 +137,105 @@ void CVMesh::LoadMSHFile(char * filename)
 
 	BuildTangentSpaceFromTexCoordsIndexed(true);
 
+}
+
+#define MASA (4)
+#define INITIALIZE_SPEED {0,0,0,0}
+#define K (1)
+#define DELTA_T (0.05)
+
+void CVMesh::CreateNeighbors()
+{
+	for (unsigned long i = 0; i < m_IndicesTetrahedros.size(); i += 4)
+	{
+		// 1. Sacar los 4 vertices
+		// 2. Ver si ya existen 
+		//	2.1 Si no existe agregarlo 
+		//  2.2 Si existe no hacer nada
+		// 3. Crear lista vecinos
+		for (int j = 0; j < 4; j++)
+		{
+			for (int k = 0; k < 4; k++)
+			{
+				if (j != k)
+				{
+
+					// Agregar a la lista
+					m_MassSpring[m_IndicesTetrahedros[i + j]].vecinos.insert(m_IndicesTetrahedros[i + k]);
+					// Agregar distancia 
+					long long key;
+					GET_KEY(m_IndicesTetrahedros[i + j], m_IndicesTetrahedros[i + k], key);
+
+					m_MassSpring[m_IndicesTetrahedros[i + j]].distancia[key] =
+						fabs(
+							Magnity(m_Vertices[m_IndicesTetrahedros[i + j]].Position -
+								    m_Vertices[m_IndicesTetrahedros[i + k]].Position
+							)
+						);
+				}
+			}
+		}
+	}
+}
+
+void CVMesh::InitializaMassSpring()
+{
+	// initialization
+	//(1) forall particles i
+	//(2) initialize xi
+	//	, vi and mi
+	//	(3) endfor
+	m_MassSpring.resize(m_Vertices.size());
+
+	for (unsigned i = 0; i < m_MassSpring.size(); i++)
+	{
+		m_MassSpring[i].Masa = MASA;
+		m_MassSpring[i].Velocity = INITIALIZE_SPEED;
+		m_MassSpring[i].x0 = m_Vertices[i].Position;
+	}
+
+	CreateNeighbors();
+}
+
+void CVMesh::ApplyForces(VECTOR4D Gravity)
+{
+	for (unsigned long i = 0; i < m_Vertices.size(); i++)
+	{
+		VECTOR4D F = {0,0,0,0};
+
+		for (auto vecino : m_MassSpring[i].vecinos) 
+		{
+			VECTOR4D V = m_Vertices[i].Position - m_Vertices[vecino].Position;
+			float M = Magnity(V);
+			
+			long long Key;
+			GET_KEY(i, vecino, Key);
+
+			float L = m_MassSpring[i].distancia[Key];
+
+			F = F + ((K * (M - L)) * (V/M)) ;
+		}
+		
+		m_MassSpring[i].Fuerza = F + Gravity;
+	}
+#define POS 128
+
+	printf("Vertice[1] Position = [%f][%f][%f] Fuerza = [%f][%f][%f] Velocidad = [%f][%f][%f]\n", 
+		m_Vertices[POS].Position.x,
+		m_Vertices[POS].Position.y,
+		m_Vertices[POS].Position.z,
+		m_MassSpring[POS].Fuerza.x,
+		m_MassSpring[POS].Fuerza.y,
+		m_MassSpring[POS].Fuerza.z,
+		m_MassSpring[POS].Velocity.x,
+		m_MassSpring[POS].Velocity.y,
+		m_MassSpring[POS].Velocity.z);
+
+	for (unsigned long i = 0; i < m_Vertices.size(); i++)
+	{
+		m_MassSpring[i].Velocity = m_MassSpring[i].Velocity + (DELTA_T * (m_MassSpring[i].Fuerza / m_MassSpring[i].Masa));
+		m_Vertices[i].Position = m_Vertices[i].Position + (DELTA_T * m_MassSpring[i].Velocity);
+		m_Vertices[i].Position.w = 1;
+
+	}
 }
