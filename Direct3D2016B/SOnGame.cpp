@@ -533,9 +533,14 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			m_pDXPainter->m_Params.World = Identity();
 			m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
 
-
+			VECTOR4D EF = { 0,0,0,0 };
 			/* Aplicar fuerzas */
-			m_ScenePhysics[0].ApplyForces({0,0,-0.98f,0});
+			if (m_nFlagsPainter & PAINTER_APPLY_FORCE)
+			{
+				m_nFlagsPainter ^= PAINTER_APPLY_FORCE;
+				EF.y = 10;
+			}
+			m_ScenePhysics[0].ApplyForces({ 0,0,-0.98f,0 }, EF);
 			/* Draw scene */
 			//if (!(m_lFlags & PHYSICS_DRAW_OCTREE))
 				//for (unsigned long i = 0; i < m_SceneCollisions.size(); i++)
@@ -592,6 +597,11 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			if (pWin32->m_wParam == '9')
 			{
 				m_nFlagsPainter ^= PAINTER_DRAW_WIREFRAME;
+				return 0;
+			}
+			if (pWin32->m_wParam == '1')
+			{
+				m_nFlagsPainter ^= PAINTER_APPLY_FORCE;
 				return 0;
 			}
 			if (pWin32->m_wParam == '0')

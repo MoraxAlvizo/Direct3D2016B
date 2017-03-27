@@ -34,6 +34,7 @@ protected:
 #define PAINTER_DRAW				0x08
 #define PAINTER_WITH_LINESTRIP      0x10
 #define PAINTER_DRAW_WIREFRAME		0x20
+#define PAINTER_APPLY_FORCE			0x40
 
 public:
 

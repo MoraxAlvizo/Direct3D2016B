@@ -140,9 +140,9 @@ void CVMesh::LoadMSHFile(char * filename)
 }
 
 #define MASA (4)
-#define INITIALIZE_SPEED {0,0,0,0}
-#define K (1)
-#define DELTA_T (0.05)
+#define INITIALIZE_SPEED {0,0,1,0}
+#define K (.01)
+#define DELTA_T (0.01)
 
 void CVMesh::CreateNeighbors()
 {
@@ -197,7 +197,7 @@ void CVMesh::InitializaMassSpring()
 	CreateNeighbors();
 }
 
-void CVMesh::ApplyForces(VECTOR4D Gravity)
+void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 {
 	for (unsigned long i = 0; i < m_Vertices.size(); i++)
 	{
@@ -206,17 +206,20 @@ void CVMesh::ApplyForces(VECTOR4D Gravity)
 		for (auto vecino : m_MassSpring[i].vecinos) 
 		{
 			VECTOR4D V = m_Vertices[i].Position - m_Vertices[vecino].Position;
-			float M = Magnity(V);
+
+			float M = fabs(Magnity(V));
 			
 			long long Key;
 			GET_KEY(i, vecino, Key);
 
 			float L = m_MassSpring[i].distancia[Key];
+			F = F + ((K * (M - L)) * (Normalize(V))) ;
 
-			F = F + ((K * (M - L)) * (V/M)) ;
+			
 		}
 		
-		m_MassSpring[i].Fuerza = F + Gravity;
+		m_MassSpring[i].Fuerza = F  + ExternalForce + Gravity;
+
 	}
 #define POS 128
 

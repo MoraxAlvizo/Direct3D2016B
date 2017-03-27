@@ -46,6 +46,6 @@ public:
 	// Mass Spring Systems
 	void CreateNeighbors();
 	void InitializaMassSpring();
-	void ApplyForces(VECTOR4D Gravity);
+	void ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce);
 };
 
