@@ -94,7 +94,7 @@ void CVMesh::LoadMSHFile(char * filename)
 	}
 	tourus.close();
 
-	m_Indices.resize(m_IndicesTetrahedros.size()*3);
+	m_IndicesDibujarTetrahedros.resize(m_IndicesTetrahedros.size()*3);
 
 	for (unsigned long int i = 0, j = 0; i < m_IndicesTetrahedros.size(); i+= 4, j += 12)
 	{
@@ -104,21 +104,21 @@ void CVMesh::LoadMSHFile(char * filename)
 		v2 = m_IndicesTetrahedros[i+2];
 		v3 = m_IndicesTetrahedros[i+3];
 
-		m_Indices[j] = v0;
-		m_Indices[j+1] = v2;
-		m_Indices[j + 2] = v1;
+		m_IndicesDibujarTetrahedros[j] = v0;
+		m_IndicesDibujarTetrahedros[j+1] = v2;
+		m_IndicesDibujarTetrahedros[j + 2] = v1;
 
-		m_Indices[j + 3] = v2;
-		m_Indices[j + 4] = v3;
-		m_Indices[j + 5] = v1;
+		m_IndicesDibujarTetrahedros[j + 3] = v2;
+		m_IndicesDibujarTetrahedros[j + 4] = v3;
+		m_IndicesDibujarTetrahedros[j + 5] = v1;
 
-		m_Indices[j + 6] = v3;
-		m_Indices[j + 7] = v0;
-		m_Indices[j + 8] = v1;
+		m_IndicesDibujarTetrahedros[j + 6] = v3;
+		m_IndicesDibujarTetrahedros[j + 7] = v0;
+		m_IndicesDibujarTetrahedros[j + 8] = v1;
 
-		m_Indices[j + 9] = v0;
-		m_Indices[j + 10] = v3;
-		m_Indices[j + 11] = v2;
+		m_IndicesDibujarTetrahedros[j + 9] = v0;
+		m_IndicesDibujarTetrahedros[j + 10] = v3;
+		m_IndicesDibujarTetrahedros[j + 11] = v2;
 	}
 
 
@@ -134,13 +134,15 @@ void CVMesh::LoadMSHFile(char * filename)
 
 		m_Vertices[j].TexCoord = TexCoord;
 	}
+	//m_Indices = m_IndicesDibujarTetrahedros;
 
+	CreateSurfaceMesh();
 	BuildTangentSpaceFromTexCoordsIndexed(true);
 
 }
 
 #define MASA (4)
-#define INITIALIZE_SPEED {0,0,1,0}
+#define INITIALIZE_SPEED {0,0,0,0}
 #define K (1000)
 #define DELTA_T (0.01)
 
@@ -191,7 +193,6 @@ void CVMesh::InitializaMassSpring()
 	{
 		m_MassSpring[i].Masa = MASA;
 		m_MassSpring[i].Velocity = INITIALIZE_SPEED;
-		m_MassSpring[i].x0 = m_Vertices[i].Position;
 	}
 
 	CreateNeighbors();
@@ -242,4 +243,73 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 		m_Vertices[i].Position.w = 1;
 
 	}
+
+	//CreateMeshCollisionFromVMesh(this);
+}
+
+struct TriangleSurface
+{
+	int id[3];
+	int realTriangle[3];
+	int counter;
+
+};
+
+#define VMESH_IS_SAME_ID( id1, id2 ) \
+	(id1[0] == id2[0] && id1[1] == id2[1] && id1[2] == id2[2])
+
+void CVMesh::CreateSurfaceMesh()
+{
+	vector<TriangleSurface> counterFaces;
+
+	for (unsigned long i = 0; i < this->m_IndicesDibujarTetrahedros.size(); i += 3)
+	{
+		TriangleSurface newFace;
+		newFace.realTriangle[0] = newFace.id[0] = this->m_IndicesDibujarTetrahedros[i];
+		newFace.realTriangle[1] = newFace.id[1] = this->m_IndicesDibujarTetrahedros[i + 1];
+		newFace.realTriangle[2] = newFace.id[2] = this->m_IndicesDibujarTetrahedros[i + 2];
+
+		// ordenar hacer una llave 
+		for (unsigned int j = 0; j < 3; j++)
+		{
+			for (unsigned int k = 0; k < 3; k++)
+			{
+				if (newFace.id[j] > newFace.id[k])
+				{
+					int aux = newFace.id[j];
+					newFace.id[j] = newFace.id[k];
+					newFace.id[k] = aux;
+				}
+			}
+		}
+		bool alreadyExist = false;
+		for (unsigned int j = 0; j < counterFaces.size(); j++)
+		{
+			if (VMESH_IS_SAME_ID(newFace.id, counterFaces[j].id))
+			{
+				alreadyExist = true;
+				counterFaces[j].counter++;
+				break;
+			}
+		}
+
+		if (!alreadyExist)
+		{
+			newFace.counter = 0;
+			counterFaces.push_back(newFace);
+		}
+	}
+	m_Indices.clear();
+
+	for (unsigned long i = 0; i < counterFaces.size(); i++)
+	{
+		if (counterFaces[i].counter == 0)
+		{
+			m_Indices.push_back(counterFaces[i].realTriangle[0]);
+			m_Indices.push_back(counterFaces[i].realTriangle[1]);
+			m_Indices.push_back(counterFaces[i].realTriangle[2]);
+		}
+	}
+
+	//m_Vertices = vMesh.m_Vertices;
 }

@@ -5,9 +5,14 @@
 #include "DXPainter.h"
 #include <assimp/scene.h>
 #include "../Cut/VolumeMeshGenericID.h"
-#include "../Collisions/Octree.h"
 
 using namespace std;
+
+struct BoundingBox
+{
+	VECTOR4D min;
+	VECTOR4D max;
+};
 
 struct centroid
 {
@@ -16,6 +21,9 @@ struct centroid
 	VECTOR4D max;
 	VECTOR4D min;
 };
+
+struct CVMesh;
+struct BVH;
 
 class CMesh
 {
@@ -75,6 +83,16 @@ public:
 	void GenerarCentroides();
 	
 	vector<centroid>& getCentroides() { return m_Centroides; }
+
+	/* Colission detection */ 
+	unsigned long m_lID;
+	BoundingBox m_Box;
+	BVH* m_BVH;
+
+	void ResetColors();
+	void MoveVertex(MATRIX4D Translation);
+	void CreateMeshCollisionFromVMesh(CVMesh& vMesh);
+	void ApplyTransformation(MATRIX4D & m);
 
 	~CMesh();
 };

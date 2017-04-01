@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "BVH.h"
-#include "../Collisions/MeshCollision.h"
+#include "../Graphics/Mesh.h"
 
 #define BVH_BOXES_COLLISION(box1, box2) \
 	((box1.min.x < box2.max.x && \
@@ -383,9 +383,9 @@ void BVH::Construction(CMesh & object, unsigned long node, vector<unsigned long>
 
 	if (node == 1)
 	{
-		CMeshCollision * col = (CMeshCollision*)&object;
-		col->m_Box.max = max_box;
-		col->m_Box.min = min_box;
+
+		object.m_Box.max = max_box;
+		object.m_Box.min = min_box;
 	}
 
 	/* 2. Check what axis is longer */
@@ -537,9 +537,8 @@ void BVH::BuildGPU(CDXManager * pManager, CMesh* mesh)
 	pManager->CreateStoreBuffer(this->m_pGPU_BVH, sizeof(BVH::Box), BVH_NUM_NODES, &LBVH[0]);
 
 
-	CMeshCollision * col = (CMeshCollision*)mesh;
-	col->m_Box.max = LBVH[1].max;
-	col->m_Box.min = LBVH[1].min;
+	mesh->m_Box.max = LBVH[1].max;
+	mesh->m_Box.min = LBVH[1].min;
 	
 
 	/*vector<centroid> buffer;

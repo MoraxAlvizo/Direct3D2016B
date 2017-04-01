@@ -20,7 +20,6 @@ struct VolumeCutInfo
 
 struct MassSpring
 {
-	VECTOR4D x0;
 	VECTOR4D Velocity;
 	VECTOR4D Fuerza;
 	float Masa;
@@ -35,6 +34,7 @@ class CVMesh :
 public:
 	vector<EdgeCutInfo> m_EdgeCutInfo;
 	vector<unsigned long> m_IndicesTetrahedros;
+	vector<unsigned long> m_IndicesDibujarTetrahedros;
 	vector<MassSpring> m_MassSpring;
 public:
 	CVMesh();
@@ -47,5 +47,7 @@ public:
 	void CreateNeighbors();
 	void InitializaMassSpring();
 	void ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce);
+
+	void CreateSurfaceMesh();
 };
 

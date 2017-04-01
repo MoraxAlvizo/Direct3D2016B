@@ -81,9 +81,9 @@ void COctreeCube::createChildren()
 	}
 
 
-	for (set<CMeshCollision*>::iterator it = m_Objects.begin(); it != m_Objects.end();
+	for (set<CMesh*>::iterator it = m_Objects.begin(); it != m_Objects.end();
 		it++) {
-		CMeshCollision* object = *it;
+		CMesh* object = *it;
 		fileObject(object, object->m_Box.min /* object->m_World*/, object->m_Box.max /* object->m_World*/, true);
 	}
 
@@ -96,7 +96,7 @@ COctreeCube::~COctreeCube()
 {
 }
 
-inline void COctreeCube::addObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D bmax)
+inline void COctreeCube::addObject(CMesh * object, VECTOR4D bmin, VECTOR4D bmax)
 {
 	numObjects++;
 
@@ -115,7 +115,7 @@ inline void COctreeCube::addObject(CMeshCollision * object, VECTOR4D bmin, VECTO
 	}
 }
 
-void COctreeCube::collectObjects(set<CMeshCollision*> &objects) {
+void COctreeCube::collectObjects(set<CMesh*> &objects) {
 
 	if (hasChildren)
 		for (int x = 0; x < 2; x++)
@@ -125,10 +125,10 @@ void COctreeCube::collectObjects(set<CMeshCollision*> &objects) {
 
 	else
 	{
-		for (set<CMeshCollision*>::iterator it = m_Objects.begin(); it != m_Objects.end();
+		for (set<CMesh*>::iterator it = m_Objects.begin(); it != m_Objects.end();
 			it++)
 		{
-			CMeshCollision* point = *it;
+			CMesh* point = *it;
 			objects.insert(point);
 		}
 	}
@@ -150,11 +150,11 @@ void COctreeCube::destroyChildren() {
 	hasChildren = false;
 }
 
-void COctreeCube::removeObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D bmax) {
+void COctreeCube::removeObject(CMesh * object, VECTOR4D bmin, VECTOR4D bmax) {
 
 	numObjects--;
 
-	if (hasChildren && numObjects < MIN_BALLS_PER_OCTREE)
+	if (hasChildren && numObjects < OCTREECUBE_MIN_BALLS_PER_OCTREE)
 		destroyChildren();
 
 	if (hasChildren)
@@ -167,7 +167,7 @@ void COctreeCube::removeObject(CMeshCollision * object, VECTOR4D bmin, VECTOR4D 
 	}
 }
 
-void COctreeCube::fileObject(CMeshCollision* object, VECTOR4D bmin, VECTOR4D bmax, bool addBall)
+void COctreeCube::fileObject(CMesh* object, VECTOR4D bmin, VECTOR4D bmax, bool addBall)
 {
 
 	for (int x = 0; x < 2; x++)
@@ -303,19 +303,19 @@ void COctreeCube::potentialCollsions(set<unsigned long long> &collisions) {
 	else
 	{
 
-		for (set<CMeshCollision*>::iterator it = m_Objects.begin(); it != m_Objects.end(); it++)
+		for (set<CMesh*>::iterator it = m_Objects.begin(); it != m_Objects.end(); it++)
 		{
-			CMeshCollision* object1 = *it;
-			for (set<CMeshCollision*>::iterator it2 = m_Objects.begin(); it2 != m_Objects.end(); it2++)
+			CMesh* object1 = *it;
+			for (set<CMesh*>::iterator it2 = m_Objects.begin(); it2 != m_Objects.end(); it2++)
 			{
-				CMeshCollision* object2 = *it2;
+				CMesh* object2 = *it2;
 
 				if (object1->m_lID == object2->m_lID)
 					continue;
 
 				if (object1->m_lID > object2->m_lID)
 				{
-					CMeshCollision* aux = object2;
+					CMesh* aux = object2;
 					object2 = object1;
 					object1 = aux;
 				}

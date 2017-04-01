@@ -18,7 +18,6 @@ Descrition:
 #include "Graphics\DXManager.h"
 #include "Graphics\DXPainter.h"
 #include "Graphics\MeshMathSurface.h"
-#include "Collisions\MeshCollision.h"
 #include "Collisions\OctreeCube.h"
 #include "Cut/VMesh.h"
 #include "Collisions\BVH.h"
@@ -71,7 +70,7 @@ public:
 	MATRIX4D m_Projection;
 
 	/* Scene */
-	vector<CMeshCollision> m_SceneCollisions;
+	vector<CMesh> m_SceneCollisions;
 	vector<CVMesh> m_ScenePhysics;
 
 	bool flag = true;

@@ -209,8 +209,8 @@ void CSOnGame::OnEntry(void)
 
 	/* Init collisions structures */
 
-	m_pOctree = new COctreeCube({ -BOX_SIZE / 2, -BOX_SIZE / 2, -BOX_SIZE / 2 , 0 },
-	{ BOX_SIZE / 2, BOX_SIZE / 2, BOX_SIZE / 2 }, 0);
+	m_pOctree = new COctreeCube({ -OCTREECUBE_BOX_SIZE / 2, -OCTREECUBE_BOX_SIZE / 2, -OCTREECUBE_BOX_SIZE / 2 , 0 },
+	{ OCTREECUBE_BOX_SIZE / 2, OCTREECUBE_BOX_SIZE / 2, OCTREECUBE_BOX_SIZE / 2 }, 0);
 
 	//Create objects
 	//int i = 1;
@@ -499,8 +499,8 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			for (set<unsigned long long>::iterator it2 = potencialCollisions.begin(); it2 != potencialCollisions.end(); it2++)
 			{
 				COctreeCube::MeshPair meshPair;
-				CMeshCollision *object1;
-				CMeshCollision *object2;
+				CMesh *object1;
+				CMesh *object2;
 				VECTOR4D min1, max1;
 				VECTOR4D min2, max2;
 

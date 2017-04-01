@@ -1,6 +1,8 @@
 ﻿#include "stdafx.h"
 #include "Mesh.h"
 #include "DXPainter.h"
+#include "../Cut/VMesh.h"
+#include "../Collisions/BVH.h"
 
 ID3D11ComputeShader*     CMesh::s_pCSApplyTransform = NULL;
 ID3D11Buffer*			 CMesh::s_pCBMesh= NULL;
@@ -97,6 +99,7 @@ CMesh::CMesh()
 
 	this->m_pIndexBuffer = NULL;
 	this->m_pVertexBuffer = NULL;
+	this->m_BVH = NULL;
 }
 
 
@@ -474,3 +477,31 @@ void CMesh::GenerarCentroides()
 	}
 }
 
+void CMesh::ResetColors()
+{
+	for (unsigned long i = 0; i < m_Vertices.size(); i++)
+		m_Vertices[i].Color = { 0,0,0,0 };
+}
+
+
+void CMesh::MoveVertex(MATRIX4D Translation)
+{
+	m_Vertices[m_Indices[0]].Position = { float(rand() % 5), float(rand() % 5) ,float(rand() % 5),1 };
+}
+
+void CMesh::CreateMeshCollisionFromVMesh(CVMesh & vMesh)
+{
+	m_Indices = vMesh.m_Indices;
+	m_Vertices = vMesh.m_Vertices;
+}
+
+void CMesh::ApplyTransformation(MATRIX4D & m)
+{
+	this->m_Box.max = this->m_Box.max * m;
+	this->m_Box.min = this->m_Box.min * m;
+
+	for (unsigned int i = 0; i < m_Vertices.size(); i++)
+	{
+		m_Vertices[i].Position = m_Vertices[i].Position * m;
+	}
+}
