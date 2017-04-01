@@ -37,6 +37,22 @@ VECTOR4D operator*(float B, VECTOR4D & A)
 	return R;
 }
 
+VECTOR4D operator-(float B, VECTOR4D & A)
+{
+	VECTOR4D R = { 0, 0, 0, 0 };
+	for (int i = 0; i < 4; i++)
+		R.v[i] += A.v[i] - B;
+	return R;
+}
+
+VECTOR4D operator-(VECTOR4D & A ,float B )
+{
+	VECTOR4D R = { 0, 0, 0, 0 };
+	for (int i = 0; i < 4; i++)
+		R.v[i] += A.v[i] - B;
+	return R;
+}
+
 VECTOR4D operator*(MATRIX4D& A, VECTOR4D& V)
 {
 	VECTOR4D R = { 0, 0, 0, 0 };

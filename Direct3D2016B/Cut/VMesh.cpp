@@ -200,10 +200,48 @@ void CVMesh::InitializaMassSpring()
 
 void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 {
-	//for (unsigned long i = 0; i < m_IndicesTetrahedros.size(); i++)
-	//{
+	for (unsigned long i = 0; i < m_MassSpring.size(); i++)
+	{
+		m_MassSpring[i].Fuerza = { 0,0,0,0 };
+	}
 
-	//}
+	/* Preservacion de volumn */
+	for (unsigned long i = 0; i < m_IndicesTetrahedros.size(); i+= 4)
+	{
+		unsigned long i1, i2, i3, i4;
+
+		i1 = m_IndicesTetrahedros[i];
+		i2 = m_IndicesTetrahedros[i + 1];
+		i3 = m_IndicesTetrahedros[i + 2];
+		i4 = m_IndicesTetrahedros[i + 3];
+
+		VECTOR4D x1, x2, x3, x4;
+		x1 = m_Vertices[i1].Position;
+		x2 = m_Vertices[i2].Position;
+		x3 = m_Vertices[i3].Position;
+		x4 = m_Vertices[i4].Position;
+
+		VECTOR4D e1, e2, e3;
+		e1 = x2 - x1;
+		e2 = x3 - x1;
+		e3 = x4 - x1;
+
+		float V = (1/6.f) * Dot(e1 ,Cross3(e2, e3));
+		VECTOR4D C = ( (1 / 6.f) * e1 * (Cross3(e2, e3)) ) - V;
+
+		VECTOR4D F1, F2, F3, F4;
+
+		F1 = K*C*(Cross3(e2 - e1, e3 - e1));
+		F2 = K*C*Cross3(e3, e2);
+		F3 = K*C*Cross3(e1, e3);
+		F4 = K*C*Cross3(e2, e1);
+
+		m_MassSpring[i1].Fuerza = m_MassSpring[i1].Fuerza + F1;
+		m_MassSpring[i2].Fuerza = m_MassSpring[i2].Fuerza + F2;
+		m_MassSpring[i3].Fuerza = m_MassSpring[i3].Fuerza + F3;
+		m_MassSpring[i4].Fuerza = m_MassSpring[i4].Fuerza + F4;
+
+	}
 
 	for (unsigned long i = 0; i < m_Vertices.size(); i++)
 	{
@@ -223,7 +261,7 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 
 		}
 		/* Agregar preservacion de volumen */
-		m_MassSpring[i].Fuerza = F /*+ InternalForces */ + ExternalForce + Gravity;
+		m_MassSpring[i].Fuerza =  m_MassSpring[i].Fuerza +  F  + ExternalForce + Gravity;
 
 	}
 //#define POS 128
