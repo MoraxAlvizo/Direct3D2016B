@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Graphics/Mesh.h"
-#define BVH_MAX_LEVEL 10
+#define BVH_MAX_LEVEL 12
 #define BVH_NUM_NODES (pow(2, BVH_MAX_LEVEL+1)-1)
 
 class BVH
@@ -12,9 +12,9 @@ class BVH
 		VECTOR4D max;
 		unsigned long idPrimitive;
 		unsigned long numPrimitives; /* -1 means that it is a invalid node */
-		bool isLeaf;
 		int offset;
 		int axis;
+		bool isLeaf;
 	}m_Box;
 
 	struct CB_BVH 

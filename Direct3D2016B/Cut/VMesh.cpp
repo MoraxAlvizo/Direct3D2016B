@@ -200,6 +200,11 @@ void CVMesh::InitializaMassSpring()
 
 void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 {
+	//for (unsigned long i = 0; i < m_IndicesTetrahedros.size(); i++)
+	//{
+
+	//}
+
 	for (unsigned long i = 0; i < m_Vertices.size(); i++)
 	{
 		VECTOR4D F = {0,0,0,0};
@@ -221,18 +226,18 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 		m_MassSpring[i].Fuerza = F /*+ InternalForces */ + ExternalForce + Gravity;
 
 	}
-#define POS 128
-
-	printf("Vertice[1] Position = [%f][%f][%f] Fuerza = [%f][%f][%f] Velocidad = [%f][%f][%f]\n", 
-		m_Vertices[POS].Position.x,
-		m_Vertices[POS].Position.y,
-		m_Vertices[POS].Position.z,
-		m_MassSpring[POS].Fuerza.x,
-		m_MassSpring[POS].Fuerza.y,
-		m_MassSpring[POS].Fuerza.z,
-		m_MassSpring[POS].Velocity.x,
-		m_MassSpring[POS].Velocity.y,
-		m_MassSpring[POS].Velocity.z);
+//#define POS 128
+//
+//	printf("Vertice[1] Position = [%f][%f][%f] Fuerza = [%f][%f][%f] Velocidad = [%f][%f][%f]\n", 
+//		m_Vertices[POS].Position.x,
+//		m_Vertices[POS].Position.y,
+//		m_Vertices[POS].Position.z,
+//		m_MassSpring[POS].Fuerza.x,
+//		m_MassSpring[POS].Fuerza.y,
+//		m_MassSpring[POS].Fuerza.z,
+//		m_MassSpring[POS].Velocity.x,
+//		m_MassSpring[POS].Velocity.y,
+//		m_MassSpring[POS].Velocity.z);
 
 	for (unsigned long i = 0; i < m_Vertices.size(); i++)
 	{
@@ -243,7 +248,7 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 		m_Vertices[i].Position.w = 1;
 
 	}
-
+	
 	//CreateMeshCollisionFromVMesh(this);
 }
 

@@ -218,17 +218,17 @@ void Build(uint3 id:SV_DispatchThreadID,
 	if (lid.x == 0)
 	{
 		if (falseTotal == 1)
-		{
 			g_BVH[num_box << 1].isLeaf = true;
-		}
+		else
+			g_BVH[num_box << 1].isLeaf = false;
 			
 		g_BVH[num_box << 1].numPrimitives = falseTotal;
 		g_BVH[num_box << 1].offset = offet_prim;
 
 		if ((num_primitives - falseTotal) == 1)
-		{
 			g_BVH[(num_box << 1) + 1].isLeaf = true;
-		}
+		else
+			g_BVH[(num_box << 1) + 1].isLeaf = false;
 			
 		g_BVH[(num_box << 1) + 1].numPrimitives = num_primitives - falseTotal;
 		g_BVH[(num_box << 1) + 1].offset = offet_prim + falseTotal;

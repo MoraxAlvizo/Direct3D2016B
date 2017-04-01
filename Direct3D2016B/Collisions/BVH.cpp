@@ -530,8 +530,6 @@ void BVH::BuildGPU(CDXManager * pManager, CMesh* mesh)
 
 	}
 
-	
-
 	this->LBVH.clear();
 	LBVH.resize(BVH_NUM_NODES);
 	pManager->CreateStoreBuffer(this->m_pGPU_BVH, sizeof(BVH::Box), BVH_NUM_NODES, &LBVH[0]);
@@ -691,7 +689,7 @@ void BVH::DrawLBVH(CDXPainter * painter, int node)
 	m_lIndicesFrame[14] = 6;
 	m_lIndicesFrame[15] = 4;
 
-	//if(LBVH[node].isLeaf)
+	if(LBVH[node].isLeaf)
 		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 	if (!LBVH[node].isLeaf)
 	{
@@ -745,6 +743,15 @@ void BVH::TraversalLBVH(
 				TraversalLBVH(pTree, nodeThis, nodeTree << 1,  object1, object2);
 				TraversalLBVH(pTree, nodeThis, (nodeTree << 1) + 1, object1, object2);
 			}
+			return;
+		}
+		else if (pTree->LBVH[nodeTree].isLeaf)
+		{
+			
+			/* Sino es nodo hoja el pTree entonces revisar si sus hijos collision con este nodo hoja */
+			TraversalLBVH(pTree, nodeThis << 1, nodeTree, object1, object2);
+			TraversalLBVH(pTree, (nodeThis << 1) + 1, nodeTree, object1, object2);
+			
 			return;
 		}
 		/*

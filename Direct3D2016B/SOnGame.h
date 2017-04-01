@@ -70,7 +70,7 @@ public:
 	MATRIX4D m_Projection;
 
 	/* Scene */
-	vector<CMesh> m_SceneCollisions;
+	//vector<CMesh> m_SceneCollisions;
 	vector<CVMesh> m_ScenePhysics;
 
 	bool flag = true;

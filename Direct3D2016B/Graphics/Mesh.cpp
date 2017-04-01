@@ -23,6 +23,18 @@ void CMesh::CompileCSShaders(CDXManager * pManager)
 
 void CMesh::CreateVertexAndIndexBuffer(CDXManager * m_pManager)
 {
+	//0 Release vexter buffer and index buffer 
+	// Vertex buffer
+	SAFE_RELEASE(m_pUAVVertexBuffer);
+	SAFE_RELEASE(m_pSRVVertexBuffer);
+	SAFE_RELEASE(m_pVertexBuffer);
+	// Index buffer 
+	SAFE_RELEASE(m_pSRVIndexBuffer);
+	SAFE_RELEASE(m_pIndexBuffer);
+	// Primitives buffer
+	SAFE_RELEASE(m_pUAVPrimitiveBuffer);
+	SAFE_RELEASE(m_pPrimitivesBuffer);
+
 	//1.- Crear los buffer de vértices e indices en el GPU.
 	
 	D3D11_BUFFER_DESC dbd;
@@ -96,10 +108,18 @@ void CMesh::Draw(CDXPainter * m_pPainter)
 CMesh::CMesh()
 {
 	//m_World = Identity();
-
-	this->m_pIndexBuffer = NULL;
-	this->m_pVertexBuffer = NULL;
 	this->m_BVH = NULL;
+
+	// Vertex buffer 
+	m_pUAVVertexBuffer = NULL;
+	m_pSRVVertexBuffer = NULL;
+	m_pVertexBuffer = NULL;
+	// Index buffer 
+	m_pSRVIndexBuffer = NULL; 
+	m_pIndexBuffer = NULL;
+	// Primitives buffer
+	m_pUAVPrimitiveBuffer = NULL;
+	m_pPrimitivesBuffer = NULL;
 }
 
 

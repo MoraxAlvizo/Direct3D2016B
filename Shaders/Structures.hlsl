@@ -58,7 +58,7 @@ struct Box
 	float4 max;
 	uint idPrimitive;
 	int numPrimitives; /* -1 means that it is a invalid node */
-	bool isLeaf;
 	uint offset;
 	uint axis;
+	bool isLeaf;
 };
