@@ -27,6 +27,29 @@
 	\
 	key = _key;\
 }
+ID3D11ComputeShader*     CVMesh::s_pCSInitForce = NULL;
+ID3D11ComputeShader*     CVMesh::s_pCSVolumePreservation = NULL;
+ID3D11ComputeShader*     CVMesh::s_pCSComputeForces = NULL;
+ID3D11ComputeShader*     CVMesh::s_pCSApplyForces = NULL;
+
+ID3D11Buffer*			 CVMesh::s_pCBMassSpring = NULL;
+
+void CVMesh::CompileCSShaders(CDXManager * pManager)
+{
+	s_pCSInitForce = pManager->CompileComputeShader(L"..\\Shaders\\MassSpring.hlsl", "InitForce");
+	s_pCSVolumePreservation = pManager->CompileComputeShader(L"..\\Shaders\\MassSpring.hlsl", "VolumePreservation");
+	s_pCSComputeForces = pManager->CompileComputeShader(L"..\\Shaders\\MassSpring.hlsl", "ComputeForces");
+	s_pCSApplyForces = pManager->CompileComputeShader(L"..\\Shaders\\MassSpring.hlsl", "ApplyForces");
+
+	// Create constant buffer MassSpring.hlsl
+	D3D11_BUFFER_DESC dbd;
+	memset(&dbd, 0, sizeof(dbd));
+	dbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+	dbd.ByteWidth = 16 * ((sizeof(PARAMS_MASS_SPRING_CB) + 15) / 16);
+	dbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+	dbd.Usage = D3D11_USAGE_DYNAMIC;
+	pManager->GetDevice()->CreateBuffer(&dbd, 0, &s_pCBMassSpring);
+}
 
 CVMesh::CVMesh()
 {

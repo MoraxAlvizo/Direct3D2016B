@@ -250,6 +250,7 @@ void CSOnGame::OnEntry(void)
 	/* Compile BVH CS shaders */
 	BVH::CompileCSShaders(m_pDXManager);
 	CMesh::CompileCSShaders(m_pDXManager);
+	CVMesh::CompileCSShaders(m_pDXManager);
 
 	m_ScenePhysics.resize(2);
 	//m_SceneCollisions.resize(2);

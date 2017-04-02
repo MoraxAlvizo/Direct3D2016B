@@ -27,11 +27,40 @@ struct MassSpring
 	map<long long, float> distancia;
 };
 
+struct MassSpringGPU
+{
+	VECTOR4D velocity;
+	VECTOR4D fuerza;
+	struct {
+		int idVecino;
+		float distancia;
+	}vecinos[24];
+	int numVecinos;
+	float masa;
+};
+
 
 class CVMesh :
 	public CMesh
 {
 public:
+	/* Compute shaders MassSpring */
+	static ID3D11ComputeShader*     s_pCSInitForce;
+	static ID3D11ComputeShader*     s_pCSVolumePreservation;
+	static ID3D11ComputeShader*     s_pCSComputeForces;
+	static ID3D11ComputeShader*     s_pCSApplyForces;
+
+	static ID3D11Buffer*			s_pCBMassSpring; // Constan buffer MassSpring.hlsl
+
+	struct PARAMS_MASS_SPRING_CB
+	{
+		VECTOR4D Gravity;
+		float K;
+		float Delta_t;
+	};
+
+	static void CompileCSShaders(CDXManager* pManager);
+
 	vector<EdgeCutInfo> m_EdgeCutInfo;
 	vector<unsigned long> m_IndicesTetrahedros;
 	vector<unsigned long> m_IndicesDibujarTetrahedros;

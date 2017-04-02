@@ -62,3 +62,19 @@ struct Box
 	uint axis;
 	bool isLeaf;
 };
+
+struct Vecino
+{
+	uint idVecino;
+	float distance;
+};
+#define NUM_VECINOS 24
+
+struct MassSpring
+{
+	float4 velocity;
+	float4 fuerza;
+	Vecino vecinos[NUM_VECINOS];
+	uint numVecinos;
+	float masa;
+};

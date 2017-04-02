@@ -31,6 +31,7 @@ public:
 	/* Compute shaders */
 	static ID3D11ComputeShader*     s_pCSApplyTransform;
 	static ID3D11Buffer*			s_pCBMesh; // Constan buffer Mesh.hlsl
+
 	static void CompileCSShaders(CDXManager* pManager);
 
 	struct PARAMS_MESH_CB
