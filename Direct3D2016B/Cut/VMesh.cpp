@@ -51,8 +51,64 @@ void CVMesh::CompileCSShaders(CDXManager * pManager)
 	pManager->GetDevice()->CreateBuffer(&dbd, 0, &s_pCBMassSpring);
 }
 
+void CVMesh::CreateTetraindexAndMassSpringBuffers(CDXManager * m_pManager)
+{
+	SAFE_RELEASE(m_pUAVMassSpringBuffer);
+	SAFE_RELEASE(m_pUAVTetraIndices);
+	SAFE_RELEASE(m_pSRVMassSpringBuffer);
+	SAFE_RELEASE(m_pSRVTetraIndices);
+	SAFE_RELEASE(m_pMassSpringBuffer);
+	SAFE_RELEASE(m_pTetraIndices);
+
+	vector<MassSpringGPU> msGPU;
+
+	msGPU.resize(m_MassSpring.size());
+
+	for (unsigned long i = 0; i < msGPU.size(); i++)
+	{
+		msGPU[i].fuerza = m_MassSpring[i].Fuerza;
+		msGPU[i].masa = m_MassSpring[i].Masa;
+		msGPU[i].velocity = m_MassSpring[i].Velocity;
+		msGPU[i].numVecinos = 0;
+
+		for (set<long>::iterator it = m_MassSpring[i].vecinos.begin(); it != m_MassSpring[i].vecinos.end(); ++it)
+		{
+			long vecino = *it;
+			// Agregar distancia 
+			long long key;
+			GET_KEY(i, vecino, key);
+
+			msGPU[i].vecinos[msGPU[i].numVecinos].idVecino = vecino;
+			msGPU[i].vecinos[msGPU[i].numVecinos].distancia = m_MassSpring[i].distancia[key];
+
+			msGPU[i].numVecinos++;
+		}
+	}
+
+	m_pMassSpringBuffer = m_pManager->CreateLoadBuffer(&msGPU[0], sizeof(MassSpringGPU), msGPU.size());
+	m_pTetraIndices = m_pManager->CreateLoadBuffer(&m_IndicesTetrahedros[0], sizeof(int)*4, m_IndicesTetrahedros.size() / 4);
+
+	// Create UAV 
+	m_pManager->GetDevice()->CreateUnorderedAccessView(m_pMassSpringBuffer, NULL, &m_pUAVMassSpringBuffer);
+	m_pManager->GetDevice()->CreateUnorderedAccessView(m_pTetraIndices, NULL, &m_pUAVTetraIndices);
+
+	// Create SRV 
+	m_pManager->GetDevice()->CreateShaderResourceView(m_pMassSpringBuffer, NULL, &m_pSRVMassSpringBuffer);
+	m_pManager->GetDevice()->CreateShaderResourceView(m_pTetraIndices, NULL, &m_pSRVTetraIndices);
+}
+
 CVMesh::CVMesh()
 {
+	m_pMassSpringBuffer = NULL;
+	m_pTetraIndices = NULL;
+
+	// UAV For vertex buffer  and primbuffer
+	m_pUAVMassSpringBuffer = NULL;
+	m_pUAVTetraIndices = NULL;
+
+	// SRV For vertex buffer and index buffer
+	m_pSRVMassSpringBuffer = NULL;
+	m_pSRVTetraIndices = NULL;
 }
 
 
@@ -165,7 +221,7 @@ void CVMesh::LoadMSHFile(char * filename)
 }
 
 #define MASA (4)
-#define INITIALIZE_SPEED {0,0,0,0}
+#define INITIALIZE_SPEED {0,0,1,0}
 #define K (1000)
 #define DELTA_T (0.01)
 
@@ -229,6 +285,7 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 	}
 
 	/* Preservacion de volumn */
+	
 	for (unsigned long i = 0; i < m_IndicesTetrahedros.size(); i+= 4)
 	{
 		unsigned long i1, i2, i3, i4;
@@ -265,7 +322,7 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 		m_MassSpring[i4].Fuerza = m_MassSpring[i4].Fuerza + F4;
 
 	}
-
+	
 	for (unsigned long i = 0; i < m_Vertices.size(); i++)
 	{
 		VECTOR4D F = {0,0,0,0};
@@ -304,6 +361,7 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 	{
 		if (i == 1)
 			continue;
+
 		m_MassSpring[i].Velocity = m_MassSpring[i].Velocity + (DELTA_T * (m_MassSpring[i].Fuerza / m_MassSpring[i].Masa));
 		m_Vertices[i].Position = m_Vertices[i].Position + (DELTA_T * m_MassSpring[i].Velocity);
 		m_Vertices[i].Position.w = 1;
@@ -311,6 +369,51 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 	}
 	
 	//CreateMeshCollisionFromVMesh(this);
+}
+
+void CVMesh::CSApplyForces(CDXManager * pManager, VECTOR4D Gravity, VECTOR4D ExternalForce)
+{
+	auto pCtx = pManager->GetContext();
+	/********* Init Force ****/
+	/* Set Compute Shader */
+	pCtx->CSSetShader(CVMesh::s_pCSInitForce, 0, 0);
+
+	/* Update constant buffer */
+	m_CB_MASS_SPRING.Delta_t = DELTA_T;
+	m_CB_MASS_SPRING.Gravity = Gravity;
+	m_CB_MASS_SPRING.Ki = K;
+
+	pManager->UpdateConstantBuffer(s_pCBMassSpring, &m_CB_MASS_SPRING, sizeof(CVMesh::PARAMS_MASS_SPRING_CB));
+
+	/* Set Constant buffer */
+	pCtx->CSSetConstantBuffers(0, 1, &s_pCBMassSpring);
+
+	/* Set UAV */
+	pCtx->CSSetUnorderedAccessViews(0, 1, &(this->m_pUAVMassSpringBuffer), NULL);
+	pCtx->CSSetUnorderedAccessViews(1, 1, &(this->m_pUAVVertexBuffer), NULL);
+
+	/* Set SRV */
+	pCtx->CSSetShaderResources(0, 1, &(this->m_pSRVTetraIndices));
+	pCtx->Dispatch((m_Vertices.size() + 511) /512, 1, 1);
+
+	/********* Preservetion Volumn ******/
+	/* Set Compute Shader */
+	pCtx->CSSetShader(CVMesh::s_pCSVolumePreservation, 0, 0);
+	pCtx->Dispatch(((m_IndicesTetrahedros.size() / 4) + 511) / 512, 1, 1);
+
+	/********* Compute Forces ******/
+	/* Set Compute Shader */
+	pCtx->CSSetShader(CVMesh::s_pCSComputeForces, 0, 0);
+	pCtx->Dispatch((m_Vertices.size() + 511) / 512, 1, 1);
+
+	/********* Preservetion Volumn ******/
+	/* Set Compute Shader */
+	pCtx->CSSetShader(CVMesh::s_pCSApplyForces, 0, 0);
+	pCtx->Dispatch((m_Vertices.size() + 511) / 512, 1, 1);
+
+	/* Save result */
+	pManager->CreateStoreBuffer(this->m_pVertexBuffer, sizeof(CDXPainter::VERTEX), this->m_Vertices.size(), &m_Vertices[0]);
+
 }
 
 struct TriangleSurface

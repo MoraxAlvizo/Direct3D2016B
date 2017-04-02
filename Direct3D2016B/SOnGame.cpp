@@ -267,6 +267,7 @@ void CSOnGame::OnEntry(void)
 	m_ScenePhysics[0].m_BVH = new BVH();
 	m_ScenePhysics[0].m_BVH->CreateGPUBuffer(m_pDXManager);
 	m_ScenePhysics[0].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[0]);
+	m_ScenePhysics[0].CreateTetraindexAndMassSpringBuffers(m_pDXManager);
 
 	m_pOctree->addObject(&m_ScenePhysics[0],
 		m_ScenePhysics[0].m_Box.min,
@@ -285,6 +286,7 @@ void CSOnGame::OnEntry(void)
 	m_ScenePhysics[1].CSApplyTranformation(Translation(.2, .2, .2), m_pDXManager);
 	m_ScenePhysics[1].m_BVH->CreateGPUBuffer(m_pDXManager);
 	m_ScenePhysics[1].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[1]);
+	m_ScenePhysics[1].CreateTetraindexAndMassSpringBuffers(m_pDXManager);
 
 	m_pOctree->addObject(&m_ScenePhysics[1],
 		m_ScenePhysics[1].m_Box.min,
@@ -508,8 +510,13 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
 			{
 				m_ScenePhysics[i].ResetColors();
-				m_ScenePhysics[i].ApplyForces({ 0,0,-0.98f,0 }, EF);
+
+				m_ScenePhysics[i].CSApplyForces(m_pDXManager, { 0,0,-0.98f,0 }, EF);
 				m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);
+
+				
+				/*m_ScenePhysics[i].ApplyForces({ 0,0,-0.98f,0 }, EF);
+				m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);*/
 
 				/* Remove object from Octree*/
 				m_pOctree->removeObject(&m_ScenePhysics[i],

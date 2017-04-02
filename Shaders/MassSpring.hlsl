@@ -53,16 +53,16 @@ void VolumePreservation(uint3 id:SV_DispatchThreadID)
 	F3 = K*C*cross(e1, e3);
 	F4 = K*C*cross(e2, e1);
 
-	g_MassSpringBuffer[i1].fuerza = g_MassSpringBuffer[i1].fuerza + float4(F1,0);
-	g_MassSpringBuffer[i2].fuerza = g_MassSpringBuffer[i2].fuerza + float4(F2, 0);
-	g_MassSpringBuffer[i3].fuerza = g_MassSpringBuffer[i3].fuerza + float4(F3, 0);
-	g_MassSpringBuffer[i4].fuerza = g_MassSpringBuffer[i4].fuerza + float4(F4, 0);
+	g_MassSpringBuffer[i1].fuerza = g_MassSpringBuffer[i1].fuerza + float4(F1,1);
+	g_MassSpringBuffer[i2].fuerza = g_MassSpringBuffer[i2].fuerza + float4(F2, 1);
+	g_MassSpringBuffer[i3].fuerza = g_MassSpringBuffer[i3].fuerza + float4(F3, 1);
+	g_MassSpringBuffer[i4].fuerza = g_MassSpringBuffer[i4].fuerza + float4(F4, 1);
 }
 
 [numthreads(NUM_THREAS_PER_GROUP, 1, 1)]
 void ComputeForces(uint3 id:SV_DispatchThreadID)
 {
-	float4 F = { 0,0,0,0 };
+	float4 F = float4( 0,0,0,0 );
 	uint numVecinos = g_MassSpringBuffer[id.x].numVecinos;
 	for (uint i = 0; i < numVecinos; i++) //auto vecino : g_MassSpringBuffer[i].vecinos)
 	{
@@ -71,11 +71,10 @@ void ComputeForces(uint3 id:SV_DispatchThreadID)
 		float M = length(V);
 		float L = vecino.distance;
 
-		F = F + ((K * (M - L)) * (normalize(V)));
-
+		F = F + ((K * (M - L)) * (V/M));
 	}
 
-	g_MassSpringBuffer[i].fuerza = g_MassSpringBuffer[i].fuerza + F + Gravity;
+	g_MassSpringBuffer[id.x].fuerza =  g_MassSpringBuffer[id.x].fuerza + F + Gravity;
 }
 
 [numthreads(NUM_THREAS_PER_GROUP, 1, 1)]

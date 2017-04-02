@@ -27,6 +27,17 @@ struct MassSpring
 	map<long long, float> distancia;
 };
 
+/*
+struct MassSpring
+{
+	float4 velocity;
+	float4 fuerza;
+	Vecino vecinos[NUM_VECINOS];
+	uint numVecinos;
+	float masa;
+};
+*/
+
 struct MassSpringGPU
 {
 	VECTOR4D velocity;
@@ -55,11 +66,24 @@ public:
 	struct PARAMS_MASS_SPRING_CB
 	{
 		VECTOR4D Gravity;
-		float K;
+		float Ki;
 		float Delta_t;
-	};
+	}m_CB_MASS_SPRING;
+
+	/* Compute shaders buffer */
+	ID3D11Buffer* m_pMassSpringBuffer;
+	ID3D11Buffer* m_pTetraIndices;
+
+	// UAV For vertex buffer  and primbuffer
+	ID3D11UnorderedAccessView* m_pUAVMassSpringBuffer;
+	ID3D11UnorderedAccessView* m_pUAVTetraIndices;
+
+	// SRV For vertex buffer and index buffer
+	ID3D11ShaderResourceView* m_pSRVMassSpringBuffer;
+	ID3D11ShaderResourceView* m_pSRVTetraIndices;
 
 	static void CompileCSShaders(CDXManager* pManager);
+	void CreateTetraindexAndMassSpringBuffers(CDXManager* m_pManager);
 
 	vector<EdgeCutInfo> m_EdgeCutInfo;
 	vector<unsigned long> m_IndicesTetrahedros;
@@ -76,6 +100,7 @@ public:
 	void CreateNeighbors();
 	void InitializaMassSpring();
 	void ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce);
+	void CSApplyForces(CDXManager * pManager, VECTOR4D Gravity, VECTOR4D ExternalForce);
 
 	void CreateSurfaceMesh();
 };
