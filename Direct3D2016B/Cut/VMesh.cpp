@@ -221,7 +221,7 @@ void CVMesh::LoadMSHFile(char * filename)
 }
 
 #define MASA (4)
-#define INITIALIZE_SPEED {0,0,1,0}
+#define INITIALIZE_SPEED {0,0,0,0}
 #define K (1000)
 #define DELTA_T (0.01)
 

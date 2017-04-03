@@ -252,45 +252,73 @@ void CSOnGame::OnEntry(void)
 	CMesh::CompileCSShaders(m_pDXManager);
 	CVMesh::CompileCSShaders(m_pDXManager);
 
-	m_ScenePhysics.resize(2);
+	m_ScenePhysics.resize(5);
 	//m_SceneCollisions.resize(2);
+	VECTOR4D t = { 0,0,0,0 };
 
+	for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
+	{
+		m_ScenePhysics[i].LoadMSHFile("");
+		m_ScenePhysics[i].InitializaMassSpring();
+		strcpy(m_ScenePhysics[i].m_cName, "Cube 0");
+		m_ScenePhysics[i].m_lID = i;
+		m_ScenePhysics[i].CreateMeshCollisionFromVMesh(m_ScenePhysics[i]);
+		m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);
+		m_ScenePhysics[i].CSApplyTranformation(Translation(t.x, t.y, t.z), m_pDXManager);
+		m_ScenePhysics[i].m_BVH = new BVH();
+		m_ScenePhysics[i].m_BVH->CreateGPUBuffer(m_pDXManager);
+		m_ScenePhysics[i].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[i]);
+		m_ScenePhysics[i].CreateTetraindexAndMassSpringBuffers(m_pDXManager);
+
+		m_pOctree->addObject(&m_ScenePhysics[i],
+			m_ScenePhysics[i].m_Box.min,
+			m_ScenePhysics[i].m_Box.max);
+
+		t = t - (-0.7f);
+	}
+
+	/* Init FPS */
+
+	m_dStarttime = 0;
+	m_iFrames = 0;
+	m_fFps = 0.0f;
+	m_bChangeFPS = false;
 	
-	/***************** Cube 0 *******************************/
-	m_ScenePhysics[0].LoadMSHFile("");
-	m_ScenePhysics[0].InitializaMassSpring();
-	//m_SceneCollisions[0].m_World = Identity();//Translation(-9, -9, -9);
-	strcpy(m_ScenePhysics[0].m_cName, "Cube 0");
-	m_ScenePhysics[0].m_lID = 0;
-	m_ScenePhysics[0].CreateMeshCollisionFromVMesh(m_ScenePhysics[0]);
-	m_ScenePhysics[0].CreateVertexAndIndexBuffer(m_pDXManager);
-	m_ScenePhysics[0].m_BVH = new BVH();
-	m_ScenePhysics[0].m_BVH->CreateGPUBuffer(m_pDXManager);
-	m_ScenePhysics[0].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[0]);
-	m_ScenePhysics[0].CreateTetraindexAndMassSpringBuffers(m_pDXManager);
+	///***************** Cube 0 *******************************/
+	//m_ScenePhysics[0].LoadMSHFile("");
+	//m_ScenePhysics[0].InitializaMassSpring();
+	////m_SceneCollisions[0].m_World = Identity();//Translation(-9, -9, -9);
+	//strcpy(m_ScenePhysics[0].m_cName, "Cube 0");
+	//m_ScenePhysics[0].m_lID = 0;
+	//m_ScenePhysics[0].CreateMeshCollisionFromVMesh(m_ScenePhysics[0]);
+	//m_ScenePhysics[0].CreateVertexAndIndexBuffer(m_pDXManager);
+	//m_ScenePhysics[0].m_BVH = new BVH();
+	//m_ScenePhysics[0].m_BVH->CreateGPUBuffer(m_pDXManager);
+	//m_ScenePhysics[0].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[0]);
+	//m_ScenePhysics[0].CreateTetraindexAndMassSpringBuffers(m_pDXManager);
 
-	m_pOctree->addObject(&m_ScenePhysics[0],
-		m_ScenePhysics[0].m_Box.min,
-		m_ScenePhysics[0].m_Box.max);
+	//m_pOctree->addObject(&m_ScenePhysics[0],
+	//	m_ScenePhysics[0].m_Box.min,
+	//	m_ScenePhysics[0].m_Box.max);
 
-	/***************** Cube 1 *******************************/
-	/*m_SceneCollisions[1].m_World = Identity();*/
-	m_ScenePhysics[1].LoadMSHFile("");
-	m_ScenePhysics[1].InitializaMassSpring();
-	m_ScenePhysics[1].m_lID = 1;
-	strcpy(m_ScenePhysics[1].m_cName, "Cube 1");
-	m_ScenePhysics[1].CreateMeshCollisionFromVMesh(m_ScenePhysics[1]);
-	m_ScenePhysics[1].CreateVertexAndIndexBuffer(m_pDXManager);
-	m_ScenePhysics[1].m_BVH = new BVH();
+	///***************** Cube 1 *******************************/
+	///*m_SceneCollisions[1].m_World = Identity();*/
+	//m_ScenePhysics[1].LoadMSHFile("");
+	//m_ScenePhysics[1].InitializaMassSpring();
+	//m_ScenePhysics[1].m_lID = 1;
+	//strcpy(m_ScenePhysics[1].m_cName, "Cube 1");
+	//m_ScenePhysics[1].CreateMeshCollisionFromVMesh(m_ScenePhysics[1]);
+	//m_ScenePhysics[1].CreateVertexAndIndexBuffer(m_pDXManager);
+	//m_ScenePhysics[1].m_BVH = new BVH();
 
-	m_ScenePhysics[1].CSApplyTranformation(Translation(.2, .2, .2), m_pDXManager);
-	m_ScenePhysics[1].m_BVH->CreateGPUBuffer(m_pDXManager);
-	m_ScenePhysics[1].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[1]);
-	m_ScenePhysics[1].CreateTetraindexAndMassSpringBuffers(m_pDXManager);
+	//m_ScenePhysics[1].CSApplyTranformation(Translation(.2, .2, .2), m_pDXManager);
+	//m_ScenePhysics[1].m_BVH->CreateGPUBuffer(m_pDXManager);
+	//m_ScenePhysics[1].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[1]);
+	//m_ScenePhysics[1].CreateTetraindexAndMassSpringBuffers(m_pDXManager);
 
-	m_pOctree->addObject(&m_ScenePhysics[1],
-		m_ScenePhysics[1].m_Box.min,
-		m_ScenePhysics[1].m_Box.max);
+	//m_pOctree->addObject(&m_ScenePhysics[1],
+	//	m_ScenePhysics[1].m_Box.min,
+	//	m_ScenePhysics[1].m_Box.max);
 
 
 	
@@ -509,19 +537,16 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 			for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
 			{
-				m_ScenePhysics[i].ResetColors();
-
-				m_ScenePhysics[i].CSApplyForces(m_pDXManager, { 0,0,-0.98f,0 }, EF);
-				m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);
-
-				
-				/*m_ScenePhysics[i].ApplyForces({ 0,0,-0.98f,0 }, EF);
-				m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);*/
-
 				/* Remove object from Octree*/
 				m_pOctree->removeObject(&m_ScenePhysics[i],
 					m_ScenePhysics[i].m_Box.min,
 					m_ScenePhysics[i].m_Box.max);
+
+				m_ScenePhysics[i].ResetColors();
+				m_ScenePhysics[i].CSApplyForces(m_pDXManager, { 0,0,-0.98f,0 }, EF);
+
+				/*m_ScenePhysics[i].ApplyForces({ 0,0,-0.98f,0 }, EF);
+				m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);*/
 
 				/* Rebuild BVH in GPU*/
 				m_ScenePhysics[i].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[i]);
@@ -578,7 +603,6 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			/* Draw scene */
 			for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
 			{
-
 				m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
 				m_pDXPainter->m_Params.World = Identity();
 
@@ -587,13 +611,25 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					&m_ScenePhysics[i].m_Indices[0],
 					m_ScenePhysics[i].m_Indices.size(),
 					PAINTER_DRAW);
-				
 			}
 
-				
+			// Update FPS
+			float currentTime = (float)GetTickCount();
+
+			if (currentTime - m_dStarttime > 500)
+			{
+				float time = (currentTime - m_dStarttime) / 1000; // Time in seconds
+				m_fFps = (double)m_iFrames / (time);
+				m_dStarttime = currentTime;
+				m_iFrames = 0;
+				//m_bChangeFPS = true;
+
+				printf("[FPS] %f\n", m_fFps);
+			}
+			m_iFrames++;
+
 
 			m_pDXManager->GetSwapChain()->Present(1, 0);
-
 		}
 
 	}

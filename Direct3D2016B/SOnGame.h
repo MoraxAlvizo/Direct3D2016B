@@ -110,6 +110,12 @@ private:
 	/* Draw options */
 	unsigned long m_nFlagsPainter;
 
+	/* FPS */
+	double m_dStarttime;
+	int m_iFrames ;
+	float m_fFps;
+	bool m_bChangeFPS;
+
 protected:
 
 	/* Protected methods */

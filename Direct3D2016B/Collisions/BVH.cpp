@@ -689,7 +689,7 @@ void BVH::DrawLBVH(CDXPainter * painter, int node)
 	m_lIndicesFrame[14] = 6;
 	m_lIndicesFrame[15] = 4;
 
-	if(LBVH[node].isLeaf)
+	//if(LBVH[node].isLeaf)
 		painter->DrawIndexed(cube, 8, m_lIndicesFrame, 16, PAINTER_WITH_LINESTRIP);
 	if (!LBVH[node].isLeaf)
 	{
