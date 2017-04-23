@@ -78,3 +78,15 @@ struct MassSpring
 	uint numVecinos;
 	float masa;
 };
+
+struct VecinosVisuales
+{
+	uint size;
+	uint idVecinos[NUM_VECINOS];
+};
+
+struct Tetrahedron
+{
+	uint4 indexes;
+	float4 C;
+};

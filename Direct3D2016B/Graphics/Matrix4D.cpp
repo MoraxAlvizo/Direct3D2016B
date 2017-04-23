@@ -428,7 +428,7 @@ void PlaneIntersect(
 bool RayCastOnTriangle(
 	VECTOR4D& V0, VECTOR4D& V1, VECTOR4D& V2,
 	VECTOR4D& RayOrigin, VECTOR4D RayDir,
-	VECTOR4D& Intersection)
+	VECTOR4D& Intersection, float* w0, float* w1, float* w2)
 {
 	VECTOR4D Plane;
 	Plane = Cross3((V1 - V0), (V2 - V0));
@@ -444,9 +444,9 @@ bool RayCastOnTriangle(
 		return false;
 	VECTOR4D Offset = { RayDir.x*u, RayDir.y*u, RayDir.z*u, 0 };
 	Intersection = RayOrigin + Offset;
-	float w0, w1, w2;
+	//float w0, w1, w2;
 	return PtInTriangleBarycentric(
-		V0, V1, V2, Intersection, w0, w1, w2);
+		V0, V1, V2, Intersection, *w0, *w1, *w2);
 }
 
 void BuildRayFromPerspective(MATRIX4D& PV,

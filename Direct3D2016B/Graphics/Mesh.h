@@ -4,6 +4,7 @@
 #include <map>
 #include "DXPainter.h"
 #include <assimp/scene.h>
+#include <set>
 #include "../Cut/VolumeMeshGenericID.h"
 
 using namespace std;
@@ -20,6 +21,18 @@ struct centroid
 	VECTOR4D position;
 	VECTOR4D max;
 	VECTOR4D min;
+};
+
+struct auxVecinos
+{
+	set<long> vecinos;
+};
+
+#define MESH_MAX_VECINOS 24
+struct vecinosVisuales
+{
+	unsigned long size;
+	unsigned long idVecinos[MESH_MAX_VECINOS];
 };
 
 struct CVMesh;
@@ -56,6 +69,7 @@ public:
 	ID3D11Buffer* m_pVertexBuffer;
 	ID3D11Buffer* m_pIndexBuffer;
 	ID3D11Buffer* m_pPrimitivesBuffer;
+	ID3D11Buffer* m_pVisualNeighbors;
 	// UAV For vertex buffer  and primbuffer
 	ID3D11UnorderedAccessView* m_pUAVVertexBuffer;
 	ID3D11UnorderedAccessView* m_pUAVPrimitiveBuffer;
@@ -63,6 +77,7 @@ public:
 	// SRV For vertex buffer and index buffer
 	ID3D11ShaderResourceView* m_pSRVVertexBuffer;
 	ID3D11ShaderResourceView* m_pSRVIndexBuffer;
+	ID3D11ShaderResourceView* m_pSRVVisualNeighbors;
 
 	void CreateVertexAndIndexBuffer(CDXManager* m_pManager);
 	void Draw(CDXPainter* m_pPainter);
@@ -80,6 +95,7 @@ public:
 	void LoadSuzanne();
 	void BuildTangentSpaceFromTexCoordsIndexed(void);
 	void BuildTangentSpaceFromTexCoordsIndexed(bool bGenerateNormal);
+	void CreateVisualNeighbors(CDXManager * m_pManager);
 	void Optimize();
 	void GenerarCentroides();
 	

@@ -24,6 +24,14 @@ class BVH
 		unsigned int suma;
 	}m_CB_BVH;
 
+#define MAX_INTERSECTIONS 3
+	struct Intersections
+	{
+		VECTOR4D listObj[2][MAX_INTERSECTIONS];
+		VECTOR4D coordBari[2][MAX_INTERSECTIONS];
+		unsigned long size[2];
+	};
+
 public:
 	/* Compute shaders */
 	static ID3D11ComputeShader*     s_pCSPrebuild ;
@@ -41,14 +49,17 @@ public:
 	// Buffer in GPU 
 	ID3D11Buffer* m_pCB_BVH;
 	ID3D11Buffer* m_pGPU_BVH;
-	ID3D11UnorderedAccessView* m_pUAV_GPU_BVH;
 	// UAV for GPU buffer
+	ID3D11UnorderedAccessView* m_pUAV_GPU_BVH;
+	// vector to check if velocity was previous change 
+	vector<bool> m_vVertexWasChanged;
 	vector<Box> LBVH;
 
 	/* Methods*/
 	BVH();
 	~BVH();
 	void CreateGPUBuffer(CDXManager* pManager);
+	void ResetVertexWasChanged(CMesh & object);
 	void Build(CMesh& object, vector<unsigned long> Primitives);
 	void Draw(CDXPainter* painter, int depth, MATRIX4D translation);
 	void Traversal(BVH* pTree, 
@@ -73,7 +84,7 @@ public:
 	void Postconstruction(CMesh & object);
 	void BuildGPU(CDXManager* pManager, CMesh* mesh);
 
-	bool CheckIfPrimitivesCollision(BVH* pTree, 
+	Intersections CheckIfPrimitivesCollision(BVH* pTree,
 		unsigned long nodeThis, 
 		unsigned long nodeTree,
 		CMesh& object1,
@@ -85,8 +96,8 @@ public:
 	void TraversalLBVH(BVH* pTree,
 		unsigned long nodeThis,
 		unsigned long nodeTree,
-		CMesh& object1,
-		CMesh& object2);
+		CVMesh& object1,
+		CVMesh& object2);
 
 	void BitTrailTraversal(BVH* pTree, 
 		MATRIX4D& thisTranslation, 

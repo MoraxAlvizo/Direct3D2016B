@@ -31,6 +31,7 @@ ID3D11ComputeShader*     CVMesh::s_pCSInitForce = NULL;
 ID3D11ComputeShader*     CVMesh::s_pCSVolumePreservation = NULL;
 ID3D11ComputeShader*     CVMesh::s_pCSComputeForces = NULL;
 ID3D11ComputeShader*     CVMesh::s_pCSApplyForces = NULL;
+ID3D11ComputeShader*     CVMesh::s_pCSComputeNormals = NULL;
 
 ID3D11Buffer*			 CVMesh::s_pCBMassSpring = NULL;
 
@@ -40,6 +41,7 @@ void CVMesh::CompileCSShaders(CDXManager * pManager)
 	s_pCSVolumePreservation = pManager->CompileComputeShader(L"..\\Shaders\\MassSpring.hlsl", "VolumePreservation");
 	s_pCSComputeForces = pManager->CompileComputeShader(L"..\\Shaders\\MassSpring.hlsl", "ComputeForces");
 	s_pCSApplyForces = pManager->CompileComputeShader(L"..\\Shaders\\MassSpring.hlsl", "ApplyForces");
+	s_pCSComputeNormals = pManager->CompileComputeShader(L"..\\Shaders\\MassSpring.hlsl", "ComputeNormals");
 
 	// Create constant buffer MassSpring.hlsl
 	D3D11_BUFFER_DESC dbd;
@@ -60,16 +62,15 @@ void CVMesh::CreateTetraindexAndMassSpringBuffers(CDXManager * m_pManager)
 	SAFE_RELEASE(m_pMassSpringBuffer);
 	SAFE_RELEASE(m_pTetraIndices);
 
-	vector<MassSpringGPU> msGPU;
 
-	msGPU.resize(m_MassSpring.size());
+	m_MassSpringGPU.resize(m_MassSpring.size());
 
-	for (unsigned long i = 0; i < msGPU.size(); i++)
+	for (unsigned long i = 0; i < m_MassSpringGPU.size(); i++)
 	{
-		msGPU[i].fuerza = m_MassSpring[i].Fuerza;
-		msGPU[i].masa = m_MassSpring[i].Masa;
-		msGPU[i].velocity = m_MassSpring[i].Velocity;
-		msGPU[i].numVecinos = 0;
+		m_MassSpringGPU[i].fuerza = m_MassSpring[i].Fuerza;
+		m_MassSpringGPU[i].masa = m_MassSpring[i].Masa;
+		m_MassSpringGPU[i].velocity = m_MassSpring[i].Velocity;
+		m_MassSpringGPU[i].numVecinos = 0;
 
 		for (set<long>::iterator it = m_MassSpring[i].vecinos.begin(); it != m_MassSpring[i].vecinos.end(); ++it)
 		{
@@ -78,15 +79,15 @@ void CVMesh::CreateTetraindexAndMassSpringBuffers(CDXManager * m_pManager)
 			long long key;
 			GET_KEY(i, vecino, key);
 
-			msGPU[i].vecinos[msGPU[i].numVecinos].idVecino = vecino;
-			msGPU[i].vecinos[msGPU[i].numVecinos].distancia = m_MassSpring[i].distancia[key];
+			m_MassSpringGPU[i].vecinos[m_MassSpringGPU[i].numVecinos].idVecino = vecino;
+			m_MassSpringGPU[i].vecinos[m_MassSpringGPU[i].numVecinos].distancia = m_MassSpring[i].distancia[key];
 
-			msGPU[i].numVecinos++;
+			m_MassSpringGPU[i].numVecinos++;
 		}
 	}
 
-	m_pMassSpringBuffer = m_pManager->CreateLoadBuffer(&msGPU[0], sizeof(MassSpringGPU), msGPU.size());
-	m_pTetraIndices = m_pManager->CreateLoadBuffer(&m_IndicesTetrahedros[0], sizeof(int)*4, m_IndicesTetrahedros.size() / 4);
+	m_pMassSpringBuffer = m_pManager->CreateLoadBuffer(&m_MassSpringGPU[0], sizeof(MassSpringGPU), m_MassSpringGPU.size());
+	m_pTetraIndices = m_pManager->CreateLoadBuffer(&m_IndicesTetrahedros[0], sizeof(Tetrahedron), m_IndicesTetrahedros.size());
 
 	// Create UAV 
 	m_pManager->GetDevice()->CreateUnorderedAccessView(m_pMassSpringBuffer, NULL, &m_pUAVMassSpringBuffer);
@@ -139,6 +140,8 @@ void CVMesh::LoadMSHFile(char * filename)
 					tourus >> m_Vertices[i].Position.x;
 					tourus >> m_Vertices[i].Position.y;
 					tourus >> m_Vertices[i].Position.z;
+					
+					//m_Vertices[i].Position = m_Vertices[i].Position * 2.f;
 					m_Vertices[i].Position.w = 1;
 				}
 			}
@@ -146,7 +149,7 @@ void CVMesh::LoadMSHFile(char * filename)
 			else if (line == "$Elements")
 			{
 				tourus >> numberIndex;
-				m_IndicesTetrahedros.resize(numberIndex*4);
+				m_IndicesTetrahedros.resize(numberIndex);
 				for (int i = 0; i < numberIndex; i++)
 				{
 					int v0;
@@ -154,16 +157,16 @@ void CVMesh::LoadMSHFile(char * filename)
 					int v2;
 					int v3;
 					int v4;
-					int offset = i * 4;
+					int offset = i;
 					tourus >> v0;
 					tourus >> v1;
 					tourus >> v2;
 					tourus >> v3;
 					tourus >> v4;
-					tourus >> m_IndicesTetrahedros[offset];
-					tourus >> m_IndicesTetrahedros[offset + 1];
-					tourus >> m_IndicesTetrahedros[offset + 2];
-					tourus >> m_IndicesTetrahedros[offset + 3];
+					tourus >> m_IndicesTetrahedros[offset].indexes[0];
+					tourus >> m_IndicesTetrahedros[offset].indexes[1];
+					tourus >> m_IndicesTetrahedros[offset].indexes[2];
+					tourus >> m_IndicesTetrahedros[offset].indexes[3];
 
 				}
 
@@ -173,15 +176,15 @@ void CVMesh::LoadMSHFile(char * filename)
 	}
 	tourus.close();
 
-	m_IndicesDibujarTetrahedros.resize(m_IndicesTetrahedros.size()*3);
+	m_IndicesDibujarTetrahedros.resize(m_IndicesTetrahedros.size()*3*4);
 
-	for (unsigned long int i = 0, j = 0; i < m_IndicesTetrahedros.size(); i+= 4, j += 12)
+	for (unsigned long int i = 0, j = 0; i < m_IndicesTetrahedros.size(); i++, j += 12)
 	{
 		int v0, v1, v2, v3;
-		v0 = m_IndicesTetrahedros[i];
-		v1 = m_IndicesTetrahedros[i+1];
-		v2 = m_IndicesTetrahedros[i+2];
-		v3 = m_IndicesTetrahedros[i+3];
+		v0 = m_IndicesTetrahedros[i].indexes[0];
+		v1 = m_IndicesTetrahedros[i].indexes[1];
+		v2 = m_IndicesTetrahedros[i].indexes[2];
+		v3 = m_IndicesTetrahedros[i].indexes[3];
 
 		m_IndicesDibujarTetrahedros[j] = v0;
 		m_IndicesDibujarTetrahedros[j+1] = v2;
@@ -222,12 +225,13 @@ void CVMesh::LoadMSHFile(char * filename)
 
 #define MASA (4)
 #define INITIALIZE_SPEED {0,0,0,0}
-#define K (1000)
+#define K (10000)
+#define Kv (10000)
 #define DELTA_T (0.01)
 
 void CVMesh::CreateNeighbors()
 {
-	for (unsigned long i = 0; i < m_IndicesTetrahedros.size(); i += 4)
+	for (unsigned long i = 0; i < m_IndicesTetrahedros.size(); i ++)
 	{
 		// 1. Sacar los 4 vertices
 		// 2. Ver si ya existen 
@@ -242,20 +246,45 @@ void CVMesh::CreateNeighbors()
 				{
 
 					// Agregar a la lista
-					m_MassSpring[m_IndicesTetrahedros[i + j]].vecinos.insert(m_IndicesTetrahedros[i + k]);
+					m_MassSpring[m_IndicesTetrahedros[i].indexes[j]].vecinos.insert(m_IndicesTetrahedros[i].indexes[k]);
 					// Agregar distancia 
 					long long key;
-					GET_KEY(m_IndicesTetrahedros[i + j], m_IndicesTetrahedros[i + k], key);
+					GET_KEY(m_IndicesTetrahedros[i].indexes[j], m_IndicesTetrahedros[i].indexes[k], key);
 
-					m_MassSpring[m_IndicesTetrahedros[i + j]].distancia[key] =
+					m_MassSpring[m_IndicesTetrahedros[i].indexes[j]].distancia[key] =
 						fabs(
-							Magnity(m_Vertices[m_IndicesTetrahedros[i + j]].Position -
-								    m_Vertices[m_IndicesTetrahedros[i + k]].Position
+							Magnity(m_Vertices[m_IndicesTetrahedros[i].indexes[j]].Position -
+								    m_Vertices[m_IndicesTetrahedros[i].indexes[k]].Position
 							)
 						);
 				}
 			}
 		}
+
+		/* Compute C */
+		unsigned long i1, i2, i3, i4;
+
+		i1 = m_IndicesTetrahedros[i].indexes[0];
+		i2 = m_IndicesTetrahedros[i].indexes[1];
+		i3 = m_IndicesTetrahedros[i].indexes[2];
+		i4 = m_IndicesTetrahedros[i].indexes[3];
+
+		VECTOR4D x1, x2, x3, x4;
+		x1 = m_Vertices[i1].Position;
+		x2 = m_Vertices[i2].Position;
+		x3 = m_Vertices[i3].Position;
+		x4 = m_Vertices[i4].Position;
+
+		VECTOR4D e1, e2, e3;
+		e1 = x2 - x1;
+		e2 = x3 - x1;
+		e3 = x4 - x1;
+
+		float V = (1 / 6.f) * Dot(e1, Cross3(e2, e3));
+		/* Hacer el Constrain una solo vez */
+		VECTOR4D C = ((1 / 6.f) * e1 * (Cross3(e2, e3))) - V;
+		C.w = 1;
+		m_IndicesTetrahedros[i].C = C;
 	}
 }
 
@@ -275,6 +304,11 @@ void CVMesh::InitializaMassSpring()
 	}
 
 	CreateNeighbors();
+
+	/* Create buffer for collision forces */
+	m_CollisionForces.resize(m_MassSpring.size());
+
+	memset(&m_CollisionForces[0], 0, m_CollisionForces.size()*sizeof(VECTOR4D));
 }
 
 void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
@@ -286,14 +320,14 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 
 	/* Preservacion de volumn */
 	
-	for (unsigned long i = 0; i < m_IndicesTetrahedros.size(); i+= 4)
+	for (unsigned long i = 0; i < m_IndicesTetrahedros.size(); i++)
 	{
 		unsigned long i1, i2, i3, i4;
 
-		i1 = m_IndicesTetrahedros[i];
-		i2 = m_IndicesTetrahedros[i + 1];
-		i3 = m_IndicesTetrahedros[i + 2];
-		i4 = m_IndicesTetrahedros[i + 3];
+		i1 = m_IndicesTetrahedros[i].indexes[0];
+		i2 = m_IndicesTetrahedros[i].indexes[1];
+		i3 = m_IndicesTetrahedros[i].indexes[2];
+		i4 = m_IndicesTetrahedros[i].indexes[3];
 
 		VECTOR4D x1, x2, x3, x4;
 		x1 = m_Vertices[i1].Position;
@@ -307,14 +341,15 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 		e3 = x4 - x1;
 
 		float V = (1/6.f) * Dot(e1 ,Cross3(e2, e3));
+		/* Hacer el Constrain una solo vez */
 		VECTOR4D C = ( (1 / 6.f) * e1 * (Cross3(e2, e3)) ) - V;
 
 		VECTOR4D F1, F2, F3, F4;
 
-		F1 = K*C*(Cross3(e2 - e1, e3 - e1));
-		F2 = K*C*Cross3(e3, e2);
-		F3 = K*C*Cross3(e1, e3);
-		F4 = K*C*Cross3(e2, e1);
+		F1 = Kv*C*(Cross3(e2 - e1, e3 - e1));
+		F2 = Kv*C*Cross3(e3, e2);
+		F3 = Kv*C*Cross3(e1, e3);
+		F4 = Kv*C*Cross3(e2, e1);
 
 		m_MassSpring[i1].Fuerza = m_MassSpring[i1].Fuerza + F1;
 		m_MassSpring[i2].Fuerza = m_MassSpring[i2].Fuerza + F2;
@@ -375,6 +410,12 @@ void CVMesh::CSApplyForces(CDXManager * pManager, VECTOR4D Gravity, VECTOR4D Ext
 {
 	auto pCtx = pManager->GetContext();
 	/********* Init Force ****/
+	/* Create collision buffers */
+	ID3D11Buffer* pCollisionBuffer = pManager->CreateLoadBuffer(&m_CollisionForces[0], sizeof(VECTOR4D), m_CollisionForces.size());
+	ID3D11ShaderResourceView* pSRVCollisionForces;
+
+	pManager->GetDevice()->CreateShaderResourceView(pCollisionBuffer, NULL, &pSRVCollisionForces);
+
 	/* Set Compute Shader */
 	pCtx->CSSetShader(CVMesh::s_pCSInitForce, 0, 0);
 
@@ -394,26 +435,39 @@ void CVMesh::CSApplyForces(CDXManager * pManager, VECTOR4D Gravity, VECTOR4D Ext
 
 	/* Set SRV */
 	pCtx->CSSetShaderResources(0, 1, &(this->m_pSRVTetraIndices));
+	pCtx->CSSetShaderResources(1, 1, &(pSRVCollisionForces));
+	pCtx->CSSetShaderResources(2, 1, &(this->m_pSRVVisualNeighbors));
+	pCtx->CSSetShaderResources(3, 1, &(this->m_pSRVIndexBuffer));
+
 	pCtx->Dispatch((m_Vertices.size() + 511) /512, 1, 1);
 
 	/********* Preservetion Volumn ******/
 	/* Set Compute Shader */
 	pCtx->CSSetShader(CVMesh::s_pCSVolumePreservation, 0, 0);
-	pCtx->Dispatch(((m_IndicesTetrahedros.size() / 4) + 511) / 512, 1, 1);
+	pCtx->Dispatch(((m_IndicesTetrahedros.size()) + 511) / 512, 1, 1);
 
 	/********* Compute Forces ******/
 	/* Set Compute Shader */
 	pCtx->CSSetShader(CVMesh::s_pCSComputeForces, 0, 0);
 	pCtx->Dispatch((m_Vertices.size() + 511) / 512, 1, 1);
 
-	/********* Preservetion Volumn ******/
+	/********* Apply forces ******/
 	/* Set Compute Shader */
 	pCtx->CSSetShader(CVMesh::s_pCSApplyForces, 0, 0);
 	pCtx->Dispatch((m_Vertices.size() + 511) / 512, 1, 1);
 
+	/********* Compute normals ******/
+	/* Set Compute Shader */
+	pCtx->CSSetShader(CVMesh::s_pCSComputeNormals, 0, 0);
+	pCtx->Dispatch((m_Vertices.size() + 511) / 512, 1, 1);
+
 	/* Save result */
 	pManager->CreateStoreBuffer(this->m_pVertexBuffer, sizeof(CDXPainter::VERTEX), this->m_Vertices.size(), &m_Vertices[0]);
+	/* Save Mass spting */
+	pManager->CreateStoreBuffer(this->m_pMassSpringBuffer, sizeof(MassSpringGPU), this->m_MassSpringGPU.size(), &m_MassSpringGPU[0]);
 
+	SAFE_RELEASE(pSRVCollisionForces);
+	SAFE_RELEASE(pCollisionBuffer);
 }
 
 struct TriangleSurface

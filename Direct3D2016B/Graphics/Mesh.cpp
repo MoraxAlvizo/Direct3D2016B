@@ -141,7 +141,8 @@ bool CMesh::RayCast(VECTOR4D& RayOrigin,
 		VECTOR4D &V1 = m_Vertices[m_Indices[nBaseIndex+1]].Position;
 		VECTOR4D &V2 = m_Vertices[m_Indices[nBaseIndex+2]].Position;
 		VECTOR4D Intersection;
-		if (RayCastOnTriangle(V0, V1, V2, RayOrigin, RayDir, Intersection))
+		float w0, w1, w2;
+		if (RayCastOnTriangle(V0, V1, V2, RayOrigin, RayDir, Intersection, &w0, &w1, &w2))
 		{
 			float dist = Magnity(Intersection - RayOrigin);
 			INTERSECTIONINFO II;
@@ -382,6 +383,51 @@ void CMesh::BuildTangentSpaceFromTexCoordsIndexed(bool bGenerateNormal)
 		pVertices[i].Tangent = Normalize(Accum[i].Tangent*invFreq);
 		pVertices[i].Binormal = Normalize(Accum[i].Binormal*invFreq);
 	}
+}
+
+void CMesh::CreateVisualNeighbors(CDXManager * m_pManager)
+{
+	vector<auxVecinos> visualNeighborsCPU;
+
+	visualNeighborsCPU.resize(m_Vertices.size());
+
+	for (unsigned int i = 0; i < m_Indices.size(); i += 3)
+	{
+		unsigned long i1, i2, i3;
+
+		i1 = m_Indices[i];
+		i2 = m_Indices[i + 1];
+		i3 = m_Indices[i + 2];
+		// Add reference to v1
+		visualNeighborsCPU[i1].vecinos.insert(i/3);
+
+		// Add reference to v2
+		visualNeighborsCPU[i2].vecinos.insert(i/3);
+
+		// Add reference to v3
+		visualNeighborsCPU[i3].vecinos.insert(i/3);
+	}
+
+	/* Convert into vecinosVisuales */
+	vector<vecinosVisuales> visualNeighborsGPU;
+	visualNeighborsGPU.resize(visualNeighborsCPU.size());
+
+	for (unsigned long i = 0; i < visualNeighborsCPU.size(); i++)
+	{
+		visualNeighborsGPU[i].size = visualNeighborsCPU[i].vecinos.size();
+		int counter = 0;
+		for (auto vecino : visualNeighborsCPU[i].vecinos)
+		{
+			visualNeighborsGPU[i].idVecinos[counter++] = vecino;
+		}
+	}
+
+	/* Create gpu buffer */
+	m_pVisualNeighbors = m_pManager->CreateLoadBuffer(&visualNeighborsGPU[0], sizeof(vecinosVisuales), visualNeighborsGPU.size());
+
+	// Create SRV
+	m_pManager->GetDevice()->CreateShaderResourceView(m_pVisualNeighbors, NULL, &m_pSRVVisualNeighbors);
+
 }
 
 void CMesh::Optimize()

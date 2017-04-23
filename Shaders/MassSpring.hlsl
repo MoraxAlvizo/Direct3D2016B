@@ -6,7 +6,10 @@
 RWStructuredBuffer<MassSpring> g_MassSpringBuffer:register(u0);
 RWStructuredBuffer<Vertex> g_Vertices:register(u1);
 // SRV 
-StructuredBuffer<uint4> g_TetraIndices:register(t0);
+StructuredBuffer<Tetrahedron> g_TetraIndices:register(t0);
+StructuredBuffer<float4> g_CollisionForces:register(t1);
+StructuredBuffer<VecinosVisuales> g_VisualNeighbors:register(t2);
+StructuredBuffer<uint> g_VisualIndexes:register(t3);
 
 
 cbuffer PARAMS:register(b0)
@@ -22,15 +25,17 @@ void InitForce(uint3 id:SV_DispatchThreadID)
 	g_MassSpringBuffer[id.x].fuerza = float4(0, 0, 0, 0);
 }
 
+#define Kv (1000)
+
 [numthreads(NUM_THREAS_PER_GROUP, 1, 1)]
 void VolumePreservation(uint3 id:SV_DispatchThreadID)
 {
 	uint i1, i2, i3, i4;
 
-	i1 = g_TetraIndices[id.x].x;
-	i2 = g_TetraIndices[id.x].y;
-	i3 = g_TetraIndices[id.x].x;
-	i4 = g_TetraIndices[id.x].w;
+	i1 = g_TetraIndices[id.x].indexes.x;
+	i2 = g_TetraIndices[id.x].indexes.y;
+	i3 = g_TetraIndices[id.x].indexes.z;
+	i4 = g_TetraIndices[id.x].indexes.w;
 
 	float3 x1, x2, x3, x4;
 	x1 = g_Vertices[i1].Position.xyz;
@@ -43,15 +48,15 @@ void VolumePreservation(uint3 id:SV_DispatchThreadID)
 	e2 = x3 - x1;
 	e3 = x4 - x1;
 
-	float V = (1 / 6.f) * dot(e1, cross(e2, e3));
-	float3 C = ((1 / 6.f) * e1 * (cross(e2, e3))) - V;
+	//float V = (1 / 6.f) * dot(e1, cross(e2, e3));
+	float3 C = g_TetraIndices[id.x].C.xyz;// ((1 / 6.f) * e1 * (cross(e2, e3))) - V;
 
 	float3 F1, F2, F3, F4;
 
-	F1 = K*C*(cross(e2 - e1, e3 - e1));
-	F2 = K*C*cross(e3, e2);
-	F3 = K*C*cross(e1, e3);
-	F4 = K*C*cross(e2, e1);
+	F1 = Kv*C*(cross(e2 - e1, e3 - e1));
+	F2 = Kv*C*cross(e3, e2);
+	F3 = Kv*C*cross(e1, e3);
+	F4 = Kv*C*cross(e2, e1);
 
 	g_MassSpringBuffer[i1].fuerza = g_MassSpringBuffer[i1].fuerza + float4(F1,1);
 	g_MassSpringBuffer[i2].fuerza = g_MassSpringBuffer[i2].fuerza + float4(F2, 1);
@@ -74,7 +79,7 @@ void ComputeForces(uint3 id:SV_DispatchThreadID)
 		F = F + ((K * (M - L)) * (V/M));
 	}
 
-	g_MassSpringBuffer[id.x].fuerza =  g_MassSpringBuffer[id.x].fuerza + F + Gravity;
+	g_MassSpringBuffer[id.x].fuerza =  g_MassSpringBuffer[id.x].fuerza +  F + Gravity;
 }
 
 [numthreads(NUM_THREAS_PER_GROUP, 1, 1)]
@@ -83,7 +88,28 @@ void ApplyForces(uint3 id:SV_DispatchThreadID)
 	if (id.x == 1)
 		return;
 
+	g_MassSpringBuffer[id.x].velocity = g_MassSpringBuffer[id.x].velocity + g_CollisionForces[id.x];
 	g_MassSpringBuffer[id.x].velocity = g_MassSpringBuffer[id.x].velocity + (Delta_t * (g_MassSpringBuffer[id.x].fuerza / g_MassSpringBuffer[id.x].masa));
 	g_Vertices[id.x].Position = g_Vertices[id.x].Position + (Delta_t * g_MassSpringBuffer[id.x].velocity);
 	g_Vertices[id.x].Position.w = 1;
+}
+
+[numthreads(NUM_THREAS_PER_GROUP, 1, 1)]
+void ComputeNormals(uint3 id:SV_DispatchThreadID)
+{
+	float4 Normal = float4(0, 0, 0, 0);
+	VecinosVisuales v = g_VisualNeighbors[id.x];
+
+	for (uint i = 0; i < v.size; i++)
+	{
+		uint t = v.idVecinos[i] * 3;
+
+		float3 V0 = g_Vertices[g_VisualIndexes[t]].Position.xyz;
+		float3 V1 = g_Vertices[g_VisualIndexes[t + 1]].Position.xyz;
+		float3 V2 = g_Vertices[g_VisualIndexes[t + 2]].Position.xyz;
+
+		Normal += float4(normalize(cross(V1 - V0, V2 - V0)), 0);
+	}
+
+	g_Vertices[id.x].Normal = Normal*(1.f / v.size);
 }

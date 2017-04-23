@@ -105,7 +105,7 @@ void PlaneIntersect(
 bool RayCastOnTriangle(
 	VECTOR4D& V0, VECTOR4D& V1, VECTOR4D& V2,
 	VECTOR4D& RayOrigin, VECTOR4D RayDir,
-	VECTOR4D& Intersection);
+	VECTOR4D& Intersection, float* w0, float* w1, float* w2);
 void BuildRayFromPerspective(MATRIX4D& PV,
 	float x, float y,
 	VECTOR4D& RayOrigin,

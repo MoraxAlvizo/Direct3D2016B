@@ -51,6 +51,13 @@ struct MassSpringGPU
 };
 
 
+struct Tetrahedron
+{
+	int indexes[4];
+	VECTOR4D C;
+};
+
+
 class CVMesh :
 	public CMesh
 {
@@ -60,6 +67,7 @@ public:
 	static ID3D11ComputeShader*     s_pCSVolumePreservation;
 	static ID3D11ComputeShader*     s_pCSComputeForces;
 	static ID3D11ComputeShader*     s_pCSApplyForces;
+	static ID3D11ComputeShader*     s_pCSComputeNormals;
 
 	static ID3D11Buffer*			s_pCBMassSpring; // Constan buffer MassSpring.hlsl
 
@@ -86,15 +94,18 @@ public:
 	void CreateTetraindexAndMassSpringBuffers(CDXManager* m_pManager);
 
 	vector<EdgeCutInfo> m_EdgeCutInfo;
-	vector<unsigned long> m_IndicesTetrahedros;
+	vector<Tetrahedron> m_IndicesTetrahedros;
 	vector<unsigned long> m_IndicesDibujarTetrahedros;
 	vector<MassSpring> m_MassSpring;
+	vector<MassSpringGPU> m_MassSpringGPU;
+	vector<VECTOR4D> m_CollisionForces;
 public:
 	CVMesh();
 	~CVMesh();
 	void LoadMSHFile(char * filename);
 	vector<EdgeCutInfo>& GetEdges() { return m_EdgeCutInfo; }
 	vector<CDXPainter::VERTEX>& GetVertices() { return m_Vertices; }
+	void ResetBufferCollisionForces() { memset(&m_CollisionForces[0], 0, m_CollisionForces.size() * sizeof(VECTOR4D)); }
 
 	// Mass Spring Systems
 	void CreateNeighbors();
