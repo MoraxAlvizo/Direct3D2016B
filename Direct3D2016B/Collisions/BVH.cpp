@@ -758,63 +758,53 @@ void BVH::TraversalLBVH(
 					unsigned long indexObject2V2 = object2.m_Indices[indicesPTree + 2];
 
 					/* Vertex obj1*/
-					MassSpringGPU& vertexObj1V0 = object1.m_MassSpringGPU[indexObject1V0];
-					MassSpringGPU& vertexObj1V1 = object1.m_MassSpringGPU[indexObject1V1];
-					MassSpringGPU& vertexObj1V2 = object1.m_MassSpringGPU[indexObject1V2];
+					VECTOR4D& vertexObj1V0 = object1.m_Vertices[indexObject1V0].Position;
+					VECTOR4D& vertexObj1V1 = object1.m_Vertices[indexObject1V1].Position;
+					VECTOR4D& vertexObj1V2 = object1.m_Vertices[indexObject1V2].Position;
 					
 					/* Vertex Obj2*/
-					MassSpringGPU& vertexObj2V0 = object2.m_MassSpringGPU[indexObject2V0];
-					MassSpringGPU& vertexObj2V1 = object2.m_MassSpringGPU[indexObject2V1];
-					MassSpringGPU& vertexObj2V2 = object2.m_MassSpringGPU[indexObject2V2];
+					VECTOR4D& vertexObj2V0 = object2.m_Vertices[indexObject2V0].Position;
+					VECTOR4D& vertexObj2V1 = object2.m_Vertices[indexObject2V1].Position;
+					VECTOR4D& vertexObj2V2 = object2.m_Vertices[indexObject2V2].Position;
 
-					/* Compute force and mass of object 1 and object 2 */
-					VECTOR4D velocity1, velocity2;
-					float mass1, mass2;
-					velocity1 = ( vertexObj1V0.velocity + vertexObj1V1.velocity + vertexObj1V2.velocity ) /3;
-					velocity2 = ( vertexObj2V0.velocity + vertexObj2V1.velocity + vertexObj2V2.velocity ) /3;
+					/* Compute normal */
+					VECTOR4D normal1, normal2;
 
-					mass1 = (vertexObj1V0.masa + vertexObj1V1.masa + vertexObj1V2.masa) ;
-					mass2 = (vertexObj2V0.masa + vertexObj2V1.masa + vertexObj2V2.masa) ;
+					normal1 =  Normalize(Cross3(vertexObj1V1 - vertexObj1V0, vertexObj1V2 - vertexObj1V0));
+					normal2 =  Normalize(Cross3(vertexObj2V1 - vertexObj2V0, vertexObj2V2 - vertexObj2V0));
 
-					VECTOR4D force1, force2;
-					force1 = (1 / 2.f)*(mass1)*(velocity1*velocity1);
-					force2 = (1 / 2.f)*(mass2)*(velocity2*velocity2);
+					/* Get vertex mass strping */
+					MassSpringGPU& massSpringObj1V0 = object1.m_MassSpringGPU[indexObject1V0];
+					MassSpringGPU& massSpringObj1V1 = object1.m_MassSpringGPU[indexObject1V1];
+					MassSpringGPU& massSpringObj1V2 = object1.m_MassSpringGPU[indexObject1V2];
 
-					VECTOR4D forceaux = (force1 + force2);
+					MassSpringGPU& massSpringObj2V0 = object2.m_MassSpringGPU[indexObject2V0];
+					MassSpringGPU& massSpringObj2V1 = object2.m_MassSpringGPU[indexObject2V1];
+					MassSpringGPU& massSpringObj2V2 = object2.m_MassSpringGPU[indexObject2V2];
 
+					/* Reflect velocities */
+					object1.m_CollisionForces[indexObject1V0].newVelocity = object1.m_CollisionForces[indexObject1V0].newVelocity +
+						(massSpringObj1V0.velocity - (2 * (Dot(massSpringObj1V0.velocity,normal2))*normal2));
+					object1.m_CollisionForces[indexObject1V1].newVelocity = object1.m_CollisionForces[indexObject1V1].newVelocity +
+						(massSpringObj1V1.velocity - (2 * (Dot(massSpringObj1V1.velocity,normal2))*normal2));
+					object1.m_CollisionForces[indexObject1V2].newVelocity = object1.m_CollisionForces[indexObject1V2].newVelocity +
+						(massSpringObj1V2.velocity - (2 * (Dot(massSpringObj1V2.velocity,normal2))*normal2));
 
-					//bool is_zero = false;
+					object1.m_CollisionForces[indexObject1V0].numHits++;
+					object1.m_CollisionForces[indexObject1V1].numHits++;
+					object1.m_CollisionForces[indexObject1V2].numHits++;
 
-					//CHECK_IF_FORCE_IS_0(force1, is_zero);
-					///* If force is 0 , it means that object is not movible */
-					//if (is_zero)
-					//{
-					//	VECTOR4D displacement = Normalize(object1.m_Vertices[indexObject1V0].Position);
-					//}
+					object2.m_CollisionForces[indexObject2V0].newVelocity = object2.m_CollisionForces[indexObject2V0].newVelocity +
+						(massSpringObj2V0.velocity - (2 * (Dot(massSpringObj2V0.velocity,normal1))*normal1));
+					object2.m_CollisionForces[indexObject2V1].newVelocity = object2.m_CollisionForces[indexObject2V1].newVelocity +
+						(massSpringObj2V1.velocity - (2 * (Dot(massSpringObj2V1.velocity,normal1))*normal1));
+					object2.m_CollisionForces[indexObject2V2].newVelocity = object2.m_CollisionForces[indexObject2V2].newVelocity +
+						(massSpringObj2V2.velocity - (2 * (Dot(massSpringObj2V2.velocity,normal1))*normal1));
 
-					object1.m_CollisionForces[indexObject1V0] = object1.m_CollisionForces[indexObject1V0] + forceaux*.3;
-					object1.m_CollisionForces[indexObject1V1] = object1.m_CollisionForces[indexObject1V1] + forceaux*.3;
-					object1.m_CollisionForces[indexObject1V2] = object1.m_CollisionForces[indexObject1V2] + forceaux*.3;
+					object2.m_CollisionForces[indexObject2V0].numHits++;
+					object2.m_CollisionForces[indexObject2V1].numHits++;
+					object2.m_CollisionForces[indexObject2V2].numHits++;
 
-					object2.m_CollisionForces[indexObject2V0] = object2.m_CollisionForces[indexObject2V0] + forceaux*.3;
-					object2.m_CollisionForces[indexObject2V1] = object2.m_CollisionForces[indexObject2V1] + forceaux*.3;
-					object2.m_CollisionForces[indexObject2V2] = object2.m_CollisionForces[indexObject2V2] + forceaux*.3;
-
-
-					/* Modify object 0 */
-					/* Reflect Velocity of vertex of object 0 */
-					/*
-					vector3 displacement = (b1->getPositionV() - b2->getPositionV()).normalise();
-					b1->setVelocity(b1->getVelocity() - ((displacement * 2) * dot(b1->getVelocity(), displacement)));
-					b2->setVelocity(b2->getVelocity() - ((displacement * 2) * dot(b2->getVelocity(), displacement)));*/
-
-					/*(object1).m_MassSpring[(object1).m_Indices[indicesThis]].Color = color;
-					(object1).m_MassSpring[(object1).m_Indices[indicesThis + 1]].Color = color;
-					(object1).m_MassSpring[(object1).m_Indices[indicesThis + 2]].Color = color;*/
-
-					/* Asignar la misma fuerza todos los vertices */
-
-					/* Modify object 1 */
 				}
 			}
 			else

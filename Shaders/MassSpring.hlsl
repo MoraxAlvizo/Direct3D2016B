@@ -5,9 +5,10 @@
 // UAV 
 RWStructuredBuffer<MassSpring> g_MassSpringBuffer:register(u0);
 RWStructuredBuffer<Vertex> g_Vertices:register(u1);
+RWStructuredBuffer<int> g_StillInCollision:register(u2);
 // SRV 
 StructuredBuffer<Tetrahedron> g_TetraIndices:register(t0);
-StructuredBuffer<float4> g_CollisionForces:register(t1);
+StructuredBuffer<Collision> g_CollisionForces:register(t1);
 StructuredBuffer<VecinosVisuales> g_VisualNeighbors:register(t2);
 StructuredBuffer<uint> g_VisualIndexes:register(t3);
 
@@ -53,10 +54,10 @@ void VolumePreservation(uint3 id:SV_DispatchThreadID)
 
 	float3 F1, F2, F3, F4;
 
-	F1 = Kv*C*(cross(e2 - e1, e3 - e1));
-	F2 = Kv*C*cross(e3, e2);
-	F3 = Kv*C*cross(e1, e3);
-	F4 = Kv*C*cross(e2, e1);
+	F1 = K*C*(cross(e2 - e1, e3 - e1));
+	F2 = K*C*cross(e3, e2);
+	F3 = K*C*cross(e1, e3);
+	F4 = K*C*cross(e2, e1);
 
 	g_MassSpringBuffer[i1].fuerza = g_MassSpringBuffer[i1].fuerza + float4(F1,1);
 	g_MassSpringBuffer[i2].fuerza = g_MassSpringBuffer[i2].fuerza + float4(F2, 1);
@@ -85,11 +86,21 @@ void ComputeForces(uint3 id:SV_DispatchThreadID)
 [numthreads(NUM_THREAS_PER_GROUP, 1, 1)]
 void ApplyForces(uint3 id:SV_DispatchThreadID)
 {
-	if (id.x == 1)
-		return;
+	
+	/*if (id.x == 1)
+		return;*/
 
-	g_MassSpringBuffer[id.x].velocity = g_MassSpringBuffer[id.x].velocity + g_CollisionForces[id.x];
-	g_MassSpringBuffer[id.x].velocity = g_MassSpringBuffer[id.x].velocity + (Delta_t * (g_MassSpringBuffer[id.x].fuerza / g_MassSpringBuffer[id.x].masa));
+	Collision collision = g_CollisionForces[id.x];
+
+	if (collision.numHits != 0)
+	{
+		g_MassSpringBuffer[id.x].velocity = (collision.newVelocity / (float)collision.numHits);
+	}
+	else
+	{
+		g_MassSpringBuffer[id.x].velocity = g_MassSpringBuffer[id.x].velocity + (Delta_t * (g_MassSpringBuffer[id.x].fuerza / g_MassSpringBuffer[id.x].masa));
+	}
+
 	g_Vertices[id.x].Position = g_Vertices[id.x].Position + (Delta_t * g_MassSpringBuffer[id.x].velocity);
 	g_Vertices[id.x].Position.w = 1;
 }

@@ -57,10 +57,12 @@ void CVMesh::CreateTetraindexAndMassSpringBuffers(CDXManager * m_pManager)
 {
 	SAFE_RELEASE(m_pUAVMassSpringBuffer);
 	SAFE_RELEASE(m_pUAVTetraIndices);
+	SAFE_RELEASE(m_pUAVStillInCollision);
 	SAFE_RELEASE(m_pSRVMassSpringBuffer);
 	SAFE_RELEASE(m_pSRVTetraIndices);
 	SAFE_RELEASE(m_pMassSpringBuffer);
 	SAFE_RELEASE(m_pTetraIndices);
+	SAFE_RELEASE(m_pStillInCollision);
 
 
 	m_MassSpringGPU.resize(m_MassSpring.size());
@@ -89,9 +91,15 @@ void CVMesh::CreateTetraindexAndMassSpringBuffers(CDXManager * m_pManager)
 	m_pMassSpringBuffer = m_pManager->CreateLoadBuffer(&m_MassSpringGPU[0], sizeof(MassSpringGPU), m_MassSpringGPU.size());
 	m_pTetraIndices = m_pManager->CreateLoadBuffer(&m_IndicesTetrahedros[0], sizeof(Tetrahedron), m_IndicesTetrahedros.size());
 
+	vector<int> stillInCollisionInit = vector<int>(m_Vertices.size());
+	memset(&stillInCollisionInit[0], 0, sizeof(int)*stillInCollisionInit.size());
+
+	m_pStillInCollision = m_pManager->CreateLoadBuffer(&stillInCollisionInit[0], sizeof(int), stillInCollisionInit.size());
+
 	// Create UAV 
 	m_pManager->GetDevice()->CreateUnorderedAccessView(m_pMassSpringBuffer, NULL, &m_pUAVMassSpringBuffer);
 	m_pManager->GetDevice()->CreateUnorderedAccessView(m_pTetraIndices, NULL, &m_pUAVTetraIndices);
+	m_pManager->GetDevice()->CreateUnorderedAccessView(m_pStillInCollision, NULL, &m_pUAVStillInCollision);
 
 	// Create SRV 
 	m_pManager->GetDevice()->CreateShaderResourceView(m_pMassSpringBuffer, NULL, &m_pSRVMassSpringBuffer);
@@ -102,10 +110,12 @@ CVMesh::CVMesh()
 {
 	m_pMassSpringBuffer = NULL;
 	m_pTetraIndices = NULL;
+	m_pStillInCollision = NULL;
 
 	// UAV For vertex buffer  and primbuffer
 	m_pUAVMassSpringBuffer = NULL;
 	m_pUAVTetraIndices = NULL;
+	m_pUAVStillInCollision = NULL;
 
 	// SRV For vertex buffer and index buffer
 	m_pSRVMassSpringBuffer = NULL;
@@ -225,8 +235,8 @@ void CVMesh::LoadMSHFile(char * filename)
 
 #define MASA (4)
 #define INITIALIZE_SPEED {0,0,0,0}
-#define K (10000)
-#define Kv (10000)
+#define K (4000)
+#define Kv (4000)
 #define DELTA_T (0.01)
 
 void CVMesh::CreateNeighbors()
@@ -432,6 +442,7 @@ void CVMesh::CSApplyForces(CDXManager * pManager, VECTOR4D Gravity, VECTOR4D Ext
 	/* Set UAV */
 	pCtx->CSSetUnorderedAccessViews(0, 1, &(this->m_pUAVMassSpringBuffer), NULL);
 	pCtx->CSSetUnorderedAccessViews(1, 1, &(this->m_pUAVVertexBuffer), NULL);
+	pCtx->CSSetUnorderedAccessViews(2, 1, &(this->m_pUAVStillInCollision), NULL);
 
 	/* Set SRV */
 	pCtx->CSSetShaderResources(0, 1, &(this->m_pSRVTetraIndices));

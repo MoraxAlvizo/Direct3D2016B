@@ -57,6 +57,12 @@ struct Tetrahedron
 	VECTOR4D C;
 };
 
+struct Collision
+{
+	VECTOR4D newVelocity; 
+	unsigned long numHits;
+};
+
 
 class CVMesh :
 	public CMesh
@@ -81,10 +87,12 @@ public:
 	/* Compute shaders buffer */
 	ID3D11Buffer* m_pMassSpringBuffer;
 	ID3D11Buffer* m_pTetraIndices;
+	ID3D11Buffer* m_pStillInCollision;
 
 	// UAV For vertex buffer  and primbuffer
 	ID3D11UnorderedAccessView* m_pUAVMassSpringBuffer;
 	ID3D11UnorderedAccessView* m_pUAVTetraIndices;
+	ID3D11UnorderedAccessView* m_pUAVStillInCollision;
 
 	// SRV For vertex buffer and index buffer
 	ID3D11ShaderResourceView* m_pSRVMassSpringBuffer;
@@ -98,14 +106,15 @@ public:
 	vector<unsigned long> m_IndicesDibujarTetrahedros;
 	vector<MassSpring> m_MassSpring;
 	vector<MassSpringGPU> m_MassSpringGPU;
-	vector<VECTOR4D> m_CollisionForces;
+	vector<Collision> m_CollisionForces;
+	
 public:
 	CVMesh();
 	~CVMesh();
 	void LoadMSHFile(char * filename);
 	vector<EdgeCutInfo>& GetEdges() { return m_EdgeCutInfo; }
 	vector<CDXPainter::VERTEX>& GetVertices() { return m_Vertices; }
-	void ResetBufferCollisionForces() { memset(&m_CollisionForces[0], 0, m_CollisionForces.size() * sizeof(VECTOR4D)); }
+	void ResetBufferCollisionForces() { memset(&m_CollisionForces[0], 0, m_CollisionForces.size() * sizeof(Collision)); }
 
 	// Mass Spring Systems
 	void CreateNeighbors();

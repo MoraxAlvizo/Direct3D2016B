@@ -90,3 +90,9 @@ struct Tetrahedron
 	uint4 indexes;
 	float4 C;
 };
+
+struct Collision
+{
+	float4 newVelocity;
+	uint numHits;
+};

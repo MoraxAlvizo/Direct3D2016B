@@ -261,6 +261,13 @@ void CSOnGame::OnEntry(void)
 		m_ScenePhysics[i].LoadMSHFile("");
 		m_ScenePhysics[i].InitializaMassSpring();
 		strcpy(m_ScenePhysics[i].m_cName, "Cube 0");
+
+		if (i == 0)
+		{
+			m_ScenePhysics[i].ApplyTransformation(Scaling(3, 3, 1));
+			m_ScenePhysics[i].ApplyTransformation(Translation(-1,-1, 0));
+		}
+			
 		m_ScenePhysics[i].m_lID = i;
 		m_ScenePhysics[i].CreateMeshCollisionFromVMesh(m_ScenePhysics[i]);
 		m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);
