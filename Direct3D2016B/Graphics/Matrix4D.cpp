@@ -425,6 +425,27 @@ void PlaneIntersect(
 	d = Dot(Plane, RayDir);
 }
 
+bool PointIsBelowPlane(VECTOR4D& V0, VECTOR4D& V1, VECTOR4D& V2, VECTOR4D& Point)
+{
+	VECTOR4D Plane;
+	Plane = Cross3((V1 - V0), (V2 - V0));
+	Plane = Normalize(Plane);
+	Plane.w = -Dot(V0, Plane);
+
+	double planeEq = Dot(Plane,Point);
+	double TOLERANCE = 1.0e-9;
+
+	/*if (fabs(planeEq) <= TOLERANCE) {
+		return false; //on
+	}*/
+	if (planeEq > TOLERANCE) {
+		return false; //above
+	}
+	else {
+		return true; //below
+	}
+}
+
 bool RayCastOnTriangle(
 	VECTOR4D& V0, VECTOR4D& V1, VECTOR4D& V2,
 	VECTOR4D& RayOrigin, VECTOR4D RayDir,
@@ -447,6 +468,41 @@ bool RayCastOnTriangle(
 	//float w0, w1, w2;
 	return PtInTriangleBarycentric(
 		V0, V1, V2, Intersection, *w0, *w1, *w2);
+}
+
+VECTOR4D computeNewPosition(VECTOR4D& V0, VECTOR4D& V1, VECTOR4D& V2, VECTOR4D& Point)
+{
+	VECTOR4D Plane;
+	VECTOR4D NewPos = { 0,0,0,0 };
+	Plane = Cross3((V1 - V0), (V2 - V0));
+	Plane = Normalize(Plane);
+	Plane.w = -Dot(V0, Plane);
+
+	/* Compute normal */
+	VECTOR4D Raydir;
+
+	Raydir = Normalize(Cross3(V1 - V0, V2 - V0));
+
+	float n, d;
+	PlaneIntersect(Point, Raydir, Plane, n, d);
+	if (fabs(d) < 0.0001)
+	{
+		MessageBox(NULL, L"No interseccion 1 ", L"Algo esta mal con el check", MB_ICONERROR);
+		return NewPos;
+	}
+		
+	float u = n / d;
+	if (u < 0.0f)
+	{
+		MessageBox(NULL, L"No interseccion 2 ", L"Algo esta mal con el check", MB_ICONERROR);
+		return NewPos;
+	}
+		
+
+	VECTOR4D Offset = { Raydir.x*u, Raydir.y*u, Raydir.z*u, 0 };
+
+	return  Point + Offset;
+
 }
 
 void BuildRayFromPerspective(MATRIX4D& PV,

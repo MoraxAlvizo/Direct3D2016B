@@ -565,7 +565,7 @@ void BVH::BuildGPU(CDXManager * pManager, CMesh* mesh)
 
 }
 
-#define CHECK_RAY_PRIMITIVES(_Edgev0,_Edgev1,_obj1V0,_obj1V1,_obj1V2,_intersections,_list) \
+#define CHECK_RAY_PRIMITIVES(_Edgev0,_Edgev1,_obj1V0,_obj1V1,_obj1V2,_intersections,_list,_Edgev0_index, _Edgev1_index) \
 {\
 	VECTOR4D _Intersection;\
 	VECTOR4D _RayOrigin = _Edgev0;\
@@ -575,14 +575,31 @@ void BVH::BuildGPU(CDXManager * pManager, CMesh* mesh)
 	\
 	if (RayCastOnTriangle(_obj1V0, _obj1V1, _obj1V2, _RayOrigin, _RayDir, _Intersection, &_w0, &_w1, &_w2))\
 	{\
+		_intersections.listObj[_list][_intersections.size[_list]] = _Intersection;\
 		_inter1 = true;\
 	}\
 	_RayOrigin = _Edgev1;\
 	_RayDir = Normalize(_Edgev0 - _RayOrigin);\
 	if (_inter1 && RayCastOnTriangle(_obj1V0, _obj1V1, _obj1V2, _RayOrigin, _RayDir, _Intersection, &_w0, &_w1, &_w2))\
 	{\
-		_intersections.listObj[_list][_intersections.size[_list]] = _Intersection;\
-		_intersections.coordBari[_list][_intersections.size[_list]++] = {_w0,_w1,_w2,0};\
+		bool isBelow = false;\
+		\
+		_intersections.coordBari[_list][_intersections.size[_list]] = {_w0,_w1,_w2,0};\
+		/*Then we need to check if which of the point are below */\
+		if(PointIsBelowPlane(_obj1V0, _obj1V1, _obj1V2, _Edgev0))\
+		{\
+			isBelow = true;\
+			_intersections.indexBelow[_list][_intersections.size[_list]] = _Edgev0_index;\
+		}\
+\
+		if(PointIsBelowPlane(_obj1V0, _obj1V1, _obj1V2, _Edgev1))\
+		{\
+			/*if(isBelow) MessageBox(NULL, L"Ambos puntos esta debajo",L"Algo esta mal con el check", MB_ICONERROR); */\
+			/*else*/ isBelow = true; \
+			_intersections.indexBelow[_list][_intersections.size[_list]] = _Edgev1_index;\
+		}\
+		if(!isBelow) MessageBox(NULL, L"No hay ningun punto debajo ",L"Algo esta mal con el check", MB_ICONERROR);\
+		_intersections.size[_list]++;\
 	}\
 }
 
@@ -599,24 +616,32 @@ BVH::Intersections BVH::CheckIfPrimitivesCollision(BVH * pTree,
 
 	unsigned long indicesThis = this->LBVH[nodeThis].idPrimitive * 3;
 
+	unsigned long indexObj1V0 = object1.m_Indices[indicesThis];
+	unsigned long indexObj1V1 = object1.m_Indices[indicesThis + 1];
+	unsigned long indexObj1V2 = object1.m_Indices[indicesThis + 2];
+
 	VECTOR4D object1_V0 = object1.m_Vertices[object1.m_Indices[indicesThis]].Position;// *object1.m_World;
 	VECTOR4D object1_V1 = object1.m_Vertices[object1.m_Indices[indicesThis + 1]].Position;// *object1.m_World;
 	VECTOR4D object1_V2 = object1.m_Vertices[object1.m_Indices[indicesThis + 2]].Position;// *object1.m_World;
 
 	unsigned long indicesPTree = pTree->LBVH[nodeTree].idPrimitive * 3;
 
+	unsigned long indexObj2V0 = object2.m_Indices[indicesPTree];
+	unsigned long indexObj2V1 = object2.m_Indices[indicesPTree + 1];
+	unsigned long indexObj2V2 = object2.m_Indices[indicesPTree + 2];
+
 	VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position;// *object2.m_World;
 	VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position;// *object2.m_World;
 	VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position;// *object2.m_World;
 
 	/* Revisar triangulo objeto1 contra el objeto2 */
-	CHECK_RAY_PRIMITIVES(object2_V0, object2_V1, object1_V0, object1_V1, object1_V2, intersections, 0);
-	CHECK_RAY_PRIMITIVES(object2_V1, object2_V2, object1_V0, object1_V1, object1_V2, intersections, 0);
-	CHECK_RAY_PRIMITIVES(object2_V2, object2_V0, object1_V0, object1_V1, object1_V2, intersections, 0);
+	CHECK_RAY_PRIMITIVES(object2_V0, object2_V1, object1_V0, object1_V1, object1_V2, intersections, 1, indexObj2V0, indexObj2V1);
+	CHECK_RAY_PRIMITIVES(object2_V1, object2_V2, object1_V0, object1_V1, object1_V2, intersections, 1, indexObj2V1, indexObj2V2);
+	CHECK_RAY_PRIMITIVES(object2_V2, object2_V0, object1_V0, object1_V1, object1_V2, intersections, 1, indexObj2V2, indexObj2V0);
 	/* Revisar triangulo objeto2 contra el objeto1 */
-	CHECK_RAY_PRIMITIVES(object1_V0, object1_V1, object2_V0, object2_V1, object2_V2, intersections, 1);
-	CHECK_RAY_PRIMITIVES(object1_V1, object1_V2, object2_V0, object2_V1, object2_V2, intersections, 1);
-	CHECK_RAY_PRIMITIVES(object1_V2, object1_V0, object2_V0, object2_V1, object2_V2, intersections, 1);
+	CHECK_RAY_PRIMITIVES(object1_V0, object1_V1, object2_V0, object2_V1, object2_V2, intersections, 0, indexObj1V0, indexObj1V1);
+	CHECK_RAY_PRIMITIVES(object1_V1, object1_V2, object2_V0, object2_V1, object2_V2, intersections, 0, indexObj1V1, indexObj1V2);
+	CHECK_RAY_PRIMITIVES(object1_V2, object1_V0, object2_V0, object2_V1, object2_V2, intersections, 0, indexObj1V2, indexObj1V0);
 
 	//printf("Intersections: obj1[%i] obj2[%i]\n", intersections.size[0], intersections.size[1]);
 
@@ -750,8 +775,8 @@ void BVH::TraversalLBVH(
 					BVH_SET_COLOR(object2, indicesPTree, m_Color);
 
 					unsigned long indexObject1V0 = object1.m_Indices[indicesThis];
-					unsigned long indexObject1V1 = object1.m_Indices[indicesThis+1];
-					unsigned long indexObject1V2 = object1.m_Indices[indicesThis+2];
+					unsigned long indexObject1V1 = object1.m_Indices[indicesThis + 1];
+					unsigned long indexObject1V2 = object1.m_Indices[indicesThis + 2];
 
 					unsigned long indexObject2V0 = object2.m_Indices[indicesPTree];
 					unsigned long indexObject2V1 = object2.m_Indices[indicesPTree + 1];
@@ -761,7 +786,7 @@ void BVH::TraversalLBVH(
 					VECTOR4D& vertexObj1V0 = object1.m_Vertices[indexObject1V0].Position;
 					VECTOR4D& vertexObj1V1 = object1.m_Vertices[indexObject1V1].Position;
 					VECTOR4D& vertexObj1V2 = object1.m_Vertices[indexObject1V2].Position;
-					
+
 					/* Vertex Obj2*/
 					VECTOR4D& vertexObj2V0 = object2.m_Vertices[indexObject2V0].Position;
 					VECTOR4D& vertexObj2V1 = object2.m_Vertices[indexObject2V1].Position;
@@ -769,41 +794,102 @@ void BVH::TraversalLBVH(
 
 					/* Compute normal */
 					VECTOR4D normal1, normal2;
+					VECTOR4D velocity1, velocity2;
+					 
+					velocity1 = (object1.m_MassSpringGPU[indexObject1V0].velocity +
+						object1.m_MassSpringGPU[indexObject1V1].velocity +
+						object1.m_MassSpringGPU[indexObject1V2].velocity)  / 3.f;
 
-					normal1 =  Normalize(Cross3(vertexObj1V1 - vertexObj1V0, vertexObj1V2 - vertexObj1V0));
-					normal2 =  Normalize(Cross3(vertexObj2V1 - vertexObj2V0, vertexObj2V2 - vertexObj2V0));
+					velocity2 = (object2.m_MassSpringGPU[indexObject2V0].velocity +
+						object2.m_MassSpringGPU[indexObject2V1].velocity +
+						object2.m_MassSpringGPU[indexObject2V2].velocity) / 3.f;
 
-					/* Get vertex mass strping */
-					MassSpringGPU& massSpringObj1V0 = object1.m_MassSpringGPU[indexObject1V0];
-					MassSpringGPU& massSpringObj1V1 = object1.m_MassSpringGPU[indexObject1V1];
-					MassSpringGPU& massSpringObj1V2 = object1.m_MassSpringGPU[indexObject1V2];
 
-					MassSpringGPU& massSpringObj2V0 = object2.m_MassSpringGPU[indexObject2V0];
-					MassSpringGPU& massSpringObj2V1 = object2.m_MassSpringGPU[indexObject2V1];
-					MassSpringGPU& massSpringObj2V2 = object2.m_MassSpringGPU[indexObject2V2];
+					normal1 = Normalize(Cross3(vertexObj1V1 - vertexObj1V0, vertexObj1V2 - vertexObj1V0));
+					normal2 = Normalize(Cross3(vertexObj2V1 - vertexObj2V0, vertexObj2V2 - vertexObj2V0));
 
-					/* Reflect velocities */
-					object1.m_CollisionForces[indexObject1V0].newVelocity = object1.m_CollisionForces[indexObject1V0].newVelocity +
-						(massSpringObj1V0.velocity - (2 * (Dot(massSpringObj1V0.velocity,normal2))*normal2));
-					object1.m_CollisionForces[indexObject1V1].newVelocity = object1.m_CollisionForces[indexObject1V1].newVelocity +
-						(massSpringObj1V1.velocity - (2 * (Dot(massSpringObj1V1.velocity,normal2))*normal2));
-					object1.m_CollisionForces[indexObject1V2].newVelocity = object1.m_CollisionForces[indexObject1V2].newVelocity +
-						(massSpringObj1V2.velocity - (2 * (Dot(massSpringObj1V2.velocity,normal2))*normal2));
+					for (int i = 0; i < intersections.size[0]; i++)
+					{
+						unsigned long index = intersections.indexBelow[0][i];
+						/* Get vertex mass strping */
+						MassSpringGPU& massSpring = object1.m_MassSpringGPU[index];
+						/* Reflect velocities */
 
-					object1.m_CollisionForces[indexObject1V0].numHits++;
-					object1.m_CollisionForces[indexObject1V1].numHits++;
-					object1.m_CollisionForces[indexObject1V2].numHits++;
+						object1.m_CollisionForces[index].newVelocity = object1.m_CollisionForces[index].newVelocity +
+							(massSpring.velocity - (2 * (Dot(massSpring.velocity, normal2))*normal2));
+						
 
-					object2.m_CollisionForces[indexObject2V0].newVelocity = object2.m_CollisionForces[indexObject2V0].newVelocity +
-						(massSpringObj2V0.velocity - (2 * (Dot(massSpringObj2V0.velocity,normal1))*normal1));
-					object2.m_CollisionForces[indexObject2V1].newVelocity = object2.m_CollisionForces[indexObject2V1].newVelocity +
-						(massSpringObj2V1.velocity - (2 * (Dot(massSpringObj2V1.velocity,normal1))*normal1));
-					object2.m_CollisionForces[indexObject2V2].newVelocity = object2.m_CollisionForces[indexObject2V2].newVelocity +
-						(massSpringObj2V2.velocity - (2 * (Dot(massSpringObj2V2.velocity,normal1))*normal1));
+							
 
-					object2.m_CollisionForces[indexObject2V0].numHits++;
-					object2.m_CollisionForces[indexObject2V1].numHits++;
-					object2.m_CollisionForces[indexObject2V2].numHits++;
+						object1.m_CollisionForces[index].newPosition = object1.m_CollisionForces[index].newPosition +
+							computeNewPosition(vertexObj2V0, vertexObj2V1, vertexObj2V2, object1.m_Vertices[index].Position);
+
+						/*printf("[BVH] NewPos[%f,%f,%f] currentPosition[%f,%f,%f ]\n",
+							object1.m_CollisionForces[index].newPosition.x,
+							object1.m_CollisionForces[index].newPosition.y,
+							object1.m_CollisionForces[index].newPosition.z,
+							object1.m_Vertices[index].Position.x,
+							object1.m_Vertices[index].Position.y,
+							object1.m_Vertices[index].Position.z);*/
+
+						object1.m_CollisionForces[index].numHits++;
+					}
+
+					for (int i = 0; i < intersections.size[1]; i++)
+					{
+						unsigned long index = intersections.indexBelow[1][i];
+						/* Get vertex mass strping */
+						MassSpringGPU& massSpring = object2.m_MassSpringGPU[index];
+						/* Reflect velocities */
+						object2.m_CollisionForces[index].newVelocity = object2.m_CollisionForces[index].newVelocity +
+							(massSpring.velocity - (2 * (Dot(massSpring.velocity, normal1))*normal1));
+
+						object2.m_CollisionForces[index].newPosition = object2.m_CollisionForces[index].newPosition +
+							computeNewPosition(vertexObj1V0, vertexObj1V1, vertexObj1V2, object2.m_Vertices[index].Position);
+						
+						/*printf("[BVH] NewPos[%f,%f,%f] currentPosition[%f,%f,%f ]\n",
+							object2.m_CollisionForces[index].newPosition.x,
+							object2.m_CollisionForces[index].newPosition.y,
+							object2.m_CollisionForces[index].newPosition.z,
+							object2.m_Vertices[index].Position.x,
+							object2.m_Vertices[index].Position.y,
+							object2.m_Vertices[index].Position.z);*/
+
+						object2.m_CollisionForces[index].numHits++;
+					}
+					
+
+					///* Get vertex mass strping */
+					//MassSpringGPU& massSpringObj1V0 = object1.m_MassSpringGPU[indexObject1V0];
+					//MassSpringGPU& massSpringObj1V1 = object1.m_MassSpringGPU[indexObject1V1];
+					//MassSpringGPU& massSpringObj1V2 = object1.m_MassSpringGPU[indexObject1V2];
+
+					//MassSpringGPU& massSpringObj2V0 = object2.m_MassSpringGPU[indexObject2V0];
+					//MassSpringGPU& massSpringObj2V1 = object2.m_MassSpringGPU[indexObject2V1];
+					//MassSpringGPU& massSpringObj2V2 = object2.m_MassSpringGPU[indexObject2V2];
+
+					///* Reflect velocities */
+					//object1.m_CollisionForces[indexObject1V0].newVelocity = object1.m_CollisionForces[indexObject1V0].newVelocity +
+					//	(massSpringObj1V0.velocity - (2 * (Dot(massSpringObj1V0.velocity,normal2))*normal2));
+					//object1.m_CollisionForces[indexObject1V1].newVelocity = object1.m_CollisionForces[indexObject1V1].newVelocity +
+					//	(massSpringObj1V1.velocity - (2 * (Dot(massSpringObj1V1.velocity,normal2))*normal2));
+					//object1.m_CollisionForces[indexObject1V2].newVelocity = object1.m_CollisionForces[indexObject1V2].newVelocity +
+					//	(massSpringObj1V2.velocity - (2 * (Dot(massSpringObj1V2.velocity,normal2))*normal2));
+
+					//object1.m_CollisionForces[indexObject1V0].numHits++;
+					//object1.m_CollisionForces[indexObject1V1].numHits++;
+					//object1.m_CollisionForces[indexObject1V2].numHits++;
+
+					//object2.m_CollisionForces[indexObject2V0].newVelocity = object2.m_CollisionForces[indexObject2V0].newVelocity +
+					//	(massSpringObj2V0.velocity - (2 * (Dot(massSpringObj2V0.velocity,normal1))*normal1));
+					//object2.m_CollisionForces[indexObject2V1].newVelocity = object2.m_CollisionForces[indexObject2V1].newVelocity +
+					//	(massSpringObj2V1.velocity - (2 * (Dot(massSpringObj2V1.velocity,normal1))*normal1));
+					//object2.m_CollisionForces[indexObject2V2].newVelocity = object2.m_CollisionForces[indexObject2V2].newVelocity +
+					//	(massSpringObj2V2.velocity - (2 * (Dot(massSpringObj2V2.velocity,normal1))*normal1));
+
+					//object2.m_CollisionForces[indexObject2V0].numHits++;
+					//object2.m_CollisionForces[indexObject2V1].numHits++;
+					//object2.m_CollisionForces[indexObject2V2].numHits++;
 
 				}
 			}

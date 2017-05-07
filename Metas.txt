@@ -1,0 +1,11 @@
+1. Validar CPU vs GPU 
+	1.1 Mass Spring
+	1.2 BVH 
+2. Apuntadores vs buffer 
+3. Validar tiempo en cantidad de objetos
+4. Escenario
+	4.1 Cadena
+	4.2 Plano inclinado y esfera
+	4.3 Barra y un cubo 
+	4.4 Cono y varios objetos
+	4.5 Higado vs objeto rigido

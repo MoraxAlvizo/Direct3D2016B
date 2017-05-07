@@ -111,6 +111,9 @@ void BuildRayFromPerspective(MATRIX4D& PV,
 	VECTOR4D& RayOrigin,
 	VECTOR4D& RayDir);
 
+bool PointIsBelowPlane(VECTOR4D& V0, VECTOR4D& V1, VECTOR4D& V2, VECTOR4D& Point);
+VECTOR4D computeNewPosition(VECTOR4D& V0, VECTOR4D& V1, VECTOR4D& V2, VECTOR4D& Point);
+
 MATRIX4D ReflectionMatrix(VECTOR4D& Plane);
 void PrintMatrix(MATRIX4D& M);
 void PrintVector(VECTOR4D& V);

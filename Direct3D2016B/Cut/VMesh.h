@@ -59,8 +59,10 @@ struct Tetrahedron
 
 struct Collision
 {
+	VECTOR4D newPosition;
 	VECTOR4D newVelocity; 
 	unsigned long numHits;
+	unsigned long padding[3];
 };
 
 

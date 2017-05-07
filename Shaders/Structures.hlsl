@@ -93,6 +93,8 @@ struct Tetrahedron
 
 struct Collision
 {
+	float4 newPosition;
 	float4 newVelocity;
 	uint numHits;
+	uint3 padding;
 };

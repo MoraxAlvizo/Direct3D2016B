@@ -27,6 +27,7 @@ class BVH
 #define MAX_INTERSECTIONS 3
 	struct Intersections
 	{
+		unsigned long indexBelow[2][MAX_INTERSECTIONS];
 		VECTOR4D listObj[2][MAX_INTERSECTIONS];
 		VECTOR4D coordBari[2][MAX_INTERSECTIONS];
 		unsigned long size[2];

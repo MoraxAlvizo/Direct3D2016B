@@ -252,7 +252,7 @@ void CSOnGame::OnEntry(void)
 	CMesh::CompileCSShaders(m_pDXManager);
 	CVMesh::CompileCSShaders(m_pDXManager);
 
-	m_ScenePhysics.resize(2);
+	m_ScenePhysics.resize(3);
 	//m_SceneCollisions.resize(2);
 	VECTOR4D t = { 0,0,0,0 };
 
@@ -264,9 +264,13 @@ void CSOnGame::OnEntry(void)
 
 		if (i == 0)
 		{
-			m_ScenePhysics[i].ApplyTransformation(Scaling(3, 3, 1));
-			m_ScenePhysics[i].ApplyTransformation(Translation(-1,-1, 0));
+			//m_ScenePhysics[i].ApplyTransformation(RotationX(.5));
+			m_ScenePhysics[i].ApplyTransformation(Scaling(6, 6, 1));
+			m_ScenePhysics[i].ApplyTransformation(Translation(-2,-2, 0));
+
 		}
+
+		
 			
 		m_ScenePhysics[i].m_lID = i;
 		m_ScenePhysics[i].CreateMeshCollisionFromVMesh(m_ScenePhysics[i]);
@@ -282,7 +286,10 @@ void CSOnGame::OnEntry(void)
 			m_ScenePhysics[i].m_Box.min,
 			m_ScenePhysics[i].m_Box.max);
 
-		t.z = t.z - (-1.5f);
+		if(i == 0)
+			t.z = t.z - (-1.5f);
+		else 
+			t.x = t.x - (-1.5f);
 	}
 
 	/* Init FPS */
@@ -597,8 +604,8 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 					m_ScenePhysics[i].m_Box.max);
 
 				//m_ScenePhysics[i].ResetColors();
-				if(i == 1)
-					m_ScenePhysics[i].CSApplyForces(m_pDXManager, { 0,0,-0.98f,0 }, EF);
+				if(i != 0)
+					m_ScenePhysics[i].CSApplyForces(m_pDXManager, { 0,0,-9.8f,0 }, EF);
 
 				//m_ScenePhysics[i].ApplyForces({ 0,0,-0.98f,0 }, EF);
 				//m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);

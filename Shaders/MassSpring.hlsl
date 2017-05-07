@@ -94,15 +94,17 @@ void ApplyForces(uint3 id:SV_DispatchThreadID)
 
 	if (collision.numHits != 0)
 	{
-		g_MassSpringBuffer[id.x].velocity = (collision.newVelocity / (float)collision.numHits);
+		g_MassSpringBuffer[id.x].velocity = 0.4*(collision.newVelocity / (float)collision.numHits);
+		g_Vertices[id.x].Position = (collision.newPosition / (float)collision.numHits);
+		g_Vertices[id.x].Position = g_Vertices[id.x].Position + (Delta_t * g_MassSpringBuffer[id.x].velocity);
+		g_Vertices[id.x].Position.w = 1;
 	}
 	else
 	{
 		g_MassSpringBuffer[id.x].velocity = g_MassSpringBuffer[id.x].velocity + (Delta_t * (g_MassSpringBuffer[id.x].fuerza / g_MassSpringBuffer[id.x].masa));
+		g_Vertices[id.x].Position = g_Vertices[id.x].Position + (Delta_t * g_MassSpringBuffer[id.x].velocity);
+		g_Vertices[id.x].Position.w = 1;
 	}
-
-	g_Vertices[id.x].Position = g_Vertices[id.x].Position + (Delta_t * g_MassSpringBuffer[id.x].velocity);
-	g_Vertices[id.x].Position.w = 1;
 }
 
 [numthreads(NUM_THREAS_PER_GROUP, 1, 1)]
@@ -119,7 +121,7 @@ void ComputeNormals(uint3 id:SV_DispatchThreadID)
 		float3 V1 = g_Vertices[g_VisualIndexes[t + 1]].Position.xyz;
 		float3 V2 = g_Vertices[g_VisualIndexes[t + 2]].Position.xyz;
 
-		Normal += float4(normalize(cross(V1 - V0, V2 - V0)), 0);
+		Normal += float4(normalize(cross(V1 - V0, V2 - V0)), 0);	
 	}
 
 	g_Vertices[id.x].Normal = Normal*(1.f / v.size);

@@ -154,8 +154,6 @@ void Build(uint3 id:SV_DispatchThreadID,
 	{
 		PrimBuf[lid.x].id = lid.x;
 		PrimBuf[lid.x].position = g_Primitives[lid.x + offet_prim].position;
-
-		/* Cambiar esto por el max y min de la primitiva en el futuro cercano*/
 		MinBuf[lid.x] = MaxBuf[lid.x] = PrimBuf[lid.x].position.xyz;
 	}
 	else
