@@ -66,7 +66,7 @@ void CSOnGame::OnEntry(void)
 	/* Load Scene */
 	char buffer[BUF_SIZE];
 	int ret;
-	ret = wcstombs(buffer, main->m_Params.scene, sizeof(buffer));
+
 
 
 	LoadScene(buffer);
@@ -252,13 +252,16 @@ void CSOnGame::OnEntry(void)
 	CMesh::CompileCSShaders(m_pDXManager);
 	CVMesh::CompileCSShaders(m_pDXManager);
 
-	m_ScenePhysics.resize(3);
+	m_ScenePhysics.resize(main->m_Params.scene.size() + 1);
 	//m_SceneCollisions.resize(2);
 	VECTOR4D t = { 0,0,0,0 };
 
 	for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
 	{
-		m_ScenePhysics[i].LoadMSHFile("");
+		if(i == 0)
+			m_ScenePhysics[i].LoadMSHFile("..\\Assets\\cube.msh");
+		else
+			m_ScenePhysics[i].LoadMSHFile(main->m_Params.scene[i-1].name);
 		m_ScenePhysics[i].InitializaMassSpring();
 		strcpy(m_ScenePhysics[i].m_cName, "Cube 0");
 
@@ -274,6 +277,9 @@ void CSOnGame::OnEntry(void)
 		m_ScenePhysics[i].m_lID = i;
 		m_ScenePhysics[i].CreateMeshCollisionFromVMesh(m_ScenePhysics[i]);
 		m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);
+
+		if(i>0)
+			t = main->m_Params.scene[i - 1].position,
 		m_ScenePhysics[i].CSApplyTranformation(Translation(t.x, t.y, t.z), m_pDXManager);
 		m_ScenePhysics[i].m_BVH = new BVH();
 		m_ScenePhysics[i].m_BVH->CreateGPUBuffer(m_pDXManager);
@@ -286,11 +292,11 @@ void CSOnGame::OnEntry(void)
 			m_ScenePhysics[i].m_Box.max);
 
 		//if(i == 0)
-			t.z = t.z - (-1.1f);
+		//	t.z = t.z - (-1.1f);
 		//else 
 		//	t.x = t.x - (-1.5f);
-			if (i == 1)
-				t.x = t.x - 0.7f;
+		//	if (i == 1)
+		//		t.x = t.x - 0.7f;
 	}
 
 	/* Init FPS */

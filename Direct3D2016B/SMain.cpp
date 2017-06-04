@@ -2,6 +2,7 @@
 #include "SMain.h"
 #include "HSM\EventWin32.h"
 #include "HSM\StateMachineManager.h"
+#include <comdef.h>
 
 CSMain::CSMain()
 {
@@ -102,15 +103,13 @@ void CSMain::OnExit(void)
 }
 
 
-#define INIT_FILE_TAG_USER			0x001
-#define INIT_FILE_TAG_SCENE			0x002
-#define INIT_FILE_TAG_FX			0x004
-#define INIT_FILE_TAG_3D_EFFECTS	0x008
-#define INIT_FILE_CUT_METHOD		0x010
-#define INIT_FILE_COLLISION_SCENE	0x020
-#define INIT_FILE_COLLISION_OBJECT	0x040
-#define INIT_FILE_PLANE_CUT			0x080
-#define INIT_FILE_GPU				0x100
+#define INIT_FILE_TAG_SCENE			0x001
+#define INIT_FILE_TAG_FX			0x002
+#define INIT_FILE_TAG_3D_EFFECTS	0x004
+#define INIT_FILE_COLLISION_SCENE	0x008
+#define INIT_FILE_COLLISION_OBJECT	0x010
+#define INIT_FILE_GPU				0x020
+#define INIT_FILE_OBJECT_NAME		0x040
 
 HRESULT CSMain::WriteAttributes(IXmlReader* pReader, long tag, wchar_t* localTag)
 {
@@ -118,9 +117,9 @@ HRESULT CSMain::WriteAttributes(IXmlReader* pReader, long tag, wchar_t* localTag
 	const WCHAR* pwszLocalName;
 	const WCHAR* pwszValue;
 	HRESULT hr = pReader->MoveToFirstAttribute();
-	long counter = 0;
 	static long pointPos = 0;
 	float x, y, z;
+	int counter = 0;
 
 	if (S_FALSE == hr)
 		return hr;
@@ -183,18 +182,19 @@ HRESULT CSMain::WriteAttributes(IXmlReader* pReader, long tag, wchar_t* localTag
 						printf("Something is wrong with initfile \n");
 					
 				}
-				else if (tag == INIT_FILE_PLANE_CUT)
+				else if (tag == INIT_FILE_OBJECT_NAME)
 				{
-					
+
 					if (counter == 0 && wcscmp(pwszLocalName, L"x") == 0)
 						x = wcstof(pwszValue, (wchar_t**)&pwszValue);
 					if (counter == 1 && wcscmp(pwszLocalName, L"y") == 0)
 						y = wcstof(pwszValue, (wchar_t**)&pwszValue);
 					if (counter == 2 && wcscmp(pwszLocalName, L"z") == 0)
 						z = wcstof(pwszValue, (wchar_t**)&pwszValue);
-					
+
 					counter++;
 				}
+				
 
 			}
 
@@ -202,12 +202,12 @@ HRESULT CSMain::WriteAttributes(IXmlReader* pReader, long tag, wchar_t* localTag
 				break;
 		}
 	}
-	if (tag == INIT_FILE_PLANE_CUT)
+	if (tag == INIT_FILE_OBJECT_NAME)
 	{
-		m_Params.PlaneCut[pointPos] = { x,y,z,1 };
-		pointPos++;
+		objectData newObject;
+		newObject.position = { x,y,z,1 };
+		m_Params.scene.push_back(newObject);
 	}
-		
 
 	return hr;
 }
@@ -216,9 +216,7 @@ void CSMain::printParams()
 {
 	printf("------------ Init parameters ----------------\n\n");
 
-	wprintf(L"USER: %s \n",m_Params.user);
 	wprintf(L"GPU: %s \n", m_Params.gpu);
-	wprintf(L"SCENE: %s \n", m_Params.scene);
 
 	switch (m_Params.FXEffect)
 	{
@@ -270,24 +268,25 @@ void CSMain::printParams()
 
 	}
 	printf("\n");
-	printf("CUT METHOD: %s \n", m_Params.MethodCutting & CUTTING_FEM ? "FEM" : m_Params.MethodCutting & CUTTING_FEM ? "XFEM" : "NONE");
 	printf("COLLISION METHOD SCENE: %s \n", m_Params.MethodCollisionScene & COLLISION_BVH ? "BVH" : m_Params.MethodCollisionScene & COLLISION_OCTREE ? "OCTREE" : "NONE");
 	printf("COLLISION METHOD OBJECT: %s \n", m_Params.MethodCollisionPerObject & COLLISION_BVH ? "BVH" : m_Params.MethodCollisionPerObject & COLLISION_BVH ? "OCTREE" : "NONE");
-	printf("PLANE CUT:\n");
-
-	for (unsigned long i = 0; i < 4;i++)
-		printf("\tPoint[%i] = { %f, %f, %f } \n", i, m_Params.PlaneCut[i].x, m_Params.PlaneCut[i].y, m_Params.PlaneCut[i].z);
+	printf("SCENE: \n");
+	for (unsigned int i = 0; i < m_Params.scene.size(); i++)
+	{
+		objectData o = m_Params.scene[i];
+		printf("\tOBJECT [%i]: file: %s\n\t\tPOS[%f,%f,%f]  \n",i, o.name,o.position.x, o.position.y, o.position.z);
+	}
 	printf("\n---------------------------------------------\n\n");
 }
 
 wchar_t* removeWhitespace(wchar_t * buf)
 {
 	wchar_t* end = NULL;
-	while (*buf == L' ')
+	while (*buf == L' ' || *buf == L'\n' || *buf == L'\t')
 		buf++;
 
 	end = buf;
-	while (*end != L'\0' && *end != L' ')
+	while (*end != L'\0' && *end != L' ' && *end != L'\n' && *end != L'\t')
 		end++;
 
 	*end = L'\0';
@@ -352,32 +351,31 @@ void CSMain::ReadInitFile()
 
 			if (depth == 2)
 			{
-				if (wcscmp(pwszLocalName, L"User") == 0)
-					tag = INIT_FILE_TAG_USER;
-				else if (wcscmp(pwszLocalName, L"Scene") == 0)
+				if (wcscmp(pwszLocalName, L"Scene") == 0)
 					tag = INIT_FILE_TAG_SCENE;
 				else if (wcscmp(pwszLocalName, L"Effect") == 0)
 					tag = INIT_FILE_TAG_FX;
 				else if (wcscmp(pwszLocalName, L"Effects3d") == 0)
 					tag = INIT_FILE_TAG_3D_EFFECTS;
-				else if (wcscmp(pwszLocalName, L"MethodCutting") == 0)
-					tag = INIT_FILE_CUT_METHOD;
 				else if (wcscmp(pwszLocalName, L"MethodCollisionScene") == 0)
 					tag = INIT_FILE_COLLISION_SCENE;
 				else if (wcscmp(pwszLocalName, L"MethodCollisionPerObject") == 0)
 					tag = INIT_FILE_COLLISION_OBJECT;
-				else if (wcscmp(pwszLocalName, L"PlaneCut") == 0)
-					tag = INIT_FILE_PLANE_CUT;
 				else if (wcscmp(pwszLocalName, L"GPU") == 0)
 					tag = INIT_FILE_GPU;
 				else
 					tag = 0;
 			}
-			if (depth == 3 && (tag == INIT_FILE_TAG_3D_EFFECTS || tag == INIT_FILE_PLANE_CUT))
+			if (depth == 3)
 			{
+				if (wcscmp(pwszLocalName, L"Object") == 0)
+					tag = INIT_FILE_OBJECT_NAME;
+
 				if (FAILED(hr = WriteAttributes(pReader, tag, (wchar_t*)pwszLocalName)))
 					wprintf(L"Error writing attributes, error is %08.8lx", hr);
-				depth--;
+
+				if (tag == INIT_FILE_TAG_3D_EFFECTS)
+					depth--;
 			}
 				
 
@@ -410,31 +408,30 @@ void CSMain::ReadInitFile()
 			
 			switch (tag)
 			{
-			case INIT_FILE_TAG_USER:
-				pwszValue = removeWhitespace((wchar_t*)pwszValue);
-				wcscpy(this->m_Params.user, pwszValue);
-				break;
 			case INIT_FILE_GPU:
 				pwszValue = removeWhitespace((wchar_t*)pwszValue);
 				wcscpy(this->m_Params.gpu, pwszValue);
 				break;
-			case INIT_FILE_TAG_SCENE:
+			case INIT_FILE_OBJECT_NAME:
 				pwszValue = removeWhitespace((wchar_t*)pwszValue);
-				wcscpy(this->m_Params.scene, pwszValue);
+				if (this->m_Params.scene.size())
+				{
+					_bstr_t b(pwszValue);
+					strcpy(this->m_Params.scene[this->m_Params.scene.size() - 1].name, MAIN_ASSETS_DIR);
+					strcat(this->m_Params.scene[this->m_Params.scene.size() - 1].name, b);
+					
+				}
+				else
+					printf("Something failed during reading object name\n");
+				break;
+			case INIT_FILE_TAG_SCENE:
+				//pwszValue = removeWhitespace((wchar_t*)pwszValue);
+				//wcscpy(this->m_Params.scene, pwszValue);
 				break;
 			case INIT_FILE_TAG_FX:
 				this->m_Params.FXEffect =  wcstol(pwszValue,(wchar_t**) &pwszValue,10);
 				break;
 			case INIT_FILE_TAG_3D_EFFECTS:
-				break;
-			case INIT_FILE_CUT_METHOD:
-				pwszValue = removeWhitespace((wchar_t*)pwszValue);
-				if (wcsncmp(pwszValue, L"FEM", sizeof(L"FEM")) == 0)
-					m_Params.MethodCutting = CUTTING_FEM;
-				else if (wcsncmp(pwszValue, L"XFEM", sizeof(L"XFEM")) == 0)
-					m_Params.MethodCutting = CUTTING_XFEM;
-				else /* Default */
-					m_Params.MethodCutting = CUTTING_FEM;
 				break;
 			case INIT_FILE_COLLISION_SCENE:
 				pwszValue = removeWhitespace((wchar_t*)pwszValue);
@@ -453,8 +450,6 @@ void CSMain::ReadInitFile()
 					m_Params.MethodCollisionPerObject = COLLISION_BVH;
 				else /* Default */
 					m_Params.MethodCollisionPerObject = COLLISION_OCTREE;
-				break;
-			case INIT_FILE_PLANE_CUT:
 				break;
 			}
 			break;

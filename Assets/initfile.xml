@@ -1,7 +1,16 @@
 <CollisionEngine>
-	<User> Omar </User>
 	<GPU> nvidia </GPU>
-	<Scene> ..\Assets\spheres.blend </Scene>
+	<Scene>
+		<Object x="0" y="0.7" z="1.1">
+			cube.msh
+		</Object>
+		<Object x="0" y="0" z="2.2">
+			cube.msh
+		</Object>
+		<Object x="0" y="0.2" z="3.3">
+			cube.msh
+		</Object>
+	</Scene>
 	<Effect> 0 </Effect>
 	<Effects3d>
 		<EMISSIVE value="off"/>
@@ -13,12 +22,6 @@
 		<ENVIROMENTSKY value="off"/>
 		<FOG value="off"/>
 	</Effects3d>
-	<MethodCutting> FEM </MethodCutting>
 	<MethodCollisionScene> OCTREE </MethodCollisionScene>
 	<MethodCollisionPerObject> BVH </MethodCollisionPerObject>
-	<PlaneCut>	
-		<Point x="1" y="1" z="1" />
-		<Point x="1" y="1" z="1" />
-		<Point x="1" y="1" z="1" />
-	</PlaneCut>
 </CollisionEngine>

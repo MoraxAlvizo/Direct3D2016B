@@ -140,7 +140,7 @@ void CVMesh::LoadMSHFile(char * filename)
 	bool element = 0;
 	long long int numberNodes = 0;
 	long long int numberIndex = 0;
-	ifstream tourus("..\\Assets\\cube.msh");
+	ifstream tourus(filename);
 	string line;
 	if (tourus.is_open())
 	{
@@ -158,7 +158,6 @@ void CVMesh::LoadMSHFile(char * filename)
 					tourus >> m_Vertices[i].Position.y;
 					tourus >> m_Vertices[i].Position.z;
 					
-					//m_Vertices[i].Position = m_Vertices[i].Position * 2.f;
 					m_Vertices[i].Position.w = 1;
 				}
 			}

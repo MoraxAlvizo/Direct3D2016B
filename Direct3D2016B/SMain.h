@@ -14,31 +14,29 @@
 #define CLSID_CSMain 0xd5d6a900
 #define MAIN ((CSMain*)m_pSMOwner->GetObjectByID(CLSID_CSMain))
 #define BUF_SIZE 128
+#define MAIN_ASSETS_DIR "..\\Assets\\"
 
 
 class CSMain :
 	public CStateBase
 {
+	struct objectData {
+		char name[BUF_SIZE];
+		VECTOR4D position;
+	};
 public:
 	/* Public memmber */
 	struct InitParameters
 	{
-		wchar_t user[BUF_SIZE];
-		wchar_t scene[BUF_SIZE];
+		vector<objectData> scene;
 		wchar_t gpu[BUF_SIZE];
 		unsigned long FXEffect;
 		unsigned long PainterFlags;
-
-#define CUTTING_FEM		0x01
-#define CUTTING_XFEM	0x01
-
-		unsigned long MethodCutting;
 
 #define COLLISION_OCTREE	0x01
 #define COLLISION_BVH		0x02
 		unsigned long MethodCollisionScene;
 		unsigned long MethodCollisionPerObject;
-		VECTOR4D PlaneCut[4];
 	}m_Params;
 
 	HINSTANCE m_hInstance;
