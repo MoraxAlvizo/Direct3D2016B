@@ -264,13 +264,12 @@ void CSOnGame::OnEntry(void)
 
 		if (i == 0)
 		{
-			//m_ScenePhysics[i].ApplyTransformation(RotationX(.5));
+			
 			m_ScenePhysics[i].ApplyTransformation(Scaling(6, 6, 1));
 			m_ScenePhysics[i].ApplyTransformation(Translation(-2,-2, 0));
+			//m_ScenePhysics[i].ApplyTransformation(RotationX(3.1416 / 10.f));
 
 		}
-
-		
 			
 		m_ScenePhysics[i].m_lID = i;
 		m_ScenePhysics[i].CreateMeshCollisionFromVMesh(m_ScenePhysics[i]);
@@ -286,10 +285,12 @@ void CSOnGame::OnEntry(void)
 			m_ScenePhysics[i].m_Box.min,
 			m_ScenePhysics[i].m_Box.max);
 
-		if(i == 0)
-			t.z = t.z - (-1.5f);
-		else 
-			t.x = t.x - (-1.5f);
+		//if(i == 0)
+			t.z = t.z - (-1.1f);
+		//else 
+		//	t.x = t.x - (-1.5f);
+			if (i == 1)
+				t.x = t.x - 0.7f;
 	}
 
 	/* Init FPS */

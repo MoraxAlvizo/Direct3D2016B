@@ -3,6 +3,13 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <sstream>
+#include <vector>
+#include <algorithm>
+#include <iterator>
+#include <iostream>
+#include <cassert>
+#include <sstream>
 
 #define GET_KEY(id1, id2, key) \
 {\
@@ -158,10 +165,35 @@ void CVMesh::LoadMSHFile(char * filename)
 
 			else if (line == "$Elements")
 			{
-				tourus >> numberIndex;
+				getline(tourus, line);
+				istringstream iss(line);
+
+				iss >> numberIndex;
+
 				m_IndicesTetrahedros.resize(numberIndex);
 				for (int i = 0; i < numberIndex; i++)
 				{
+					getline(tourus, line);
+					
+					istringstream iss(line);
+					vector<int> v;
+
+					// Iterate over the istream, using >> to grab floats
+					// and push_back to store them in the vector
+					copy(istream_iterator<int>(iss),
+						 istream_iterator<int>(),
+						 back_inserter(v));
+
+
+					for (int j = 4, k = 0; j > 0; j--, k++)
+					{
+						m_IndicesTetrahedros[i].indexes[k] = v[v.size() - j];
+					}
+
+					int omar = 0;
+					omar++;
+
+					/*
 					int v0;
 					int v1;
 					int v2;
@@ -176,7 +208,7 @@ void CVMesh::LoadMSHFile(char * filename)
 					tourus >> m_IndicesTetrahedros[offset].indexes[0];
 					tourus >> m_IndicesTetrahedros[offset].indexes[1];
 					tourus >> m_IndicesTetrahedros[offset].indexes[2];
-					tourus >> m_IndicesTetrahedros[offset].indexes[3];
+					tourus >> m_IndicesTetrahedros[offset].indexes[3];*/
 
 				}
 
@@ -232,12 +264,6 @@ void CVMesh::LoadMSHFile(char * filename)
 	BuildTangentSpaceFromTexCoordsIndexed(true);
 
 }
-
-#define MASA (4)
-#define INITIALIZE_SPEED {0,0,0,0}
-#define K (10000)
-#define Kv (4000)
-#define DELTA_T (0.01)
 
 void CVMesh::CreateNeighbors()
 {

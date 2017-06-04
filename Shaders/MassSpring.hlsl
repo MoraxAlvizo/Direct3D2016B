@@ -70,7 +70,7 @@ void ComputeForces(uint3 id:SV_DispatchThreadID)
 {
 	float4 F = float4( 0,0,0,0 );
 	uint numVecinos = g_MassSpringBuffer[id.x].numVecinos;
-	for (uint i = 0; i < numVecinos; i++) //auto vecino : g_MassSpringBuffer[i].vecinos)
+	for (uint i = 0; i < numVecinos; i++) 
 	{
 		Vecino vecino = g_MassSpringBuffer[id.x].vecinos[i];
 		float4 V = g_Vertices[vecino.idVecino].Position - g_Vertices[id.x].Position;
@@ -94,16 +94,28 @@ void ApplyForces(uint3 id:SV_DispatchThreadID)
 
 	if (collision.numHits != 0)
 	{
-		g_MassSpringBuffer[id.x].velocity = 0.4*(collision.newVelocity / (float)collision.numHits);
-		g_Vertices[id.x].Position = (collision.newPosition / (float)collision.numHits);
-		g_Vertices[id.x].Position = g_Vertices[id.x].Position + (Delta_t * g_MassSpringBuffer[id.x].velocity);
-		g_Vertices[id.x].Position.w = 1;
+		if (g_StillInCollision[id.x] == 0)
+		{
+			g_Vertices[id.x].Position = g_Vertices[id.x].Position - (Delta_t * g_MassSpringBuffer[id.x].velocity);
+			g_MassSpringBuffer[id.x].velocity = 0.4*(collision.newVelocity);// / (float)collision.numHits);
+			//g_Vertices[id.x].Position = (collision.newPosition);// / (float)collision.numHits);
+			g_StillInCollision[id.x] = 1;
+			//g_Vertices[id.x].Position = g_Vertices[id.x].Position + (Delta_t * g_MassSpringBuffer[id.x].velocity);
+			g_Vertices[id.x].Position.w = 1;
+		}
+		else
+		{
+			g_Vertices[id.x].Position = g_Vertices[id.x].Position + (Delta_t * g_MassSpringBuffer[id.x].velocity);
+			g_Vertices[id.x].Position.w = 1;
+		}
+		
 	}
 	else
 	{
 		g_MassSpringBuffer[id.x].velocity = g_MassSpringBuffer[id.x].velocity + (Delta_t * (g_MassSpringBuffer[id.x].fuerza / g_MassSpringBuffer[id.x].masa));
 		g_Vertices[id.x].Position = g_Vertices[id.x].Position + (Delta_t * g_MassSpringBuffer[id.x].velocity);
 		g_Vertices[id.x].Position.w = 1;
+		g_StillInCollision[id.x] = 0;
 	}
 }
 

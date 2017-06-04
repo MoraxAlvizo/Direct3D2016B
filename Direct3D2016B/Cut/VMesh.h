@@ -18,6 +18,12 @@ struct VolumeCutInfo
 	unsigned int				type_cut;
 };
 
+#define MASA (4)
+#define INITIALIZE_SPEED {0,0,0,0}
+#define K (10000)
+#define Kv (4000)
+#define DELTA_T (0.01)
+
 struct MassSpring
 {
 	VECTOR4D Velocity;

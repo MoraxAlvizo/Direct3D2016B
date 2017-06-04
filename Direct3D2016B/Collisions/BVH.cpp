@@ -603,11 +603,95 @@ void BVH::BuildGPU(CDXManager * pManager, CMesh* mesh)
 	}\
 }
 
+bool GetCollisionPosition(
+	VECTOR4D& currentPos,
+	VECTOR4D& velocity,
+	VECTOR4D& V0,
+	VECTOR4D& V1,
+	VECTOR4D& V2,
+	VECTOR4D& Intersection)
+{
+	VECTOR4D RayOrigin = currentPos;
+	VECTOR4D previousPos = currentPos - (DELTA_T * velocity);
+	VECTOR4D RayDir = Normalize(previousPos - RayOrigin);
+	float w0, w1, w2;
+
+	if (RayCastOnTriangle(V0, V1, V2, RayOrigin, RayDir, Intersection, &w0, &w1, &w2))
+		return true;
+
+	return false;
+}
+
+void CheckRayPrimitives(VECTOR4D &Edgev0, VECTOR4D &Edgev1, VECTOR4D & obj1V0,
+	VECTOR4D &obj1V1, VECTOR4D & obj1V2, BVH::Intersections* intersections, 
+	long list, unsigned long Edgev0_index, unsigned long Edgev1_index, VECTOR4D& velocityEdgev0, 
+	VECTOR4D& velocityEdgev1)
+{
+	VECTOR4D Intersection;
+	VECTOR4D RayOrigin = Edgev0;
+	VECTOR4D RayDir = Normalize(Edgev1 - RayOrigin);
+	bool inter1 = false;
+	float w0, w1, w2;
+	
+	if (RayCastOnTriangle(obj1V0, obj1V1, obj1V2, RayOrigin, RayDir, Intersection, &w0, &w1, &w2))
+	{
+		//intersections->listObj[list][intersections->size[list]] = Intersection;
+		inter1 = true;
+	}
+	RayOrigin = Edgev1;
+	RayDir = Normalize(Edgev0 - RayOrigin);
+	if (inter1 && RayCastOnTriangle(obj1V0, obj1V1, obj1V2, RayOrigin, RayDir, Intersection, &w0, &w1, &w2))
+	{
+		bool isBelow = false;
+		
+		intersections->coordBari[list][intersections->size[list]] = {w0,w1,w2,0};
+		/*Then we need to check if which of the point are below */
+		if(PointIsBelowPlane(obj1V0, obj1V1, obj1V2, Edgev0) && 
+			GetCollisionPosition(Edgev0, velocityEdgev0, obj1V0, obj1V1, obj1V2, Intersection))
+		{
+			isBelow = true;
+			intersections->indexBelow[list][intersections->size[list]] = Edgev0_index;
+			intersections->listObj[list][intersections->size[list]] = Intersection;
+			intersections->size[list]++;
+		}
+		else if(PointIsBelowPlane(obj1V0, obj1V1, obj1V2, Edgev1) &&
+			    GetCollisionPosition(Edgev1, velocityEdgev1, obj1V0, obj1V1, obj1V2, Intersection))
+		{
+			/*if(isBelow) MessageBox(NULL, L"Ambos puntos esta debajo",L"Algo esta mal con el check", MB_ICONERROR); */
+			/*else*/ isBelow = true; 
+			intersections->indexBelow[list][intersections->size[list]] = Edgev1_index;
+			intersections->listObj[list][intersections->size[list]] = Intersection;
+			intersections->size[list]++;
+		}
+
+		//if(!isBelow) MessageBox(NULL, L"No hay ningun punto debajo ",L"Algo esta mal con el check", MB_ICONERROR);
+		
+	}
+}
+
+bool CheckRayVertex(VECTOR4D& currentPos, 
+	VECTOR4D& velocity, 
+	VECTOR4D& V0, 
+	VECTOR4D& V1, 
+	VECTOR4D& V2,
+	VECTOR4D& Intersection)
+{
+	VECTOR4D RayOrigin = currentPos;
+	VECTOR4D previousPos = currentPos - (/*DELTA_T */ velocity);
+	VECTOR4D RayDir = Normalize(previousPos - RayOrigin);
+	float w0, w1, w2; 
+		
+	if (RayCastOnTriangle(V0, V1, V2, RayOrigin, RayDir, Intersection, &w0, &w1, &w2))
+		return true;
+
+	return false;
+}
+
 BVH::Intersections BVH::CheckIfPrimitivesCollision(BVH * pTree,
 	unsigned long nodeThis,
 	unsigned long nodeTree,
-	CMesh& object1,
-	CMesh& object2)
+	CVMesh& object1,
+	CVMesh& object2)
 {
 	// Crear funcion de revisar triangulos
 	Intersections intersections ;
@@ -620,9 +704,16 @@ BVH::Intersections BVH::CheckIfPrimitivesCollision(BVH * pTree,
 	unsigned long indexObj1V1 = object1.m_Indices[indicesThis + 1];
 	unsigned long indexObj1V2 = object1.m_Indices[indicesThis + 2];
 
-	VECTOR4D object1_V0 = object1.m_Vertices[object1.m_Indices[indicesThis]].Position;// *object1.m_World;
-	VECTOR4D object1_V1 = object1.m_Vertices[object1.m_Indices[indicesThis + 1]].Position;// *object1.m_World;
-	VECTOR4D object1_V2 = object1.m_Vertices[object1.m_Indices[indicesThis + 2]].Position;// *object1.m_World;
+
+	// Get positions 
+	VECTOR4D object1_V0 = object1.m_Vertices[indexObj1V0].Position;// *object1.m_World;
+	VECTOR4D object1_V1 = object1.m_Vertices[indexObj1V1].Position;// *object1.m_World;
+	VECTOR4D object1_V2 = object1.m_Vertices[indexObj1V2].Position;// *object1.m_World;
+
+	// Get velocities
+	VECTOR4D velocity1_V0 = object1.m_MassSpringGPU[indexObj1V0].velocity;
+	VECTOR4D velocity1_V1 =	object1.m_MassSpringGPU[indexObj1V1].velocity;
+	VECTOR4D velocity1_V2 = object1.m_MassSpringGPU[indexObj1V2].velocity;
 
 	unsigned long indicesPTree = pTree->LBVH[nodeTree].idPrimitive * 3;
 
@@ -630,18 +721,82 @@ BVH::Intersections BVH::CheckIfPrimitivesCollision(BVH * pTree,
 	unsigned long indexObj2V1 = object2.m_Indices[indicesPTree + 1];
 	unsigned long indexObj2V2 = object2.m_Indices[indicesPTree + 2];
 
-	VECTOR4D object2_V0 = object2.m_Vertices[object2.m_Indices[indicesPTree]].Position;// *object2.m_World;
-	VECTOR4D object2_V1 = object2.m_Vertices[object2.m_Indices[indicesPTree + 1]].Position;// *object2.m_World;
-	VECTOR4D object2_V2 = object2.m_Vertices[object2.m_Indices[indicesPTree + 2]].Position;// *object2.m_World;
+	VECTOR4D object2_V0 = object2.m_Vertices[indexObj2V0].Position;// *object2.m_World;
+	VECTOR4D object2_V1 = object2.m_Vertices[indexObj2V1].Position;// *object2.m_World;
+	VECTOR4D object2_V2 = object2.m_Vertices[indexObj2V2].Position;// *object2.m_World;
+
+	// Get velocities
+	VECTOR4D velocity2_V0 = object2.m_MassSpringGPU[indexObj2V0].velocity;
+	VECTOR4D velocity2_V1 = object2.m_MassSpringGPU[indexObj2V1].velocity;
+	VECTOR4D velocity2_V2 = object2.m_MassSpringGPU[indexObj2V2].velocity;
+
+	VECTOR4D intersection = { 0,0,0,0 };
+
+	///* Check Vertex 0 of object 1 with object 2 */
+	//if (CheckRayVertex(object1_V0, velocity1_V0, object2_V0, object2_V1, object2_V2, intersection))
+	//{
+	//	intersections.indexBelow[0][intersections.size[0]] = indexObj1V0;
+	//	intersections.listObj[0][intersections.size[0]] = intersection;
+	//	intersections.size[0]++;
+	//}
+
+	///* Check Vertex 1 of object 1 with object 2 */
+	//if (CheckRayVertex(object1_V1, velocity1_V1, object2_V0, object2_V1, object2_V2, intersection))
+	//{
+	//	intersections.indexBelow[0][intersections.size[0]] = indexObj1V1;
+	//	intersections.listObj[0][intersections.size[0]] = intersection;
+	//	intersections.size[0]++;
+	//}
+
+	///* Check Vertex 2 of object 1 with object 2 */
+	//if (CheckRayVertex(object1_V2, velocity1_V2, object2_V0, object2_V1, object2_V2, intersection))
+	//{
+	//	intersections.indexBelow[0][intersections.size[0]] = indexObj1V2;
+	//	intersections.listObj[0][intersections.size[0]] = intersection;
+	//	intersections.size[0]++;
+	//}
+
+	///* Check Vertex 0 of object 2 with object 1 */
+	//if (CheckRayVertex(object2_V0, velocity2_V0, object1_V0, object1_V1, object1_V2, intersection))
+	//{
+	//	intersections.indexBelow[1][intersections.size[1]] = indexObj2V0;
+	//	intersections.listObj[1][intersections.size[1]] = intersection;
+	//	intersections.size[1]++;
+	//}
+
+	///* Check Vertex 1 of object 2 with object 1 */
+	//if (CheckRayVertex(object2_V1, velocity2_V1, object1_V0, object1_V1, object1_V2, intersection))
+	//{
+	//	intersections.indexBelow[1][intersections.size[1]] = indexObj2V1;
+	//	intersections.listObj[1][intersections.size[1]] = intersection;
+	//	intersections.size[1]++;
+	//}
+
+	///* Check Vertex 2 of object 2 with object 1 */
+	//if (CheckRayVertex(object2_V2, velocity2_V2, object1_V0, object1_V1, object1_V2, intersection))
+	//{
+	//	intersections.indexBelow[1][intersections.size[1]] = indexObj2V2;
+	//	intersections.listObj[1][intersections.size[1]] = intersection;
+	//	intersections.size[1]++;
+	//}
+	
+	/* Revisar triangulo objeto1 contra el objeto2 */
+	CheckRayPrimitives(object2_V0, object2_V1, object1_V0, object1_V1, object1_V2, &intersections, 1, indexObj2V0, indexObj2V1, velocity2_V0, velocity2_V1);
+	CheckRayPrimitives(object2_V1, object2_V2, object1_V0, object1_V1, object1_V2, &intersections, 1, indexObj2V1, indexObj2V2, velocity2_V1, velocity2_V2);
+	CheckRayPrimitives(object2_V2, object2_V0, object1_V0, object1_V1, object1_V2, &intersections, 1, indexObj2V2, indexObj2V0, velocity2_V2, velocity2_V0);
+	/* Revisar triangulo objeto2 contra el objeto1 */
+	CheckRayPrimitives(object1_V0, object1_V1, object2_V0, object2_V1, object2_V2, &intersections, 0, indexObj1V0, indexObj1V1, velocity1_V0, velocity1_V1);
+	CheckRayPrimitives(object1_V1, object1_V2, object2_V0, object2_V1, object2_V2, &intersections, 0, indexObj1V1, indexObj1V2, velocity1_V1, velocity1_V2);
+	CheckRayPrimitives(object1_V2, object1_V0, object2_V0, object2_V1, object2_V2, &intersections, 0, indexObj1V2, indexObj1V0, velocity1_V2, velocity1_V0);
 
 	/* Revisar triangulo objeto1 contra el objeto2 */
-	CHECK_RAY_PRIMITIVES(object2_V0, object2_V1, object1_V0, object1_V1, object1_V2, intersections, 1, indexObj2V0, indexObj2V1);
-	CHECK_RAY_PRIMITIVES(object2_V1, object2_V2, object1_V0, object1_V1, object1_V2, intersections, 1, indexObj2V1, indexObj2V2);
-	CHECK_RAY_PRIMITIVES(object2_V2, object2_V0, object1_V0, object1_V1, object1_V2, intersections, 1, indexObj2V2, indexObj2V0);
-	/* Revisar triangulo objeto2 contra el objeto1 */
-	CHECK_RAY_PRIMITIVES(object1_V0, object1_V1, object2_V0, object2_V1, object2_V2, intersections, 0, indexObj1V0, indexObj1V1);
-	CHECK_RAY_PRIMITIVES(object1_V1, object1_V2, object2_V0, object2_V1, object2_V2, intersections, 0, indexObj1V1, indexObj1V2);
-	CHECK_RAY_PRIMITIVES(object1_V2, object1_V0, object2_V0, object2_V1, object2_V2, intersections, 0, indexObj1V2, indexObj1V0);
+	//CHECK_RAY_PRIMITIVES(object2_V0, object2_V1, object1_V0, object1_V1, object1_V2, intersections, 1, indexObj2V0, indexObj2V1);
+	//CHECK_RAY_PRIMITIVES(object2_V1, object2_V2, object1_V0, object1_V1, object1_V2, intersections, 1, indexObj2V1, indexObj2V2);
+	//CHECK_RAY_PRIMITIVES(object2_V2, object2_V0, object1_V0, object1_V1, object1_V2, intersections, 1, indexObj2V2, indexObj2V0);
+	///* Revisar triangulo objeto2 contra el objeto1 */
+	//CHECK_RAY_PRIMITIVES(object1_V0, object1_V1, object2_V0, object2_V1, object2_V2, intersections, 0, indexObj1V0, indexObj1V1);
+	//CHECK_RAY_PRIMITIVES(object1_V1, object1_V2, object2_V0, object2_V1, object2_V2, intersections, 0, indexObj1V1, indexObj1V2);
+	//CHECK_RAY_PRIMITIVES(object1_V2, object1_V0, object2_V0, object2_V1, object2_V2, intersections, 0, indexObj1V2, indexObj1V0);
 
 	//printf("Intersections: obj1[%i] obj2[%i]\n", intersections.size[0], intersections.size[1]);
 
@@ -811,17 +966,19 @@ void BVH::TraversalLBVH(
 					for (int i = 0; i < intersections.size[0]; i++)
 					{
 						unsigned long index = intersections.indexBelow[0][i];
+
+						if (object1.m_CollisionForces[index].numHits == 1)
+							continue;
+
 						/* Get vertex mass strping */
 						MassSpringGPU& massSpring = object1.m_MassSpringGPU[index];
 						/* Reflect velocities */
 
 						object1.m_CollisionForces[index].newVelocity = object1.m_CollisionForces[index].newVelocity +
 							(massSpring.velocity - (2 * (Dot(massSpring.velocity, normal2))*normal2));
-						
 
-							
-
-						object1.m_CollisionForces[index].newPosition = object1.m_CollisionForces[index].newPosition +
+						object1.m_CollisionForces[index].newPosition = //intersections.listObj[0][i];
+							/*object1.m_CollisionForces[index].newPosition + */
 							computeNewPosition(vertexObj2V0, vertexObj2V1, vertexObj2V2, object1.m_Vertices[index].Position);
 
 						/*printf("[BVH] NewPos[%f,%f,%f] currentPosition[%f,%f,%f ]\n",
@@ -833,18 +990,25 @@ void BVH::TraversalLBVH(
 							object1.m_Vertices[index].Position.z);*/
 
 						object1.m_CollisionForces[index].numHits++;
+
+						
 					}
 
 					for (int i = 0; i < intersections.size[1]; i++)
 					{
 						unsigned long index = intersections.indexBelow[1][i];
+
+						if (object2.m_CollisionForces[index].numHits == 1)
+							continue;
+
 						/* Get vertex mass strping */
 						MassSpringGPU& massSpring = object2.m_MassSpringGPU[index];
 						/* Reflect velocities */
 						object2.m_CollisionForces[index].newVelocity = object2.m_CollisionForces[index].newVelocity +
 							(massSpring.velocity - (2 * (Dot(massSpring.velocity, normal1))*normal1));
 
-						object2.m_CollisionForces[index].newPosition = object2.m_CollisionForces[index].newPosition +
+						object2.m_CollisionForces[index].newPosition =// intersections.listObj[1][i];
+							/*object2.m_CollisionForces[index].newPosition +*/
 							computeNewPosition(vertexObj1V0, vertexObj1V1, vertexObj1V2, object2.m_Vertices[index].Position);
 						
 						/*printf("[BVH] NewPos[%f,%f,%f] currentPosition[%f,%f,%f ]\n",
@@ -856,6 +1020,8 @@ void BVH::TraversalLBVH(
 							object2.m_Vertices[index].Position.z);*/
 
 						object2.m_CollisionForces[index].numHits++;
+
+						
 					}
 					
 
@@ -948,7 +1114,7 @@ int firstbithigh(int num)
 
 }
 
-void BVH::BitTrailTraversal(BVH * pTree, MATRIX4D & thisTranslation, MATRIX4D & translationTree, CMesh & object1, CMesh & object2)
+void BVH::BitTrailTraversal(BVH * pTree, MATRIX4D & thisTranslation, MATRIX4D & translationTree, CVMesh & object1, CVMesh & object2)
 {
 
 	int iTriangleId = -1;

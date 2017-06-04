@@ -24,6 +24,7 @@ class BVH
 		unsigned int suma;
 	}m_CB_BVH;
 
+public:
 #define MAX_INTERSECTIONS 3
 	struct Intersections
 	{
@@ -33,7 +34,7 @@ class BVH
 		unsigned long size[2];
 	};
 
-public:
+
 	/* Compute shaders */
 	static ID3D11ComputeShader*     s_pCSPrebuild ;
 	static ID3D11ComputeShader*     s_pCSBuild;
@@ -88,8 +89,8 @@ public:
 	Intersections CheckIfPrimitivesCollision(BVH* pTree,
 		unsigned long nodeThis, 
 		unsigned long nodeTree,
-		CMesh& object1,
-		CMesh& object2);
+		CVMesh& object1,
+		CVMesh& object2);
 	
 	void PrintLBVH(int node, int depth);
 
@@ -103,8 +104,8 @@ public:
 	void BitTrailTraversal(BVH* pTree, 
 		MATRIX4D& thisTranslation, 
 		MATRIX4D& translationTree, 
-		CMesh& object1, 
-		CMesh& object2);
+		CVMesh& object1, 
+		CVMesh& object2);
 	
 };
 
