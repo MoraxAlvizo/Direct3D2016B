@@ -21,7 +21,28 @@ Descrition:
 #include "Collisions\OctreeCube.h"
 #include "Cut/VMesh.h"
 #include "Collisions\BVH.h"
+#include <time.h>
 
+/* Get time API */
+//#define TIMER
+
+#define TIMER_NUM_ITERATION (100)
+#define TIMER_PRINT_TIME(_function, _msg) \
+{\
+	double _secs = 0.0;\
+	LARGE_INTEGER _t_ini, _t_fin, _freq;\
+\
+	for(unsigned int _i=0; _i < TIMER_NUM_ITERATION; _i++)\
+	{\
+		QueryPerformanceCounter(&_t_ini); \
+		_function;\
+		QueryPerformanceCounter(&_t_fin);\
+		QueryPerformanceFrequency(&_freq);\
+		_secs +=  (double)(_t_fin.QuadPart - _t_ini.QuadPart) / (double)_freq.QuadPart;\
+	}\
+ \
+	printf("TIMER: %s: time[%.16g ms]\n", _msg, _secs * 1000 / TIMER_NUM_ITERATION);\
+}
 
 #define CLSID_CSOnGame 0x14638246
 
@@ -115,6 +136,9 @@ private:
 	int m_iFrames ;
 	float m_fFps;
 	bool m_bChangeFPS;
+
+	/* Simulation options */
+	bool m_pause;
 
 protected:
 

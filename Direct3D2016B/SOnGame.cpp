@@ -202,7 +202,7 @@ void CSOnGame::OnEntry(void)
 	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pEmissiveMap, NULL, &m_pSRVEmissiveMap);
 
 	/* Initialize camera options */
-	m_bLeft =  m_bRight =
+	m_pause = m_bLeft =  m_bRight =
 	m_bUp = m_bDown =
 	m_bForward =  m_bBackward = m_bTurnLeft = m_bTurnRight =
 	m_bTurnUp =  m_bTurnDown = m_bTurnS =  m_bTurnS1 =false;
@@ -283,7 +283,15 @@ void CSOnGame::OnEntry(void)
 		m_ScenePhysics[i].CSApplyTranformation(Translation(t.x, t.y, t.z), m_pDXManager);
 		m_ScenePhysics[i].m_BVH = new BVH();
 		m_ScenePhysics[i].m_BVH->CreateGPUBuffer(m_pDXManager);
+
+		
+#ifdef TIMER
+		char msg[128];
+		sprintf(msg, "Object[%i] BVH GPU time construction ", i);
+		TIMER_PRINT_TIME(m_ScenePhysics[i].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[i]),msg);
+#else
 		m_ScenePhysics[i].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[i]);
+#endif
 		m_ScenePhysics[i].CreateTetraindexAndMassSpringBuffers(m_pDXManager);
 		m_ScenePhysics[i].CreateVisualNeighbors(m_pDXManager);
 
@@ -535,7 +543,7 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				m_pDXPainter->m_Params.World = Identity();
 				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
 
-				//m_pOctree->DrawOctree(m_pDXPainter);
+				m_pOctree->DrawOctree(m_pDXPainter);
 
 				//unsigned long i = 0;
 				for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
@@ -547,83 +555,85 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 			m_pDXPainter->m_Params.Flags1 = m_lPainterFlags;
 
-
-			/************** Actualizar fuerza y BVH **********/
-			VECTOR4D EF = { 0,0,0,0 };
-			/* Aplicar fuerzas */
-			if (m_nFlagsPainter & PAINTER_APPLY_FORCE)
+			if (!m_pause)
 			{
-				m_nFlagsPainter ^= PAINTER_APPLY_FORCE;
-				EF.y = 10;
-			}
-
-			/************** Obtener colisiones *************/
-			set<unsigned long long> potencialCollisions;
-			m_pOctree->potentialCollsions(potencialCollisions);
-
-			/************* Limpiar vector in BVH ***********/
-			for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
-			{
-				m_ScenePhysics[i].m_BVH->ResetVertexWasChanged(m_ScenePhysics[i]);
-				m_ScenePhysics[i].ResetColors();
-				m_ScenePhysics[i].ResetBufferCollisionForces();
-			}
-
-			for (set<unsigned long long>::iterator it2 = potencialCollisions.begin(); it2 != potencialCollisions.end(); it2++)
-			{
-				COctreeCube::MeshPair meshPair;
-				CVMesh *object1;
-				CVMesh *object2;
-				VECTOR4D min1, max1;
-				VECTOR4D min2, max2;
-
-				meshPair.m_idColision = *it2;
-				object1 = &m_ScenePhysics[meshPair.m_object1ID];
-				object2 = &m_ScenePhysics[meshPair.m_object2ID];
-
-				/* Max min object 1*/
-				min1 = object1->m_Box.min;
-				max1 = object1->m_Box.max;
-
-				/* Max min object 2*/
-				min2 = object2->m_Box.min;
-				max2 = object2->m_Box.max;
-
-				/* Check if boxes collision */
-				if (min1.x < max2.x &&
-					max1.x > min2.x &&
-					min1.y < max2.y &&
-					max1.y > min2.y &&
-					min1.z < max2.z &&
-					max1.z > min2.z)
+				/************** Actualizar fuerza y BVH **********/
+				VECTOR4D EF = { 0,0,0,0 };
+				/* Aplicar fuerzas */
+				if (m_nFlagsPainter & PAINTER_APPLY_FORCE)
 				{
-					//object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
-					object1->m_BVH->TraversalLBVH(object2->m_BVH, 1, 1, *object1, *object2);
-					//object1->m_BVH->BitTrailTraversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
+					m_nFlagsPainter ^= PAINTER_APPLY_FORCE;
+					EF.y = 10;
 				}
-			}
 
-			for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
-			{
-				/* Remove object from Octree*/
-				m_pOctree->removeObject(&m_ScenePhysics[i],
-					m_ScenePhysics[i].m_Box.min,
-					m_ScenePhysics[i].m_Box.max);
+				/************** Obtener colisiones *************/
+				set<unsigned long long> potencialCollisions;
+				m_pOctree->potentialCollsions(potencialCollisions);
 
-				//m_ScenePhysics[i].ResetColors();
-				if(i != 0)
-					m_ScenePhysics[i].CSApplyForces(m_pDXManager, { 0,0,-9.8f,0 }, EF);
+				/************* Limpiar vector in BVH ***********/
+				for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
+				{
+					m_ScenePhysics[i].m_BVH->ResetVertexWasChanged(m_ScenePhysics[i]);
+					m_ScenePhysics[i].ResetColors();
+					m_ScenePhysics[i].ResetBufferCollisionForces();
+				}
 
-				//m_ScenePhysics[i].ApplyForces({ 0,0,-0.98f,0 }, EF);
-				//m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);
+				for (set<unsigned long long>::iterator it2 = potencialCollisions.begin(); it2 != potencialCollisions.end(); it2++)
+				{
+					COctreeCube::MeshPair meshPair;
+					CVMesh *object1;
+					CVMesh *object2;
+					VECTOR4D min1, max1;
+					VECTOR4D min2, max2;
 
-				/* Rebuild BVH in GPU*/
-				m_ScenePhysics[i].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[i]);
+					meshPair.m_idColision = *it2;
+					object1 = &m_ScenePhysics[meshPair.m_object1ID];
+					object2 = &m_ScenePhysics[meshPair.m_object2ID];
 
-				/* Add again */
-				m_pOctree->addObject(&m_ScenePhysics[i],
-					m_ScenePhysics[i].m_Box.min,
-					m_ScenePhysics[i].m_Box.max);
+					/* Max min object 1*/
+					min1 = object1->m_Box.min;
+					max1 = object1->m_Box.max;
+
+					/* Max min object 2*/
+					min2 = object2->m_Box.min;
+					max2 = object2->m_Box.max;
+
+					/* Check if boxes collision */
+					if (min1.x < max2.x &&
+						max1.x > min2.x &&
+						min1.y < max2.y &&
+						max1.y > min2.y &&
+						min1.z < max2.z &&
+						max1.z > min2.z)
+					{
+						//object1->m_BVH->Traversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
+						object1->m_BVH->TraversalLBVH(object2->m_BVH, 1, 1, *object1, *object2);
+						//object1->m_BVH->BitTrailTraversal(object2->m_BVH, object1->m_TranslationBVH, object2->m_TranslationBVH, *object1, *object2);
+					}
+				}
+
+				for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
+				{
+					/* Remove object from Octree*/
+					m_pOctree->removeObject(&m_ScenePhysics[i],
+						m_ScenePhysics[i].m_Box.min,
+						m_ScenePhysics[i].m_Box.max);
+
+					//m_ScenePhysics[i].ResetColors();
+					if (i != 0)
+						m_ScenePhysics[i].CSApplyForces(m_pDXManager, { 0,0,-9.8f,0 }, EF);
+
+					//m_ScenePhysics[i].ApplyForces({ 0,0,-0.98f,0 }, EF);
+					//m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);
+
+					/* Rebuild BVH in GPU*/
+					m_ScenePhysics[i].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[i]);
+
+					/* Add again */
+					m_pOctree->addObject(&m_ScenePhysics[i],
+						m_ScenePhysics[i].m_Box.min,
+						m_ScenePhysics[i].m_Box.max);
+				}
 			}
 
 			m_pDXPainter->m_Params.World = Identity();
@@ -981,6 +991,12 @@ void CSOnGame::ManageKeyboardEvents(UINT event, WPARAM wParam)
 		{
 			switch (wParam)
 			{
+			case VK_SPACE:
+				if (!m_pause)
+					m_pause = true;
+				else
+					m_pause = false;
+				break;
 			case VK_LEFT:
 				m_bLeft = false;
 				break;
