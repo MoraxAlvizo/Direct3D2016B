@@ -1,0 +1,2 @@
+Merge "torus.msh";
+Hide "*";

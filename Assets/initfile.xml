@@ -1,13 +1,10 @@
 <CollisionEngine>
 	<GPU> nvidia </GPU>
 	<Scene>
-		<Object x="0" y="0.7" z="1.1">
-			cube.msh
+		<Object x="0" y="0" z="5">
+			sphere2.msh
 		</Object>
-		<Object x="0" y="0" z="2.2">
-			cube.msh
-		</Object>
-		<Object x="0" y="0.2" z="3.3">
+  <Object x="0" y="0.2" z="3.3">
 			cube.msh
 		</Object>
 	</Scene>

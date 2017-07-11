@@ -202,7 +202,8 @@ void CSOnGame::OnEntry(void)
 	m_pDXManager->GetDevice()->CreateShaderResourceView(m_pEmissiveMap, NULL, &m_pSRVEmissiveMap);
 
 	/* Initialize camera options */
-	m_pause = m_bLeft =  m_bRight =
+	m_pause = true;
+	m_bLeft = m_bRight =
 	m_bUp = m_bDown =
 	m_bForward =  m_bBackward = m_bTurnLeft = m_bTurnRight =
 	m_bTurnUp =  m_bTurnDown = m_bTurnS =  m_bTurnS1 =false;
@@ -532,8 +533,9 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 			/* Print BVH */
 			if (m_lFlags & PHYSICS_PRINT_BVH)
 			{
+				int local_i = 1;
 				m_lFlags ^= PHYSICS_PRINT_BVH;
-				m_ScenePhysics[0].m_BVH->PrintLBVH(1, 0);
+				m_ScenePhysics[local_i].m_BVH->PrintLBVH(1, 0);
 
 			}
 
@@ -543,10 +545,10 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 				m_pDXPainter->m_Params.World = Identity();
 				m_pDXPainter->m_Params.Flags1 = DRAW_JUST_WITH_COLOR;
 
-				m_pOctree->DrawOctree(m_pDXPainter);
+				//m_pOctree->DrawOctree(m_pDXPainter);
 
-				//unsigned long i = 0;
-				for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
+				unsigned long i = 1;
+				//for (unsigned long i = 0; i < m_ScenePhysics.size(); i++)
 				{
 					m_pDXPainter->m_Params.World = Identity();
 					m_ScenePhysics[i].m_BVH->DrawLBVH(m_pDXPainter, 1);
@@ -621,10 +623,13 @@ unsigned long CSOnGame::OnEvent(CEventBase * pEvent)
 
 					//m_ScenePhysics[i].ResetColors();
 					if (i != 0)
+					{
 						m_ScenePhysics[i].CSApplyForces(m_pDXManager, { 0,0,-9.8f,0 }, EF);
 
-					//m_ScenePhysics[i].ApplyForces({ 0,0,-0.98f,0 }, EF);
-					//m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);
+						//m_ScenePhysics[i].ApplyForces({ 0,0,-9.8f,0 }, EF);
+						//m_ScenePhysics[i].CreateVertexAndIndexBuffer(m_pDXManager);
+					}
+						
 
 					/* Rebuild BVH in GPU*/
 					m_ScenePhysics[i].m_BVH->BuildGPU(m_pDXManager, &m_ScenePhysics[i]);

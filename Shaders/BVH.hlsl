@@ -208,7 +208,7 @@ void Build(uint3 id:SV_DispatchThreadID,
 	if (lid.x < num_primitives)
 		rp = g_Primitives[PrimBuf[lid.x].id + offet_prim];
 	
-	GroupMemoryBarrierWithGroupSync();
+	AllMemoryBarrierWithGroupSync();
 	if (lid.x < num_primitives)
 		g_Primitives[lid.x + offet_prim] = rp;
 

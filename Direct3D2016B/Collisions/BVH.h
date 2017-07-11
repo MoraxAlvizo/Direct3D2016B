@@ -54,7 +54,7 @@ public:
 	// UAV for GPU buffer
 	ID3D11UnorderedAccessView* m_pUAV_GPU_BVH;
 	// vector to check if velocity was previous change 
-	vector<bool> m_vVertexWasChanged;
+	//vector<bool> m_vVertexWasChanged;
 	vector<Box> LBVH;
 
 	/* Methods*/

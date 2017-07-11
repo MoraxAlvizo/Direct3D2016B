@@ -68,7 +68,7 @@ struct Vecino
 	uint idVecino;
 	float distance;
 };
-#define NUM_VECINOS 24
+#define NUM_VECINOS 30
 
 struct MassSpring
 {
@@ -79,10 +79,12 @@ struct MassSpring
 	float masa;
 };
 
+#define MESH_MAX_VECINOS 24
+
 struct VecinosVisuales
 {
 	uint size;
-	uint idVecinos[NUM_VECINOS];
+	uint idVecinos[MESH_MAX_VECINOS];
 };
 
 struct Tetrahedron

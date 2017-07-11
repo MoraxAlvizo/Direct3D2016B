@@ -51,8 +51,9 @@ void BVH::CreateGPUBuffer(CDXManager * pManager)
 
 void BVH::ResetVertexWasChanged(CMesh & object)
 {
-	m_vVertexWasChanged.resize(object.m_Vertices.size());
-	memset(&m_vVertexWasChanged[0], 0, sizeof(bool)*m_vVertexWasChanged.size());
+	
+	//m_vVertexWasChanged.resize(object.m_Vertices.size());
+	//memset(&m_vVertexWasChanged[0], 0, sizeof(bool)*m_vVertexWasChanged.size());
 }
 
 void BVH::Build(CMesh & object, vector<unsigned long> Primitives)

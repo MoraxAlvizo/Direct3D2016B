@@ -51,7 +51,7 @@ struct MassSpringGPU
 	struct {
 		int idVecino;
 		float distancia;
-	}vecinos[24];
+	}vecinos[30];
 	int numVecinos;
 	float masa;
 };

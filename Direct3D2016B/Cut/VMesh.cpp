@@ -282,6 +282,12 @@ void CVMesh::CreateNeighbors()
 
 					// Agregar a la lista
 					m_MassSpring[m_IndicesTetrahedros[i].indexes[j]].vecinos.insert(m_IndicesTetrahedros[i].indexes[k]);
+
+					if (m_MassSpring[m_IndicesTetrahedros[i].indexes[j]].vecinos.size() > 24)
+					{
+						int omar = 0;
+						omar++;
+					}
 					// Agregar distancia 
 					long long key;
 					GET_KEY(m_IndicesTetrahedros[i].indexes[j], m_IndicesTetrahedros[i].indexes[k], key);
@@ -429,8 +435,8 @@ void CVMesh::ApplyForces(VECTOR4D Gravity, VECTOR4D ExternalForce)
 
 	for (unsigned long i = 0; i < m_Vertices.size(); i++)
 	{
-		if (i == 1)
-			continue;
+		//if (i == 1)
+		//	continue;
 
 		m_MassSpring[i].Velocity = m_MassSpring[i].Velocity + (DELTA_T * (m_MassSpring[i].Fuerza / m_MassSpring[i].Masa));
 		m_Vertices[i].Position = m_Vertices[i].Position + (DELTA_T * m_MassSpring[i].Velocity);
